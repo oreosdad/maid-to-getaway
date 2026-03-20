@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Maid to Getaway — My Jobs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
+      --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
+      --text: #1C2B3A; --text-muted: #7A7060; --white: #FFFFFF;
+      --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
+      --radius: 12px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+    #auth-loading { position: fixed; inset: 0; background: var(--cream); display: flex; align-items: center; justify-content: center; z-index: 9999; font-size: 15px; color: var(--text-muted); }
+    #app { display: none; }
+    #app.ready { display: block; }
+
+    /* TOP BAR */
+    .topbar { background: var(--navy); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .topbar-brand { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--white); }
+    .topbar-brand em { font-style: italic; color: var(--gold); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .cleaner-name { font-size: 13px; color: rgba(255,255,255,0.6); }
+    .bell-btn { position: relative; background: none; border: none; cursor: pointer; font-size: 20px; color: rgba(255,255,255,0.8); padding: 4px; }
+    .bell-badge { position: absolute; top: -2px; right: -2px; background: #E74C3C; color: white; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+    .signout-link { font-size: 12px; color: rgba(255,255,255,0.5); cursor: pointer; background: none; border: none; font-family: inherit; }
+    .signout-link:hover { color: white; }
+
+    /* TABS */
+    .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--cream-dark); position: sticky; top: 49px; z-index: 99; overflow-x: auto; }
+    .tab { flex: 1; min-width: 70px; padding: 12px 6px; text-align: center; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.15s; white-space: nowrap; }
+    .tab.active { color: var(--navy); border-bottom-color: var(--gold); }
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+
+    /* CARDS */
+    .job-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); margin-bottom: 14px; overflow: hidden; }
+    .job-card-header { padding: 14px 16px; border-bottom: 1px solid var(--cream-dark); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .job-property { font-size: 16px; font-weight: 500; color: var(--navy); font-family: 'Playfair Display', serif; }
+    .job-date { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .job-card-body { padding: 12px 16px; }
+    .job-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .meta-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .pill-time    { background: #E8F0FB; color: #1A56A4; }
+    .pill-payout  { background: var(--gold-light); color: var(--gold-dark); }
+    .pill-paydate { background: var(--success-bg); color: var(--success); }
+    .pill-pet     { background: #FBF3D5; color: var(--gold-dark); }
+    .pill-short   { background: #FDEEEE; color: var(--error); }
+
+    /* BUTTONS */
+    .btn { padding: 10px 16px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn:active { transform: scale(0.97); }
+    .btn-gold    { background: var(--gold); color: white; }
+    .btn-gold:hover { background: var(--gold-dark); }
+    .btn-navy    { background: var(--navy); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--cream-dark); color: var(--text-muted); }
+    .btn-outline:hover { background: var(--cream-dark); }
+    .btn-danger  { background: transparent; border: 1.5px solid #F0C4BE; color: var(--error); }
+    .btn-unsure  { background: #FBF3D5; color: var(--gold-dark); border: 1.5px solid #F0D98A; }
+    .btn-full    { width: 100%; text-align: center; padding: 13px; font-size: 15px; }
+    .btn-sm      { padding: 6px 12px; font-size: 13px; }
+    .job-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .done-btn { width: 100%; padding: 18px; font-size: 18px; font-weight: 500; background: var(--success); color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 4px; font-family: 'DM Sans', sans-serif; letter-spacing: 0.02em; transition: all 0.15s; }
+    .done-btn:active { transform: scale(0.98); }
+
+    .status-accepted { display: inline-block; background: var(--success-bg); color: var(--success); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .status-pending  { display: inline-block; background: #E8F0FB; color: #1A56A4; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .completed-banner { background: var(--success-bg); border-top: 1px solid #C3E6D5; padding: 12px 16px; font-size: 13px; color: var(--success); font-weight: 500; text-align: center; }
+
+    /* PAY */
+    .pay-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 18px; margin-bottom: 12px; }
+    .pay-amount { font-size: 26px; font-weight: 500; color: var(--navy); }
+    .pay-status-paid    { background: var(--success-bg); color: var(--success); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .pay-status-pending { background: var(--gold-light); color: var(--gold-dark); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+
+    /* CHECKLIST */
+    .checklist-section { margin-bottom: 18px; }
+    .checklist-section-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 8px 0 6px; border-bottom: 1px solid var(--cream-dark); margin-bottom: 8px; }
+    .checklist-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--cream-dark); cursor: pointer; }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--gold); flex-shrink: 0; cursor: pointer; }
+    .checklist-item-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+    .checklist-item.checked .checklist-item-text { text-decoration: line-through; color: var(--text-muted); }
+
+    /* PHOTO UPLOAD */
+    .photo-upload-area { border: 2px dashed var(--cream-dark); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--cream); display: block; }
+    .photo-upload-area:hover { border-color: var(--gold); background: var(--gold-light); }
+    .photo-upload-area input { display: none; }
+    .photo-upload-icon { font-size: 28px; margin-bottom: 6px; }
+    .photo-upload-text { font-size: 14px; color: var(--text-muted); }
+    .photo-upload-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; opacity: 0.7; }
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .photo-thumb { aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* PROPERTY CARD */
+    .prop-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 16px; margin-bottom: 12px; }
+    .prop-name { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .prop-address { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .prop-notes { background: var(--gold-light); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--gold-dark); margin-top: 8px; line-height: 1.5; }
+
+    /* SETTINGS */
+    .settings-section { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); margin-bottom: 16px; overflow: hidden; }
+    .settings-section-title { padding: 14px 16px; font-size: 13px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--cream-dark); background: var(--cream); }
+    .settings-row { padding: 14px 16px; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-label { font-size: 14px; color: var(--text); }
+    .settings-row-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--cream-dark); border-radius: 12px; transition: 0.2s; cursor: pointer; }
+    .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+    .toggle input:checked + .toggle-slider { background: var(--gold); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(28,43,58,0.6); z-index: 200; align-items: flex-end; justify-content: center; padding: 0; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--white); border-radius: 20px 20px 0 0; padding: 20px 20px 40px; width: 100%; max-height: 92vh; overflow-y: auto; animation: slideUp 0.25s ease both; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle { width: 40px; height: 4px; background: var(--cream-dark); border-radius: 2px; margin: 0 auto 18px; }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 14px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--text); background: var(--cream); border: 1.5px solid var(--cream-dark); border-radius: var(--radius); outline: none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--gold); background: var(--white); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* NOTIFICATION DROPDOWN */
+    .notif-dropdown { display: none; position: absolute; top: 49px; right: 0; width: min(360px, 100vw); background: var(--white); border-radius: 0 0 var(--radius) var(--radius); box-shadow: 0 8px 32px rgba(28,43,58,0.15); z-index: 150; max-height: 400px; overflow-y: auto; }
+    .notif-dropdown.open { display: block; }
+    .notif-header { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text); border-bottom: 1px solid var(--cream-dark); display: flex; justify-content: space-between; align-items: center; }
+    .notif-item { padding: 12px 16px; border-bottom: 1px solid var(--cream-dark); cursor: pointer; transition: background 0.1s; }
+    .notif-item:hover { background: var(--cream); }
+    .notif-item.unread { background: #FDFBF7; border-left: 3px solid var(--gold); }
+    .notif-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+    .notif-time { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .notif-empty { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+    .mark-all-read { background: none; border: none; font-size: 12px; color: var(--gold-dark); cursor: pointer; font-family: inherit; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--navy); color: white; padding: 10px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 18px 0 10px; }
+    .section-label:first-child { margin-top: 0; }
+    .inactive-banner { background: #FDF0EE; border: 1px solid #F0C4BE; color: var(--error); padding: 14px; border-radius: var(--radius); font-size: 14px; margin-bottom: 16px; text-align: center; }
+    .property-notes-card { background: var(--gold-light); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--gold-dark); margin-bottom: 14px; line-height: 1.5; }
+    .first-login-banner { background: var(--navy); color: white; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
+    .divider { height: 1px; background: var(--cream-dark); margin: 16px 0; }
+    .sub-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+    .sub-tab.active { background: var(--navy); color: white; }
+    .prop-photos { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
+    .prop-photo { aspect-ratio: 1; border-radius: 8px; overflow: hidden; cursor: pointer; }
+    .prop-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* HIGH FIVE */
+    #highfive-overlay { display: none; position: fixed; inset: 0; background: rgba(28,43,58,0.75); z-index: 9000; align-items: center; justify-content: center; flex-direction: column; }
+    #highfive-overlay.show { display: flex; }
+    .highfive-hand { font-size: 80px; animation: highfive 0.6s ease forwards; transform-origin: bottom center; }
+    @keyframes highfive { 0%{transform:translateY(120px) rotate(20deg);opacity:0} 40%{transform:translateY(-20px) rotate(-5deg);opacity:1} 60%{transform:translateY(10px) rotate(3deg);opacity:1} 80%{transform:translateY(-8px) rotate(-2deg);opacity:1} 100%{transform:translateY(0px) rotate(0deg);opacity:1} }
+    .highfive-message { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: white; margin-top: 20px; animation: fadeInUp 0.4s ease 0.3s both; }
+    .highfive-sub { font-size: 15px; color: rgba(255,255,255,0.7); margin-top: 8px; animation: fadeInUp 0.4s ease 0.5s both; }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+<div id="auth-loading">Loading your jobs…</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">Maid to <em>Getaway</em></div>
+    <div class="topbar-right">
+      <span class="cleaner-name" id="cleaner-greeting"></span>
+      <div style="position:relative">
+        <button class="bell-btn" onclick="toggleNotifications()" id="bell-btn">
+          🔔<span class="bell-badge" id="bell-badge" style="display:none">0</span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            Notifications
+            <button class="mark-all-read" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div id="notif-list"><div class="notif-empty">No notifications</div></div>
+        </div>
+      </div>
+      <button class="signout-link" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('my-jobs', this)">My Jobs</div>
+    <div class="tab" onclick="switchTab('open-jobs', this)">Open Jobs</div>
+    <div class="tab" onclick="switchTab('my-earnings', this)">Earnings</div>
+    <div class="tab" onclick="switchTab('properties', this)">Properties</div>
+    <div class="tab" onclick="switchTab('report', this)">Report</div>
+    <div class="tab" onclick="switchTab('settings', this)">Settings</div>
+  </div>
+
+  <!-- MY JOBS -->
+  <div class="tab-content active" id="tab-my-jobs">
+    <div id="inactive-banner" style="display:none" class="inactive-banner">Your account is currently inactive. Contact your admin if you think this is a mistake.</div>
+    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden">
+      <button class="sub-tab active" id="subtab-upcoming" onclick="switchSubTab('upcoming')">Upcoming</button>
+      <button class="sub-tab" id="subtab-completed" onclick="switchSubTab('completed')">Completed</button>
+    </div>
+    <div id="my-jobs-list"></div>
+  </div>
+
+  <!-- OPEN JOBS -->
+  <div class="tab-content" id="tab-open-jobs">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="section-label" style="margin:0">Available jobs — next 30 days</div>
+      <button class="btn btn-outline btn-sm" onclick="openSubmitJobModal()">+ Submit unscheduled job</button>
+    </div>
+    <div id="open-jobs-list"><div class="empty-state"><div class="empty-state-icon">📋</div><p>Loading available jobs…</p></div></div>
+  </div>
+
+  <!-- EARNINGS -->
+  <div class="tab-content" id="tab-my-earnings">
+    <div id="pay-pending-list"></div>
+    <div class="section-label">Payment history</div>
+    <div id="pay-paid-list"></div>
+  </div>
+
+  <!-- PROPERTIES -->
+  <div class="tab-content" id="tab-properties">
+    <div class="section-label">Active properties</div>
+    <div id="properties-list"><div class="empty-state"><div class="empty-state-icon">🏠</div><p>Loading properties…</p></div></div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="tab-content" id="tab-report">
+    <div class="section-label">What type of report?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openMaintenanceModal()">
+        🔧<br><strong style="display:block;margin-top:6px;font-size:14px">Property Issue</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs, maintenance</span>
+      </button>
+      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openEvidenceModal()">
+        📸<br><strong style="display:block;margin-top:6px;font-size:14px">Excessive Clean</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess, pet issues</span>
+      </button>
+      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openGoodIdeasModal()">
+        💡<br><strong style="display:block;margin-top:6px;font-size:14px">Good Ideas</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Property-specific suggestions</span>
+      </button>
+    </div>
+    <div class="section-label">Your recent submissions</div>
+    <div id="report-history-list"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="tab-content" id="tab-settings">
+    <div class="section-label">Profile</div>
+    <div class="settings-section">
+      <div class="settings-section-title">My information</div>
+      <div style="padding:16px">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" id="settings-name"/>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="settings-phone" placeholder="(816) 555-0100"/>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="saveProfile()">Save profile</button>
+      </div>
+    </div>
+
+    <div class="section-label">Password</div>
+    <div class="settings-section">
+      <div class="settings-section-title">Change password</div>
+      <div style="padding:16px">
+        <div class="form-group">
+          <label>New password</label>
+          <input type="password" id="settings-new-password" placeholder="At least 8 characters"/>
+        </div>
+        <div class="form-group">
+          <label>Confirm new password</label>
+          <input type="password" id="settings-confirm-password" placeholder="Repeat your new password"/>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="changePassword()">Update password</button>
+      </div>
+    </div>
+
+    <div class="section-label">Notifications</div>
+    <div class="settings-section">
+      <div class="settings-section-title">Email me when…</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">New job assigned to me</div>
+          <div class="settings-row-sub">Get an email when admin assigns you a job</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notif-job-assigned" checked onchange="saveNotifPrefs()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">New job available</div>
+          <div class="settings-row-sub">Get an email when an open job is available to claim</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notif-job-available" checked onchange="saveNotifPrefs()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Job not marked complete reminder</div>
+          <div class="settings-row-sub">Reminder if a scheduled job wasn't marked done</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notif-job-reminder" checked onchange="saveNotifPrefs()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Job details updated</div>
+          <div class="settings-row-sub">Get notified when a job you're assigned to changes</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notif-job-updated" checked onchange="saveNotifPrefs()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="modal-job-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="detail-property-name">Job Details</div>
+    <div id="detail-meta" style="margin-bottom:14px"></div>
+    <div id="detail-checklist-wrap"></div>
+    <div class="form-group" style="margin-top:14px">
+      <label>Notes (optional — e.g. "I did all the work" or split details)</label>
+      <textarea id="detail-notes" placeholder="Any notes about this job…"></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Add cleaning evidence photos (optional)</label>
+      <label class="photo-upload-area">
+        <input type="file" id="evidence-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'evidence-preview')"/>
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Tap to take or upload photos</div>
+        <div class="photo-upload-hint">💡 Try not to upload too many similar photos — we have limited storage</div>
+        <div class="photo-upload-hint">📱 If a photo is too large to upload, try taking a screenshot of it instead</div>
+      </label>
+      <div class="photo-grid" id="evidence-preview"></div>
+    </div>
+    <button class="done-btn" id="detail-done-btn" onclick="">💪 I Did It! 🎉</button>
+  </div>
+</div>
+
+<!-- DECLINE/UNSURE MODAL -->
+<div class="modal-overlay" id="modal-response">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="response-title">Respond to job</div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px" id="response-subtitle"></p>
+    <input type="hidden" id="response-job-id"/>
+    <input type="hidden" id="response-assignment-id"/>
+    <input type="hidden" id="response-type"/>
+    <div class="form-group">
+      <label id="response-notes-label">Notes (optional)</label>
+      <textarea id="response-notes" placeholder="Let your admin know anything relevant…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-response')">Cancel</button>
+      <button class="btn btn-full" id="response-confirm-btn" onclick="submitResponse()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM JOB MODAL -->
+<div class="modal-overlay" id="modal-claim">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Claim this job?</div>
+    <div id="claim-job-summary" style="margin-bottom:18px"></div>
+    <input type="hidden" id="claim-job-id"/>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-claim')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="confirmClaimJob()">Yes, I'll take it</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMIT UNSCHEDULED JOB MODAL -->
+<div class="modal-overlay" id="modal-submit-job">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Submit unscheduled job</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Submit a cleaning job that wasn't in the system. Your admin will review and approve it.</p>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="submit-job-property"></select>
+    </div>
+    <div class="form-group">
+      <label>Date of cleaning</label>
+      <input type="date" id="submit-job-date"/>
+    </div>
+    <div class="form-group">
+      <label>Payout amount ($)</label>
+      <input type="number" id="submit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="submit-job-notes" placeholder="Describe the cleaning, any special circumstances…"></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos (optional)</label>
+      <label class="photo-upload-area">
+        <input type="file" id="submit-job-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'submit-job-preview')"/>
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Tap to take or upload photos</div>
+        <div class="photo-upload-hint">📱 If a photo is too large, try a screenshot instead</div>
+      </label>
+      <div class="photo-grid" id="submit-job-preview"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-submit-job')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="confirmSubmitJob()">Submit for review</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAINTENANCE MODAL -->
+<div class="modal-overlay" id="modal-maintenance">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Report Property Issue</div>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="maint-property"></select>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="maint-category">
+        <option value="plumbing">Plumbing</option>
+        <option value="appliance">Appliance</option>
+        <option value="cosmetic">Cosmetic damage (paint, trim, etc.)</option>
+        <option value="electrical">Electrical</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="maint-notes" placeholder="Describe the issue in detail…"></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos (optional)</label>
+      <label class="photo-upload-area">
+        <input type="file" id="maint-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'maint-preview')"/>
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Tap to take or upload photos</div>
+        <div class="photo-upload-hint">📱 If a photo is too large, try a screenshot instead</div>
+      </label>
+      <div class="photo-grid" id="maint-preview"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-maintenance')">Cancel</button>
+      <button class="btn btn-navy btn-full" onclick="submitMaintenance()">Submit report</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXCESSIVE CLEANING MODAL -->
+<div class="modal-overlay" id="modal-evidence">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Excessive Cleaning Evidence</div>
+    <div class="form-group">
+      <label>Which job?</label>
+      <select id="evidence-job"></select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="evidence-notes" placeholder="Describe what made this clean excessive…"></textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos</label>
+      <label class="photo-upload-area">
+        <input type="file" id="evidence-photos-standalone" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'evidence-standalone-preview')"/>
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Tap to take or upload photos</div>
+        <div class="photo-upload-hint">💡 Try not to upload too many similar photos — we have limited storage</div>
+        <div class="photo-upload-hint">📱 If a photo is too large, try a screenshot instead</div>
+      </label>
+      <div class="photo-grid" id="evidence-standalone-preview"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-evidence')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="submitEvidence()">Submit evidence</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROPERTY DETAIL MODAL -->
+<div class="modal-overlay" id="modal-property-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="prop-detail-name">Property Details</div>
+    <div id="prop-detail-body"></div>
+    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-property-detail')">Close</button>
+  </div>
+</div>
+
+<!-- GOOD IDEAS MODAL -->
+<div class="modal-overlay" id="modal-good-ideas">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💡 Good Ideas</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Share property-specific suggestions with your admin — things that could improve the guest experience or make cleanings smoother.</p>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="ideas-property"></select>
+    </div>
+    <div class="form-group">
+      <label>Your suggestion</label>
+      <textarea id="ideas-notes" placeholder="e.g. Guests always ask about extra towels — maybe stock an extra set in the closet?" style="min-height:100px"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-good-ideas')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="submitGoodIdea()">Submit idea</button>
+    </div>
+  </div>
+</div>
+
+<!-- HIGH FIVE OVERLAY -->
+<div id="highfive-overlay">
+  <div class="highfive-hand">🖐️</div>
+  <div class="highfive-message">Great work!</div>
+  <div class="highfive-sub" id="highfive-sub">Job marked complete</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let myJobs = [];
+let openJobs = [];
+let allProperties = [];
+let notifications = [];
+let masterChecklist = [];
+
+// ── AUTH ──
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.replace('login.html'); return; }
+
+  const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+  if (!profile || profile.role !== 'cleaner') { window.location.replace('login.html'); return; }
+
+  currentUser = session.user;
+  currentProfile = profile;
+
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('app').classList.add('ready');
+
+  const firstName = profile.full_name.split(' ')[0];
+  document.getElementById('cleaner-greeting').textContent = `Hi, ${firstName}`;
+
+  if (!profile.is_active) {
+    document.getElementById('inactive-banner').style.display = 'block';
+  }
+
+  const prefs = profile.notification_prefs || {};
+
+  // Load notification preferences
+  loadNotifPrefs(prefs);
+
+  // Pre-fill settings
+  document.getElementById('settings-name').value  = profile.full_name || '';
+  document.getElementById('settings-phone').value = profile.phone || '';
+
+  await Promise.all([
+    loadMyJobs(),
+    loadOpenJobs(),
+    loadNotifications(),
+    loadMasterChecklist(),
+    loadAllProperties()
+  ]);
+}
+
+db.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') window.location.replace('login.html');
+});
+
+// ── TABS ──
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'my-earnings') renderEarnings();
+  if (name === 'properties')  renderProperties();
+  if (name === 'report')      renderReportHistory();
+}
+
+// ── LOAD MY JOBS ──
+async function loadMyJobs() {
+  const today = new Date().toISOString().split('T')[0];
+  const in30  = new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0];
+
+  const { data } = await db
+    .from('job_assignments')
+    .select('*, jobs!inner(*, properties(name, notes, default_checkout_time, default_checkin_time))')
+    .eq('cleaner_id', currentUser.id)
+    .is('jobs.deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  myJobs = (data || []).filter(a => a.jobs);
+  renderMyJobs();
+}
+
+let myJobsSubTab = 'upcoming';
+
+function switchSubTab(tab) {
+  myJobsSubTab = tab;
+  document.getElementById('subtab-upcoming').classList.toggle('active', tab === 'upcoming');
+  document.getElementById('subtab-completed').classList.toggle('active', tab === 'completed');
+  renderMyJobs();
+}
+
+function renderMyJobs() {
+  const list = document.getElementById('my-jobs-list');
+  const active         = myJobs.filter(a => !['pending_payment','completed'].includes(a.jobs.status));
+  const pendingPayment = myJobs.filter(a => a.jobs.status === 'pending_payment');
+  const completed      = myJobs.filter(a => a.jobs.status === 'completed');
+
+  if (myJobsSubTab === 'completed') {
+    if (!pendingPayment.length && !completed.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>No completed jobs yet.</p></div>';
+      return;
+    }
+    let html = '';
+    if (pendingPayment.length) {
+      html += `<div class="section-label">Pending payment</div>` +
+        pendingPayment.map(a => {
+          const job = a.jobs;
+          return `<div class="job-card" style="border-color:var(--gold)">
+            <div class="job-card-header">
+              <div>
+                <div class="job-property">${job.properties?.name || '—'}</div>
+                <div class="job-date">${formatDate(job.scheduled_date)}</div>
+              </div>
+              <span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">⏳ Pending payment</span>
+            </div>
+            <div class="job-card-body">
+              <div class="job-meta">
+                ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+                ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay by ${formatDate(job.cleaner_pay_date)}</span>` : ''}
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo</button>
+            </div>
+          </div>`;
+        }).join('');
+    }
+    if (completed.length) {
+      html += `<div class="section-label">Completed & paid</div>` +
+        completed.map(a => {
+          const job = a.jobs;
+          return `<div class="job-card" style="opacity:0.7">
+            <div class="job-card-header">
+              <div>
+                <div class="job-property">${job.properties?.name || '—'}</div>
+                <div class="job-date">${formatDate(job.scheduled_date)}</div>
+              </div>
+              <span class="status-accepted">✓ Paid</span>
+            </div>
+          </div>`;
+        }).join('');
+    }
+    list.innerHTML = html;
+    return;
+  }
+
+  // Upcoming tab
+  if (!active.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No upcoming jobs right now.</p></div>';
+    return;
+  }
+  list.innerHTML = active.map(a => jobCard(a)).join('');
+}
+
+function jobCard(assignment) {
+  const job  = assignment.jobs;
+  const prop = job.properties;
+  const isPending  = assignment.response === 'pending';
+  const isAccepted = assignment.response === 'accepted';
+  const isDeclined = assignment.response === 'declined';
+  const isUnsure   = assignment.response === 'unsure';
+
+  const statusBadge =
+    isPending  ? '<span class="status-pending">Awaiting your response</span>' :
+    isAccepted ? '<span class="status-accepted">✓ Accepted</span>' :
+    isDeclined ? '<span style="background:#FDEEEE;color:#C0392B;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">Declined</span>' :
+    isUnsure   ? '<span style="background:#FBF3D5;color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">Unsure</span>' : '';
+
+  return `
+  <div class="job-card">
+    <div class="job-card-header">
+      <div>
+        <div class="job-property">${prop?.name || 'Unknown property'}</div>
+        <div class="job-date">${formatDate(job.scheduled_date)}</div>
+      </div>
+      ${statusBadge}
+    </div>
+    <div class="job-card-body">
+      <div class="job-meta">
+        ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+        ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Paid ${formatDate(job.cleaner_pay_date)}</span>` : ''}
+        ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Pet fee</span>' : ''}
+        ${job.is_short_window  ? '<span class="meta-pill pill-short">⚑ Short window</span>' : ''}
+      </div>
+      ${prop?.notes ? `<div style="background:var(--gold-light);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--gold-dark);margin-bottom:10px">📌 ${prop.notes}</div>` : ''}
+      <div class="job-actions">
+        ${isPending ? `
+          <button class="btn btn-success" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Accept</button>
+          <button class="btn btn-unsure"  onclick="openResponseModal('${assignment.id}','${job.id}','unsure')">Unsure</button>
+          <button class="btn btn-danger"  onclick="openResponseModal('${assignment.id}','${job.id}','decline')">Decline</button>
+        ` : ''}
+        ${isAccepted ? `
+          <button class="btn btn-outline btn-sm" style="margin-bottom:8px" onclick="openPropertyDetailFromJob('${job.property_id}')">📋 View task list</button>
+          <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
+        ` : ''}
+        ${(isDeclined || isUnsure) ? `
+          <button class="btn btn-outline" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Actually, I can do it</button>
+        ` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function openPropertyDetailFromJob(propertyId) {
+  if (!propertyId) { showToast('No property linked to this job'); return; }
+  openPropertyDetail(propertyId);
+}
+
+// ── JOB RESPONSES ──
+async function respondToJob(assignmentId, jobId, type) {
+  const response = (type === 'accept') ? 'accepted' : type;
+  await db.from('job_assignments').update({ response, responded_at: new Date().toISOString() }).eq('id', assignmentId);
+
+  if (type === 'accept') {
+    await db.from('jobs').update({ status: 'accepted' }).eq('id', jobId);
+    showToast('Job accepted ✓');
+  } else {
+    await db.from('jobs').update({ status: 'unassigned', notify_available_at: new Date(Date.now() + 30*60000).toISOString() }).eq('id', jobId);
+    showToast(type === 'decline' ? 'Job declined — returned to pool' : 'Marked as unsure — job returned to pool');
+  }
+
+  await loadMyJobs();
+  await loadOpenJobs();
+}
+
+function openResponseModal(assignmentId, jobId, type) {
+  document.getElementById('response-assignment-id').value = assignmentId;
+  document.getElementById('response-job-id').value = jobId;
+  document.getElementById('response-type').value = type;
+  document.getElementById('response-notes').value = '';
+  const btn = document.getElementById('response-confirm-btn');
+  if (type === 'decline') {
+    document.getElementById('response-title').textContent = "Can't make it?";
+    document.getElementById('response-subtitle').textContent = "This job will go back to the available pool.";
+    btn.className = 'btn btn-full'; btn.style.cssText = 'background:#C0392B;color:white';
+    btn.textContent = 'Decline job';
+  } else {
+    document.getElementById('response-title').textContent = 'Not sure yet?';
+    document.getElementById('response-subtitle').textContent = "The job will go back to unassigned while you figure it out.";
+    btn.className = 'btn btn-unsure btn-full'; btn.style.cssText = '';
+    btn.textContent = 'Mark as unsure';
+  }
+  document.getElementById('modal-response').classList.add('open');
+}
+
+async function submitResponse() {
+  const assignmentId = document.getElementById('response-assignment-id').value;
+  const jobId        = document.getElementById('response-job-id').value;
+  const type         = document.getElementById('response-type').value;
+  const notes        = document.getElementById('response-notes').value;
+  const response     = type === 'decline' ? 'declined' : 'unsure';
+
+  await db.from('job_assignments').update({ response, responded_at: new Date().toISOString(), split_notes: notes || null }).eq('id', assignmentId);
+  await db.from('jobs').update({ status: 'unassigned', notify_available_at: new Date(Date.now() + 30*60000).toISOString() }).eq('id', jobId);
+
+  closeModal('modal-response');
+  showToast(type === 'decline' ? 'Job declined' : 'Marked as unsure');
+  await loadMyJobs();
+  await loadOpenJobs();
+}
+
+// ── JOB DETAIL ──
+async function openJobDetail(assignmentId, jobId) {
+  const assignment = myJobs.find(a => a.id === assignmentId);
+  if (!assignment) return;
+  const job  = assignment.jobs;
+  const prop = job.properties;
+
+  document.getElementById('detail-property-name').textContent = prop?.name || 'Job Details';
+  document.getElementById('detail-notes').value = '';
+  document.getElementById('evidence-preview').innerHTML = '';
+
+  document.getElementById('detail-meta').innerHTML = `
+    <div class="job-meta">
+      <span class="meta-pill pill-time">${formatDate(job.scheduled_date)}</span>
+      ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+      ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay date: ${formatDate(job.cleaner_pay_date)}</span>` : ''}
+      ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Collect pet fee</span>' : ''}
+    </div>`;
+
+  await renderChecklist(job.property_id);
+
+  document.getElementById('detail-done-btn').onclick = () => markJobDone(assignmentId, jobId);
+  document.getElementById('modal-job-detail').classList.add('open');
+}
+
+async function renderChecklist(propertyId) {
+  const wrap = document.getElementById('detail-checklist-wrap');
+  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
+
+  let items = [...masterChecklist];
+  if (propChecklist?.items?.length) {
+    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
+  }
+
+  if (!items.length) { wrap.innerHTML = ''; return; }
+
+  const sections = {};
+  items.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
+
+  wrap.innerHTML = Object.entries(sections).map(([section, sectionItems]) => `
+    <div class="checklist-section">
+      <div class="checklist-section-title">${section}</div>
+      ${sectionItems.map(item => `
+        <label class="checklist-item" id="check-${item.id}">
+          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
+          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
+        </label>`).join('')}
+    </div>`).join('');
+}
+
+async function markJobDone(assignmentId, jobId) {
+  await db.from('job_assignments').update({ completed_at: new Date().toISOString() }).eq('id', assignmentId);
+  const { error } = await db.from('jobs').update({ status: 'pending_payment', completed_at: new Date().toISOString() }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showHighFive();
+  await loadMyJobs();
+}
+
+async function undoComplete(assignmentId, jobId) {
+  await db.from('job_assignments').update({ completed_at: null }).eq('id', assignmentId);
+  const { error } = await db.from('jobs').update({ status: 'accepted', completed_at: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Undone — job is back in your active list');
+  await loadMyJobs();
+}
+
+// ── OPEN JOBS ──
+async function loadOpenJobs() {
+  const today = new Date().toISOString().split('T')[0];
+  const in30  = new Date(Date.now() + 30 * 864e5).toISOString().split('T')[0];
+
+  const { data } = await db
+    .from('jobs')
+    .select('*, properties(name, default_checkout_time, default_checkin_time)')
+    .eq('status', 'unassigned')
+    .is('deleted_at', null)
+    .gte('scheduled_date', today)
+    .lte('scheduled_date', in30)
+    .order('scheduled_date', { ascending: true });
+
+  openJobs = data || [];
+  renderOpenJobs();
+}
+
+function renderOpenJobs() {
+  const list = document.getElementById('open-jobs-list');
+  if (!openJobs.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎉</div><p>No open jobs right now.</p></div>';
+    return;
+  }
+  list.innerHTML = openJobs.map(job => {
+    const daysOut = Math.ceil((new Date(job.scheduled_date) - new Date()) / 864e5);
+    return `
+    <div class="job-card">
+      <div class="job-card-header">
+        <div>
+          <div class="job-property">${job.properties?.name || 'Unknown property'}</div>
+          <div class="job-date">${formatDate(job.scheduled_date)} · ${daysOut <= 3 ? `<span style="color:#C0392B;font-weight:500">In ${daysOut} day${daysOut !== 1 ? 's' : ''}</span>` : `In ${daysOut} days`}</div>
+        </div>
+      </div>
+      <div class="job-card-body">
+        <div class="job-meta">
+          ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+          ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Pet fee</span>' : ''}
+          ${job.is_short_window  ? '<span class="meta-pill pill-short">⚑ Short window</span>' : ''}
+        </div>
+        <button class="btn btn-gold btn-full" onclick="openClaimModal('${job.id}','${job.properties?.name || ''}','${job.scheduled_date}',${job.payout_cents || 0})">Claim this job</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClaimModal(jobId, propName, date, payoutCents) {
+  document.getElementById('claim-job-id').value = jobId;
+  document.getElementById('claim-job-summary').innerHTML = `
+    <div class="job-meta">
+      <span class="meta-pill pill-time">${formatDate(date)}</span>
+      ${payoutCents ? `<span class="meta-pill pill-payout">💰 $${Math.round(payoutCents/100)}</span>` : ''}
+    </div>
+    <p style="font-size:14px;color:var(--text-muted);margin-top:8px">${propName}</p>`;
+  document.getElementById('modal-claim').classList.add('open');
+}
+
+async function confirmClaimJob() {
+  const jobId = document.getElementById('claim-job-id').value;
+  // First update the job status so RLS policy is satisfied (cleaner is now assigned)
+  const { error: jobErr } = await db.from('jobs').update({ status: 'accepted', assigned_cleaner_id: currentUser.id }).eq('id', jobId);
+  if (jobErr) { showToast('Error: ' + jobErr.message); return; }
+  const { error } = await db.from('job_assignments').insert({ job_id: jobId, cleaner_id: currentUser.id, response: 'accepted', responded_at: new Date().toISOString() });
+  if (error) {
+    // Rollback job status if insert fails
+    await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
+    showToast('Error: ' + error.message); return;
+  }
+  closeModal('modal-claim');
+  showToast('Job claimed ✓');
+  await loadMyJobs();
+  await loadOpenJobs();
+}
+
+// ── SUBMIT UNSCHEDULED JOB ──
+function openSubmitJobModal() {
+  const sel = document.getElementById('submit-job-property');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('submit-job-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('submit-job-payout').value = '';
+  document.getElementById('submit-job-notes').value = '';
+  document.getElementById('submit-job-preview').innerHTML = '';
+  document.getElementById('modal-submit-job').classList.add('open');
+}
+
+async function confirmSubmitJob() {
+  const propertyId = document.getElementById('submit-job-property').value;
+  const date       = document.getElementById('submit-job-date').value;
+  const payout     = document.getElementById('submit-job-payout').value;
+  const notes      = document.getElementById('submit-job-notes').value.trim();
+  if (!date)  { showToast('Please select a date'); return; }
+  if (!notes) { showToast('Please add notes describing the cleaning'); return; }
+
+  const { data: job, error } = await db.from('jobs').insert({
+    property_id:   propertyId,
+    scheduled_date: date,
+    status:        'pending_review',
+    source:        'manual',
+    submitted_by:  currentUser.id,
+    payout_cents:  payout ? Math.round(parseFloat(payout) * 100) : null,
+    notes:         `Submitted by cleaner: ${notes}`
+  }).select().single();
+
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  const files = document.getElementById('submit-job-photos').files;
+  if (files.length > 0 && job) await uploadPhotos(files, job.id, 'evidence');
+
+  closeModal('modal-submit-job');
+  showToast('Submitted for admin review ✓');
+}
+
+// ── EARNINGS ──
+async function renderEarnings() {
+  // Load completed jobs
+  const { data: completedData } = await db
+    .from('job_assignments')
+    .select('*, jobs!inner(*, properties(name))')
+    .eq('cleaner_id', currentUser.id)
+    .eq('jobs.status', 'completed')
+    .is('jobs.deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  // Load upcoming accepted jobs
+  const today = new Date().toISOString().split('T')[0];
+  const { data: upcomingData } = await db
+    .from('job_assignments')
+    .select('*, jobs!inner(*, properties(name))')
+    .eq('cleaner_id', currentUser.id)
+    .eq('response', 'accepted')
+    .neq('jobs.status', 'completed')
+    .is('jobs.deleted_at', null)
+    .gte('jobs.scheduled_date', today)
+    .order('created_at', { ascending: false });
+
+  const completed = (completedData || []).filter(a => a.jobs);
+  const upcoming  = (upcomingData  || []).filter(a => a.jobs);
+
+  // MTD = completed jobs this calendar month
+  const now = new Date();
+  const mtd = completed.filter(a => {
+    const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const mtdTotal      = mtd.reduce((s, a) => s + (a.jobs.payout_cents || 0), 0);
+  const upcomingTotal = upcoming.reduce((s, a) => s + (a.jobs.payout_cents || 0), 0);
+
+  const pending = completed.filter(a => !a.jobs.cleaner_paid_at);
+  const paid    = completed.filter(a =>  a.jobs.cleaner_paid_at);
+  const pendingTotal = pending.reduce((s, a) => s + (a.jobs.payout_cents || 0), 0);
+
+  const pendingEl = document.getElementById('pay-pending-list');
+  const paidEl    = document.getElementById('pay-paid-list');
+
+  // Summary cards
+  const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+  pendingEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">${monthName} earned</div>
+        <div style="font-size:24px;font-weight:500;color:var(--navy)">$${Math.round(mtdTotal/100)}</div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Upcoming</div>
+        <div style="font-size:24px;font-weight:500;color:var(--navy)">$${Math.round(upcomingTotal/100)}</div>
+      </div>
+    </div>`;
+
+  // Upcoming jobs
+  if (upcoming.length) {
+    pendingEl.innerHTML += `<div class="section-label" style="margin-top:0">Upcoming jobs</div>` +
+      upcoming.map(a => {
+        const job = a.jobs;
+        return `<div class="pay-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:14px;font-weight:500">${job.properties?.name || '—'}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${formatDate(job.scheduled_date)}</div>
+              ${job.cleaner_pay_date ? `<div style="font-size:12px;color:var(--success);margin-top:2px">Pay by ${formatDate(job.cleaner_pay_date)}</div>` : ''}
+            </div>
+            <span style="background:#E8F0FB;color:#1A56A4;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500">Upcoming</span>
+          </div>
+          ${job.payout_cents ? `<div class="pay-amount" style="margin-top:8px">$${Math.round(job.payout_cents/100)}</div>` : '<div style="font-size:13px;color:var(--text-muted);margin-top:8px">Amount TBD</div>'}
+        </div>`;
+      }).join('');
+  }
+
+  // Pending payment (completed but not paid)
+  if (!pending.length) {
+    pendingEl.innerHTML += '<div class="section-label">Awaiting payment</div><div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:24px">⏳</div><p>No pending payments.</p></div>';
+  } else {
+    pendingEl.innerHTML += `
+      <div class="section-label">Awaiting payment</div>
+      <div style="background:var(--gold-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--gold-dark);font-weight:500">Total owed to you</span>
+        <span style="font-size:20px;font-weight:500;color:var(--navy)">$${Math.round(pendingTotal/100)}</span>
+      </div>` +
+      pending.map(a => earningsCard(a, false)).join('');
+  }
+
+  if (!paid.length) {
+    paidEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>No payment history yet.</p></div>';
+  } else {
+    paidEl.innerHTML = paid.map(a => earningsCard(a, true)).join('');
+  }
+}
+
+function earningsCard(assignment, isPaid) {
+  const job = assignment.jobs;
+  return `
+  <div class="pay-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-size:14px;font-weight:500">${job.properties?.name || '—'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${formatDate(job.scheduled_date)}</div>
+        ${job.cleaner_pay_date && !isPaid ? `<div style="font-size:12px;color:var(--success);margin-top:2px">Pay by ${formatDate(job.cleaner_pay_date)}</div>` : ''}
+      </div>
+      <span class="${isPaid ? 'pay-status-paid' : 'pay-status-pending'}">${isPaid ? '✓ Paid' : 'Pending'}</span>
+    </div>
+    ${job.payout_cents ? `<div class="pay-amount" style="margin-top:8px">$${Math.round(job.payout_cents/100)}</div>` : '<div style="font-size:13px;color:var(--text-muted);margin-top:8px">Amount TBD</div>'}
+  </div>`;
+}
+
+async function loadAllProperties() {
+  const { data } = await db.from('properties').select('*').eq('is_active', true).order('name');
+  allProperties = data || [];
+}
+
+async function renderProperties() {
+  const list = document.getElementById('properties-list');
+  if (!allProperties.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No properties found.</p></div>';
+    return;
+  }
+
+  // Fetch photos for all properties
+  const propIds = allProperties.map(p => p.id);
+  const { data: photos } = await db.from('photos').select('*').in('property_id', propIds).eq('photo_type', 'property').order('created_at', { ascending: false });
+  const photosByProp = {};
+  (photos || []).forEach(ph => {
+    if (!photosByProp[ph.property_id]) photosByProp[ph.property_id] = [];
+    if (photosByProp[ph.property_id].length < 6) photosByProp[ph.property_id].push(ph);
+  });
+
+  list.innerHTML = allProperties.map(p => {
+    const propPhotos = photosByProp[p.id] || [];
+    const photoHtml = propPhotos.length ? `
+      <div class="prop-photos">
+        ${propPhotos.map(ph => `<div class="prop-photo"><img src="${ph.storage_path}" alt="Property photo" loading="lazy" onerror="this.parentElement.style.display='none'"/></div>`).join('')}
+      </div>` : '';
+    return `
+    <div class="prop-card" style="cursor:pointer" onclick="openPropertyDetail('${p.id}')">
+      ${photoHtml}
+      <div class="prop-name">${p.name}</div>
+      <div class="prop-address">📍 ${p.address || '—'}</div>
+      ${p.notes ? `<div class="prop-notes">📌 ${p.notes}</div>` : ''}
+      ${p.default_checkout_time || p.default_checkin_time ? `
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          ${p.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(p.default_checkout_time)}</span>` : ''}
+          ${p.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(p.default_checkin_time)}</span>`  : ''}
+        </div>` : ''}
+      <div style="margin-top:10px">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPropertyDetail('${p.id}')">📋 View task list</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Property detail modal (photos + checklist)
+async function openPropertyDetail(propertyId) {
+  const prop = allProperties.find(p => p.id === propertyId);
+  if (!prop) return;
+
+  // Fetch photos
+  const { data: photos } = await db.from('photos').select('*').eq('property_id', propertyId).eq('photo_type', 'property').order('created_at', { ascending: false }).limit(12);
+
+  // Fetch checklist
+  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
+  let items = [...masterChecklist];
+  if (propChecklist?.items?.length) {
+    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
+  }
+  const sections = {};
+  items.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
+
+  const photoHtml = photos?.length ? `
+    <div class="prop-photos" style="margin-bottom:16px">
+      ${photos.map(ph => `<div class="prop-photo"><img src="${ph.storage_path}" alt="Property photo" loading="lazy" onerror="this.parentElement.style.display='none'"/></div>`).join('')}
+    </div>` : '';
+
+  const checklistHtml = Object.entries(sections).map(([section, sectionItems]) => `
+    <div class="checklist-section">
+      <div class="checklist-section-title">${section}</div>
+      ${sectionItems.map(item => `
+        <label class="checklist-item">
+          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
+          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
+        </label>`).join('')}
+    </div>`).join('');
+
+  document.getElementById('prop-detail-name').textContent = prop.name;
+  document.getElementById('prop-detail-body').innerHTML = `
+    ${prop.address ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">📍 ${prop.address}</div>` : ''}
+    ${prop.notes ? `<div class="prop-notes" style="margin-bottom:14px">📌 ${prop.notes}</div>` : ''}
+    ${prop.default_checkout_time || prop.default_checkin_time ? `
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        ${prop.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(prop.default_checkout_time)}</span>` : ''}
+        ${prop.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(prop.default_checkin_time)}</span>`  : ''}
+      </div>` : ''}
+    ${photoHtml}
+    ${checklistHtml || '<p style="font-size:13px;color:var(--text-muted)">No task list for this property.</p>'}
+  `;
+  document.getElementById('modal-property-detail').classList.add('open');
+}
+
+// ── GOOD IDEAS ──
+function openGoodIdeasModal() {
+  const sel = document.getElementById('ideas-property');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('ideas-notes').value = '';
+  document.getElementById('modal-good-ideas').classList.add('open');
+}
+
+async function submitGoodIdea() {
+  const propertyId = document.getElementById('ideas-property').value;
+  const notes      = document.getElementById('ideas-notes').value.trim();
+  if (!notes) { showToast('Please describe your idea'); return; }
+  const { error } = await db.from('maintenance_requests').insert({
+    property_id: propertyId,
+    submitted_by: currentUser.id,
+    category: 'good_idea',
+    notes
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-good-ideas');
+  showToast('Idea submitted ✓ Admin will review it');
+  renderReportHistory();
+}
+
+// ── REPORT ──
+function openMaintenanceModal() {
+  const sel = document.getElementById('maint-property');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('maint-notes').value = '';
+  document.getElementById('maint-preview').innerHTML = '';
+  document.getElementById('modal-maintenance').classList.add('open');
+}
+
+async function submitMaintenance() {
+  const propertyId = document.getElementById('maint-property').value;
+  const category   = document.getElementById('maint-category').value;
+  const notes      = document.getElementById('maint-notes').value.trim();
+  if (!notes) { showToast('Please describe the issue'); return; }
+  const { error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-maintenance');
+  showToast('Issue reported ✓ Admin has been notified');
+  renderReportHistory();
+}
+
+function openEvidenceModal() {
+  const sel = document.getElementById('evidence-job');
+  sel.innerHTML = myJobs.map(a => `<option value="${a.job_id || a.jobs?.id}">${a.jobs?.properties?.name || 'Job'} — ${formatDate(a.jobs?.scheduled_date)}</option>`).join('');
+  document.getElementById('evidence-notes').value = '';
+  document.getElementById('evidence-standalone-preview').innerHTML = '';
+  document.getElementById('modal-evidence').classList.add('open');
+}
+
+async function submitEvidence() {
+  const jobId = document.getElementById('evidence-job').value;
+  const notes = document.getElementById('evidence-notes').value.trim();
+  if (!notes) { showToast('Please describe the situation'); return; }
+  const files = document.getElementById('evidence-photos-standalone').files;
+  if (files.length > 0) await uploadPhotos(files, jobId, 'evidence');
+  const { data: existing } = await db.from('jobs').select('notes').eq('id', jobId).single();
+  const newNote = (existing?.notes ? existing.notes + '\n' : '') + 'Excessive cleaning reported: ' + notes;
+  await db.from('jobs').update({ notes: newNote }).eq('id', jobId);
+  closeModal('modal-evidence');
+  showToast('Evidence submitted ✓');
+  renderReportHistory();
+}
+
+async function renderReportHistory() {
+  const list = document.getElementById('report-history-list');
+  const { data } = await db.from('maintenance_requests').select('*, properties(name)').eq('submitted_by', currentUser.id).order('created_at', { ascending: false }).limit(10);
+  if (!data?.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No recent submissions</p></div>';
+    return;
+  }
+  list.innerHTML = data.map(r => `
+    <div class="job-card" style="margin-bottom:10px">
+      <div class="job-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
+          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${r.category} · ${timeAgo(r.created_at)}</div>
+        <div style="font-size:13px">${r.notes}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── SETTINGS ──
+async function saveProfile() {
+  const name  = document.getElementById('settings-name').value.trim();
+  const phone = document.getElementById('settings-phone').value.trim();
+  if (!name) { showToast('Please enter your name'); return; }
+  const { error } = await db.from('profiles').update({ full_name: name, phone: phone || null }).eq('id', currentUser.id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Profile saved ✓');
+  currentProfile.full_name = name;
+  document.getElementById('cleaner-greeting').textContent = `Hi, ${name.split(' ')[0]}`;
+}
+
+async function changePassword() {
+  const newPass     = document.getElementById('settings-new-password').value;
+  const confirmPass = document.getElementById('settings-confirm-password').value;
+  if (!newPass)              { showToast('Please enter a new password'); return; }
+  if (newPass.length < 8)    { showToast('Password must be at least 8 characters'); return; }
+  if (newPass !== confirmPass){ showToast('Passwords do not match'); return; }
+
+  const { error } = await db.auth.updateUser({ password: newPass });
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  // Mark password as changed so first-login banner goes away
+  const prefs = currentProfile.notification_prefs || {};
+  prefs.password_changed = true;
+  await db.from('profiles').update({ notification_prefs: prefs }).eq('id', currentUser.id);
+
+  document.getElementById('first-login-banner').style.display = 'none';
+  document.getElementById('settings-new-password').value = '';
+  document.getElementById('settings-confirm-password').value = '';
+  showToast('Password updated ✓');
+}
+
+function loadNotifPrefs(prefs) {
+  document.getElementById('notif-job-assigned').checked  = prefs.job_assigned  !== false;
+  document.getElementById('notif-job-available').checked = prefs.job_available !== false;
+  document.getElementById('notif-job-reminder').checked  = prefs.job_reminder  !== false;
+  document.getElementById('notif-job-updated').checked   = prefs.job_updated   !== false;
+}
+
+async function saveNotifPrefs() {
+  const prefs = currentProfile.notification_prefs || {};
+  prefs.job_assigned  = document.getElementById('notif-job-assigned').checked;
+  prefs.job_available = document.getElementById('notif-job-available').checked;
+  prefs.job_reminder  = document.getElementById('notif-job-reminder').checked;
+  prefs.job_updated   = document.getElementById('notif-job-updated').checked;
+  await db.from('profiles').update({ notification_prefs: prefs }).eq('id', currentUser.id);
+  currentProfile.notification_prefs = prefs;
+}
+
+// ── NOTIFICATIONS ──
+async function loadNotifications() {
+  const { data } = await db.from('notifications').select('*').eq('recipient_id', currentUser.id).order('sent_at', { ascending: false }).limit(30);
+  notifications = data || [];
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const unread = notifications.filter(n => !n.read_at).length;
+  const badge  = document.getElementById('bell-badge');
+  badge.style.display = unread > 0 ? 'flex' : 'none';
+  badge.textContent   = unread > 9 ? '9+' : unread;
+
+  const list = document.getElementById('notif-list');
+  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications yet</div>'; return; }
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item ${n.read_at ? '' : 'unread'}" onclick="clickNotification('${n.id}','${n.job_id || ''}')">
+      <div class="notif-text">${n.message}</div>
+      <div class="notif-time">${timeAgo(n.sent_at)}</div>
+    </div>`).join('');
+}
+
+async function clickNotification(notifId, jobId) {
+  await db.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', notifId);
+  notifications = notifications.map(n => n.id === notifId ? { ...n, read_at: new Date().toISOString() } : n);
+  renderNotifications();
+  toggleNotifications();
+  if (jobId) {
+    const assignment = myJobs.find(a => a.jobs?.id === jobId);
+    if (assignment) openJobDetail(assignment.id, jobId);
+  }
+}
+
+async function markAllRead() {
+  await db.from('notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', currentUser.id).is('read_at', null);
+  notifications = notifications.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }));
+  renderNotifications();
+}
+
+function toggleNotifications() { document.getElementById('notif-dropdown').classList.toggle('open'); }
+document.addEventListener('click', e => {
+  if (!document.getElementById('bell-btn').contains(e.target) && !document.getElementById('notif-dropdown').contains(e.target)) {
+    document.getElementById('notif-dropdown').classList.remove('open');
+  }
+});
+
+// ── PHOTO UPLOAD ──
+async function uploadPhotos(files, jobId, type) {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  for (const file of Array.from(files)) {
+    const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
+    const { error } = await db.storage.from('job photos').upload(path, file);
+    if (error) { console.error('Upload error:', error); continue; }
+    const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
+    await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
+  }
+}
+
+function previewPhotos(input, previewId) {
+  const preview = document.getElementById(previewId);
+  preview.innerHTML = '';
+  Array.from(input.files).forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = e => { preview.innerHTML += `<div class="photo-thumb"><img src="${e.target.result}" alt="Photo ${i+1}"/></div>`; };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── MASTER CHECKLIST ──
+async function loadMasterChecklist() {
+  const { data } = await db.from('checklist_templates').select('items').eq('is_master', true).single();
+  masterChecklist = data?.items || [];
+}
+
+// ── HIGH FIVE ──
+function showHighFive() {
+  const messages = ['Crushed it!', 'Great work!', "You're a star! ⭐", 'Nailed it!', 'Another one done! 💪'];
+  const subs = ['Job marked complete.', 'The guests are going to love it.', 'Pay coming your way soon.', 'That property is sparkling.', 'Admin has been notified.'];
+  const i = Math.floor(Math.random() * messages.length);
+  const overlay = document.getElementById('highfive-overlay');
+  overlay.querySelector('.highfive-message').textContent = messages[i];
+  document.getElementById('highfive-sub').textContent = subs[i];
+  const hand = overlay.querySelector('.highfive-hand');
+  hand.style.animation = 'none';
+  overlay.classList.add('show');
+  requestAnimationFrame(() => requestAnimationFrame(() => { hand.style.animation = ''; }));
+  setTimeout(() => overlay.classList.remove('show'), 2500);
+  overlay.onclick = () => overlay.classList.remove('show');
+}
+
+// ── MODALS ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── SIGN OUT ──
+async function signOut() { await db.auth.signOut(); window.location.replace('login.html'); }
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── HELPERS ──
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+function formatTime12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+function timeAgo(dt) {
+  const diff = Date.now() - new Date(dt).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maid to Getaway — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F4EFE4;
+      --cream-dark: #EDE6D6;
+      --navy: #1C2B3A;
+      --gold: #C49A2A;
+      --gold-dark: #A07D1C;
+      --gold-light: #FBF3D5;
+      --text: #1C2B3A;
+      --text-muted: #7A7060;
+      --white: #FFFFFF;
+      --error: #C0392B;
+      --success: #1E7B4B;
+      --success-bg: #EAF7F0;
+      --radius: 10px;
+      --sidebar: 220px;
+    }
+
+    /* Loading screen shown until auth is confirmed */
+    #auth-loading {
+      position: fixed;
+      inset: 0;
+      background: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    /* App is hidden until auth confirmed */
+    #app { display: none; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    #app { display: none; min-height: 100vh; }
+    #app.ready { display: flex; }
+
+    .sidebar {
+      width: var(--sidebar);
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 0 20px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sidebar-brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.3;
+    }
+
+    .sidebar-brand h1 em { font-style: italic; color: var(--gold); }
+
+    .sidebar-brand p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 2px;
+    }
+
+    .sidebar nav { padding: 20px 0; flex: 1; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active { color: var(--white); border-left-color: var(--gold); background: rgba(255,255,255,0.07); font-weight: 500; }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .signout-btn {
+      width: 100%;
+      padding: 9px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius);
+      color: rgba(255,255,255,0.6);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .signout-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+    .main {
+      margin-left: var(--sidebar);
+      flex: 1;
+      padding: 32px;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .page-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      background: var(--gold);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn:hover { background: var(--gold-dark); }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--cream-dark);
+      color: var(--text-muted);
+    }
+
+    .btn-outline:hover { background: var(--cream-dark); color: var(--text); }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--cream-dark);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
+    .stat-card.flagged .stat-value { color: var(--error); }
+    .stat-card.gold .stat-value { color: var(--gold-dark); }
+    .stat-card[onclick]:hover { border-color: var(--gold); transform: translateY(-1px); transition: all 0.15s; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      border: 1px solid var(--cream-dark);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--cream-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title { font-size: 15px; font-weight: 500; color: var(--navy); }
+
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .filter-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--cream-dark);
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--navy);
+      color: var(--white);
+      border-color: var(--navy);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      text-align: left;
+      padding: 12px 20px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      background: var(--cream);
+      border-bottom: 1px solid var(--cream-dark);
+    }
+
+    td {
+      padding: 14px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--cream-dark);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #FDFBF7; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-unassigned { background: #F0EFED; color: #7A7060; }
+    .badge-assigned   { background: #E8F0FB; color: #1A56A4; }
+    .badge-accepted   { background: var(--success-bg); color: var(--success); }
+    .badge-completed  { background: #EAF7F0; color: #1E7B4B; }
+    .badge-declined   { background: #FDEEEE; color: #C0392B; }
+    .badge-flagged    { background: #FFF3CD; color: #856404; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state p { font-size: 15px; margin-top: 8px; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28,43,58,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: fadeUp 0.2s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--cream);
+      border: 1.5px solid var(--cream-dark);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--gold); background: var(--white); }
+
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--cream);
+      border-radius: var(--radius);
+      border: 1.5px solid var(--cream-dark);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--cream-dark);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--navy);
+      color: var(--white);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .loading-inline { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- Shown while checking auth -->
+<div id="auth-loading">Checking your session…</div>
+
+<!-- Hidden until auth confirmed -->
+<div id="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Maid to <em>Getaway</em></h1>
+      <p>Admin Portal</p>
+    </div>
+    <nav>
+      <a class="nav-item active" id="nav-jobs" onclick="showPage('jobs', this)">
+        <span class="nav-icon">📋</span> Jobs
+      </a>
+      <a class="nav-item" id="nav-properties" onclick="showPage('properties', this)">
+        <span class="nav-icon">🏠</span> Properties
+      </a>
+      <a class="nav-item" id="nav-cleaners" onclick="showPage('cleaners', this)">
+        <span class="nav-icon">👤</span> Cleaners
+      </a>
+      <a class="nav-item" id="nav-payments" onclick="showPage('payments', this)">
+        <span class="nav-icon">💰</span> Payments
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="signout-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="page active" id="page-jobs">
+      <div class="page-header">
+        <h2>Jobs</h2>
+        <button class="btn" onclick="openNewJobModal()">+ New job</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
+          <div class="stat-label">Total jobs this month</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('unassigned-2wk')" title="Click to filter">
+          <div class="stat-label">Unassigned (next 2 weeks)</div>
+          <div class="stat-value" id="stat-unassigned">—</div>
+        </div>
+        <div class="stat-card gold" style="cursor:pointer" onclick="filterJobsFromStat('today')" title="Click to filter">
+          <div class="stat-label">Jobs today</div>
+          <div class="stat-value" id="stat-active">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('completed-week')" title="Click to filter">
+          <div class="stat-label">Completed this week</div>
+          <div class="stat-value" id="stat-completed">—</div>
+        </div>
+        <div class="stat-card flagged" style="cursor:pointer" onclick="filterJobsFromStat('flagged')" title="Click to filter">
+          <div class="stat-label">⚑ Flagged</div>
+          <div class="stat-value" id="stat-flagged">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cleaner payout MTD</div>
+          <div class="stat-value" id="stat-payout">—</div>
+        </div>
+        <div class="stat-card" style="border-color:#C49A2A">
+          <div class="stat-label">Profit MTD</div>
+          <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All jobs</span>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterJobs('active', this)">Active</button>
+            <button class="filter-btn" onclick="filterJobs('all', this)">All</button>
+            <button class="filter-btn" onclick="filterJobs('unassigned', this)">Unassigned</button>
+            <button class="filter-btn" onclick="filterJobs('needs-paid', this)">💰 Needs paid</button>
+            <button class="filter-btn" onclick="filterJobs('completed', this)">Completed</button>
+            <button class="filter-btn" onclick="filterJobs('trash', this)">🗑️ Trash</button>
+          </div>
+        </div>
+        <div style="padding:14px 24px;border-bottom:1px solid var(--cream-dark);display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <select id="filter-property" onchange="applyJobFilters()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All properties</option>
+          </select>
+          <select id="filter-cleaner" onchange="applyJobFilters()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All cleaners</option>
+          </select>
+          <select id="filter-month" onchange="applyJobFilters()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All months</option>
+          </select>
+          <select id="filter-sort" onchange="applyJobFilters()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="date-asc">Date ↑</option>
+            <option value="date-desc">Date ↓</option>
+            <option value="pay-date">Pay date</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearJobFilters()">Clear</button>
+        </div>
+        <div id="jobs-table-wrap"><div class="loading-inline">Loading jobs…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-properties">
+      <div class="page-header">
+        <h2>Properties</h2>
+        <button class="btn" onclick="openNewPropertyModal()">+ Add property</button>
+      </div>
+      <div class="card">
+        <div id="properties-table-wrap"><div class="loading-inline">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-cleaners">
+      <div class="page-header">
+        <h2>Cleaners</h2>
+        <button class="btn" onclick="openNewCleanerModal()">+ Add cleaner</button>
+      </div>
+      <div class="card">
+        <div id="cleaners-table-wrap"><div class="loading-inline">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-payments">
+      <div class="page-header"><h2>Payments</h2></div>
+      <div class="card">
+        <div id="payments-table-wrap"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- New Job Modal -->
+<div class="modal-overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">New cleaning job</span>
+      <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="job-property"><option value="">Select a property…</option></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Scheduled date</label>
+        <input type="date" id="job-date"/>
+      </div>
+      <div class="form-group">
+        <label>Scheduled time</label>
+        <input type="time" id="job-time"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Guest checkout</label>
+        <input type="datetime-local" id="job-checkout"/>
+      </div>
+      <div class="form-group">
+        <label>Guest check-in</label>
+        <input type="datetime-local" id="job-checkin"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Assign cleaner (optional)</label>
+      <select id="job-cleaner"><option value="">Leave unassigned</option></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Charge to owner ($)</label>
+        <input type="number" id="job-charge" placeholder="e.g. 120" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>Cleaner payout ($)</label>
+        <input type="number" id="job-payout" placeholder="e.g. 85" min="0" step="1"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="job-pet-fee"/>
+        🐶 Pet fee needs to be collected
+      </label>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Additional cleaning fee ($)</label>
+        <input type="number" id="job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"/>
+      </div>
+      <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label>Reason</label>
+        <input type="text" id="job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="job-flagged"/>
+        ⚑ Flag as short window / urgent
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="job-notes" placeholder="Any special instructions…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn" onclick="saveJob()">Create job</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Property Modal -->
+<div class="modal-overlay" id="modal-property">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add property</span>
+      <button class="modal-close" onclick="closeModal('modal-property')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Property name</label>
+      <input type="text" id="prop-name" placeholder="e.g. Westport Loft"/>
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="prop-address" placeholder="123 Main St, Kansas City, MO"/>
+    </div>
+    <div class="form-group">
+      <label>Airbnb iCal URL (optional)</label>
+      <input type="url" id="prop-airbnb" placeholder="https://www.airbnb.com/calendar/ical/…"/>
+    </div>
+    <div class="form-group">
+      <label>VRBO iCal URL (optional)</label>
+      <input type="url" id="prop-vrbo" placeholder="https://www.vrbo.com/icalendar/…"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default checkout time</label>
+        <input type="time" id="prop-checkout-time"/>
+      </div>
+      <div class="form-group">
+        <label>Default check-in time</label>
+        <input type="time" id="prop-checkin-time"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default charge to owner ($)</label>
+        <input type="number" id="prop-charge" placeholder="e.g. 120" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>Default cleaner payout ($)</label>
+        <input type="number" id="prop-payout" placeholder="e.g. 85" min="0" step="1"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="prop-notes" placeholder="Gate code, parking, special instructions…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-property')">Cancel</button>
+      <button class="btn" onclick="saveProperty()">Add property</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Cleaner Modal -->
+<div class="modal-overlay" id="modal-cleaner">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add cleaner</span>
+      <button class="modal-close" onclick="closeModal('modal-cleaner')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Full name</label>
+      <input type="text" id="cleaner-name" placeholder="Jane Smith"/>
+    </div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="cleaner-email" placeholder="jane@example.com"/>
+    </div>
+    <div class="form-group">
+      <label>Phone (optional)</label>
+      <input type="tel" id="cleaner-phone" placeholder="(816) 555-0100"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cleaner')">Cancel</button>
+      <button class="btn" onclick="saveCleaner()">Add cleaner</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Property Modal -->
+<div class="modal-overlay" id="modal-edit-property">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit property</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-property')">✕</button>
+    </div>
+    <input type="hidden" id="edit-prop-id"/>
+    <div class="form-group">
+      <label>Property name</label>
+      <input type="text" id="edit-prop-name"/>
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="edit-prop-address"/>
+    </div>
+    <div class="form-group">
+      <label>Airbnb iCal URL</label>
+      <input type="url" id="edit-prop-airbnb" placeholder="https://www.airbnb.com/calendar/ical/…"/>
+    </div>
+    <div class="form-group">
+      <label>VRBO iCal URL</label>
+      <input type="url" id="edit-prop-vrbo" placeholder="https://www.vrbo.com/icalendar/…"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default checkout time</label>
+        <input type="time" id="edit-prop-checkout-time"/>
+      </div>
+      <div class="form-group">
+        <label>Default check-in time</label>
+        <input type="time" id="edit-prop-checkin-time"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default charge to owner ($)</label>
+        <input type="number" id="edit-prop-charge" placeholder="e.g. 120" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>Default cleaner payout ($)</label>
+        <input type="number" id="edit-prop-payout" placeholder="e.g. 85" min="0" step="1"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="edit-prop-notes" placeholder="Gate code, parking, special instructions…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-property')">Cancel</button>
+      <button class="btn" onclick="saveEditProperty()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Job Modal -->
+<div class="modal-overlay" id="modal-edit-job">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit job</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-job')">✕</button>
+    </div>
+    <input type="hidden" id="edit-job-id"/>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="edit-job-property"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Scheduled date</label>
+        <input type="date" id="edit-job-date"/>
+      </div>
+      <div class="form-group">
+        <label>Scheduled time</label>
+        <input type="time" id="edit-job-time"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Guest checkout</label>
+        <input type="datetime-local" id="edit-job-checkout"/>
+      </div>
+      <div class="form-group">
+        <label>Guest check-in</label>
+        <input type="datetime-local" id="edit-job-checkin"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Assigned cleaner</label>
+      <select id="edit-job-cleaner"></select>
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="edit-job-status">
+        <option value="unassigned">Unassigned</option>
+        <option value="assigned">Assigned</option>
+        <option value="accepted">Accepted</option>
+        <option value="declined">Declined</option>
+        <option value="completed">Completed</option>
+        <option value="flagged">Flagged</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Charge to owner ($)</label>
+        <input type="number" id="edit-job-charge" placeholder="e.g. 120" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>Cleaner payout ($)</label>
+        <input type="number" id="edit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="edit-job-pet-fee"/>
+        🐶 Pet fee needs to be collected
+      </label>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Additional cleaning fee ($)</label>
+        <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"/>
+      </div>
+      <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label>Reason</label>
+        <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="edit-job-flagged"/>
+        ⚑ Flag as short window / urgent
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="edit-job-notes" placeholder="Any special instructions…"></textarea>
+    </div>
+    <p id="edit-job-pay-date-display" style="font-size:13px;color:var(--gold-dark);margin-bottom:8px;font-weight:500"></p>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" style="color:#C0392B;border-color:#C0392B" onclick="openDeleteJobModal(document.getElementById('edit-job-id').value)">Delete job</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="closeModal('modal-edit-job')">Cancel</button>
+        <button class="btn" onclick="saveEditJob()">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Job Confirmation Modal -->
+<div class="modal-overlay" id="modal-delete-job">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">Delete job</span>
+      <button class="modal-close" onclick="closeModal('modal-delete-job')">✕</button>
+    </div>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px">This job will be moved to Trash. You can restore it later. Please provide a reason.</p>
+    <input type="hidden" id="delete-job-id"/>
+    <div class="form-group">
+      <label>Reason for deletion (required)</label>
+      <input type="text" id="delete-job-reason" placeholder="e.g. Booking cancelled, duplicate entry…"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-delete-job')">Cancel</button>
+      <button class="btn" style="background:#C0392B" onclick="confirmDeleteJob()">Move to trash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Cleaner Modal -->
+<div class="modal-overlay" id="modal-edit-cleaner">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit cleaner</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-cleaner')">✕</button>
+    </div>
+    <input type="hidden" id="edit-cleaner-id"/>
+    <div class="form-group">
+      <label>Full name</label>
+      <input type="text" id="edit-cleaner-name"/>
+    </div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="edit-cleaner-email"/>
+    </div>
+    <div class="form-group">
+      <label>Phone (optional)</label>
+      <input type="tel" id="edit-cleaner-phone"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-cleaner')">Cancel</button>
+      <button class="btn" onclick="saveEditCleaner()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Property Checklist Modal -->
+<div class="modal-overlay" id="modal-prop-checklist">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="checklist-modal-title">Cleaning Checklist</span>
+      <button class="modal-close" onclick="closeModal('modal-prop-checklist')">✕</button>
+    </div>
+    <input type="hidden" id="checklist-prop-id"/>
+    <div id="checklist-master-section" style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">Master checklist (applies to all properties)</div>
+      <div id="checklist-master-items"></div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">Property-specific items</div>
+        <button class="btn btn-sm" onclick="addChecklistItem()">+ Add item</button>
+      </div>
+      <div id="checklist-prop-items"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-prop-checklist')">Cancel</button>
+      <button class="btn" onclick="savePropertyChecklist()">Save checklist</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let allJobs = [];
+let properties = [];
+let cleaners = [];
+let authChecked = false;
+let jobSortCol = 'date';
+let jobSortAsc = true;
+let lastRenderedJobs = [];
+
+function sortJobsTable(col) {
+  if (jobSortCol === col) { jobSortAsc = !jobSortAsc; }
+  else { jobSortCol = col; jobSortAsc = true; }
+  const sorted = [...lastRenderedJobs].sort((a, b) => {
+    let av, bv;
+    if (col === 'date')     { av = a.scheduled_date || ''; bv = b.scheduled_date || ''; }
+    else if (col === 'property') { av = a.properties?.name || ''; bv = b.properties?.name || ''; }
+    else if (col === 'status')   { av = a.status || ''; bv = b.status || ''; }
+    else if (col === 'cleaner')  { av = a.job_assignments?.[0]?.profiles?.full_name || ''; bv = b.job_assignments?.[0]?.profiles?.full_name || ''; }
+    else if (col === 'charge')   { av = a.charge_cents || 0; bv = b.charge_cents || 0; }
+    else if (col === 'payout')   { av = a.payout_cents || 0; bv = b.payout_cents || 0; }
+    else if (col === 'profit')   { av = ((a.charge_cents||0)+(a.additional_cleaning_cents||0))-(a.payout_cents||0); bv = ((b.charge_cents||0)+(b.additional_cleaning_cents||0))-(b.payout_cents||0); }
+    else if (col === 'flags')    { av = (a.is_short_window?1:0)+(a.pet_fee_required?1:0); bv = (b.is_short_window?1:0)+(b.pet_fee_required?1:0); }
+    else if (col === 'paydate')  { av = a.cleaner_pay_date || '9999'; bv = b.cleaner_pay_date || '9999'; }
+    else { av = ''; bv = ''; }
+    if (av < bv) return jobSortAsc ? -1 : 1;
+    if (av > bv) return jobSortAsc ? 1 : -1;
+    return 0;
+  });
+  renderJobsTable(sorted);
+}
+
+// ── AUTH: runs once, shows app or redirects ──
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+
+  if (!session) {
+    window.location.replace('login.html');
+    return;
+  }
+
+  // Auth confirmed — show the app, hide loading screen
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('app').classList.add('ready');
+  authChecked = true;
+
+  await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
+  await autoPurgeTrash();
+}
+
+// Only redirect on explicit sign-out, not on every state change
+db.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    window.location.replace('login.html');
+  }
+});
+
+// ── NAVIGATION ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'properties') renderProperties();
+  if (name === 'cleaners')   renderCleaners();
+  if (name === 'payments')   renderPayments();
+}
+
+// ── JOBS ──
+async function loadJobs() {
+  const { data, error } = await db
+    .from('jobs')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name))')
+    .order('scheduled_date', { ascending: true })
+    .limit(500);
+  if (error) { showToast('Error loading jobs'); return; }
+  allJobs = data || [];
+  renderJobStats();
+  populateJobFilters();
+  // Default view: hide completed and deleted
+  const activeJobs = allJobs.filter(j => j.status !== 'completed' && !j.deleted_at);
+  renderJobsTable(activeJobs);
+}
+
+async function autoPurgeTrash() {
+  const cutoff = new Date(Date.now() - 90 * 864e5).toISOString();
+  const toPurge = allJobs.filter(j => j.deleted_at && j.deleted_at < cutoff);
+  for (const job of toPurge) {
+    await db.from('jobs').delete().eq('id', job.id);
+  }
+  if (toPurge.length > 0) {
+    allJobs = allJobs.filter(j => !toPurge.find(p => p.id === j.id));
+    showToast(`${toPurge.length} old trash item${toPurge.length > 1 ? 's' : ''} auto-purged`);
+  }
+}
+
+function applyJobFilters() {
+  const propFilter    = document.getElementById('filter-property')?.value || '';
+  const cleanerFilter = document.getElementById('filter-cleaner')?.value || '';
+  const monthFilter   = document.getElementById('filter-month')?.value || '';
+  const sortFilter    = document.getElementById('filter-sort')?.value || 'date-asc';
+  const activeBtn     = document.querySelector('.filter-btn.active');
+  const statusFilter  = activeBtn?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || 'active';
+
+  let filtered = allJobs.filter(j => !j.deleted_at);
+
+  // Status filter
+  if (statusFilter === 'active')      filtered = filtered.filter(j => j.status !== 'completed');
+  else if (statusFilter === 'needs-paid') filtered = filtered.filter(j => j.status === 'completed' && !j.cleaner_paid_at);
+  else if (statusFilter === 'completed')  filtered = filtered.filter(j => j.status === 'completed');
+  else if (statusFilter !== 'all')    filtered = filtered.filter(j => j.status === statusFilter);
+
+  // Property filter
+  if (propFilter) filtered = filtered.filter(j => j.property_id === propFilter);
+
+  // Cleaner filter
+  if (cleanerFilter) filtered = filtered.filter(j => j.job_assignments?.[0]?.cleaner_id === cleanerFilter);
+
+  // Month filter (format: YYYY-MM)
+  if (monthFilter) filtered = filtered.filter(j => j.scheduled_date?.startsWith(monthFilter));
+
+  // Sort
+  if (sortFilter === 'date-asc')  filtered.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date));
+  if (sortFilter === 'date-desc') filtered.sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date));
+  if (sortFilter === 'pay-date')  filtered.sort((a, b) => new Date(a.cleaner_pay_date || '9999') - new Date(b.cleaner_pay_date || '9999'));
+
+  renderJobsTable(filtered);
+}
+
+function clearJobFilters() {
+  document.getElementById('filter-property').value = '';
+  document.getElementById('filter-cleaner').value  = '';
+  document.getElementById('filter-month').value    = '';
+  document.getElementById('filter-sort').value     = 'date-asc';
+  applyJobFilters();
+}
+
+function populateJobFilters() {
+  // Properties
+  const propSel = document.getElementById('filter-property');
+  if (propSel) {
+    propSel.innerHTML = '<option value="">All properties</option>' +
+      properties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  }
+  // Cleaners
+  const cleanerSel = document.getElementById('filter-cleaner');
+  if (cleanerSel) {
+    cleanerSel.innerHTML = '<option value="">All cleaners</option>' +
+      cleaners.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
+  }
+  // Months — build from actual job dates
+  const monthSel = document.getElementById('filter-month');
+  if (monthSel) {
+    const months = [...new Set(allJobs.filter(j => j.scheduled_date).map(j => j.scheduled_date.slice(0,7)))].sort();
+    monthSel.innerHTML = '<option value="">All months</option>' +
+      months.map(m => {
+        const [y, mo] = m.split('-');
+        const label = new Date(y, parseInt(mo)-1, 1).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+        return `<option value="${m}">${label}</option>`;
+      }).join('');
+  }
+}
+
+function renderJobStats() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const in2wk = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
+
+  // Start of this week (Sunday)
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  const weekStartStr = weekStart.toISOString().split('T')[0];
+
+  const thisMonthJobs = allJobs.filter(j => {
+    if (!j.scheduled_date || j.deleted_at) return false;
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const unassigned2wk = allJobs.filter(j => !j.deleted_at && j.status === 'unassigned' && j.scheduled_date >= todayStr && j.scheduled_date <= in2wk);
+  const todayJobs = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
+  const completedThisWeek = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
+  const flagged = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
+
+  document.getElementById('stat-total').textContent      = thisMonthJobs.length;
+  document.getElementById('stat-unassigned').textContent  = unassigned2wk.length;
+  document.getElementById('stat-active').textContent      = todayJobs.length;
+  document.getElementById('stat-completed').textContent   = completedThisWeek.length;
+  document.getElementById('stat-flagged').textContent     = flagged.length;
+
+  const mtdPayout = thisMonthJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
+  document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
+
+  const mtdCharge = thisMonthJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+  const mtdProfit = mtdCharge - mtdPayout;
+  document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
+}
+
+function filterJobsFromStat(type) {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const in2wk = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  const weekStartStr = weekStart.toISOString().split('T')[0];
+
+  // Reset filter buttons
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+
+  let filtered;
+  if (type === 'this-month') {
+    filtered = allJobs.filter(j => {
+      if (!j.scheduled_date || j.deleted_at) return false;
+      const d = new Date(j.scheduled_date + 'T12:00:00');
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  } else if (type === 'unassigned-2wk') {
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'unassigned' && j.scheduled_date >= todayStr && j.scheduled_date <= in2wk);
+  } else if (type === 'today') {
+    filtered = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
+  } else if (type === 'completed-week') {
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
+  } else if (type === 'flagged') {
+    filtered = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
+  } else {
+    filtered = allJobs.filter(j => !j.deleted_at);
+  }
+  renderJobsTable(filtered);
+}
+
+function filterJobs(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (filter === 'trash') {
+    renderTrashInline();
+    return;
+  }
+  let filtered;
+  if (filter === 'active')      filtered = allJobs.filter(j => j.status !== 'completed' && !j.deleted_at);
+  else if (filter === 'all')    filtered = allJobs.filter(j => !j.deleted_at);
+  else if (filter === 'needs-paid') filtered = allJobs.filter(j => j.status === 'completed' && !j.cleaner_paid_at && !j.deleted_at);
+  else if (filter === 'completed')  filtered = allJobs.filter(j => j.status === 'completed' && !j.deleted_at);
+  else filtered = allJobs.filter(j => j.status === filter && !j.deleted_at);
+  renderJobsTable(filtered);
+}
+
+function renderTrashInline() {
+  const wrap = document.getElementById('jobs-table-wrap');
+  const deleted = allJobs.filter(j => j.deleted_at);
+  if (!deleted.length) {
+    wrap.innerHTML = '<div class="empty-state">🗑️<p>Trash is empty.</p></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div style="padding:12px 20px;background:#FDF0EE;border-bottom:1px solid #F0C4BE;font-size:13px;color:#7A4040">
+      🗑️ Deleted jobs are shown below. Jobs are automatically purged after 90 days.
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Property</th><th>Deleted on</th><th>Reason</th><th>Auto-purge</th><th>Actions</th></tr></thead>
+      <tbody>${deleted.map(job => {
+        const deletedDate = new Date(job.deleted_at);
+        const purgeDate = new Date(deletedDate.getTime() + 90 * 864e5);
+        const daysLeft = Math.ceil((purgeDate - new Date()) / 864e5);
+        return `
+        <tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name || '—'}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${deletedDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${job.deleted_reason || '—'}</td>
+          <td style="font-size:12px;color:${daysLeft <= 14 ? '#C0392B' : 'var(--text-muted)'}">
+            ${daysLeft > 0 ? `In ${daysLeft} day${daysLeft !== 1 ? 's' : ''}` : 'Purging soon'}
+          </td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="restoreJob('${job.id}')">Restore</button>
+            <button class="btn btn-outline btn-sm" style="margin-left:6px;color:#C0392B" onclick="permanentDeleteJob('${job.id}')">Delete forever</button>
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderJobsTable(jobs) {
+  lastRenderedJobs = jobs;
+  const wrap = document.getElementById('jobs-table-wrap');
+  if (!jobs.length) {
+    wrap.innerHTML = '<div class="empty-state">🧹<p>No jobs yet. Create your first job above.</p></div>';
+    return;
+  }
+  const sortIcon = (col) => jobSortCol === col ? (jobSortAsc ? ' ↑' : ' ↓') : '';
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('date')">Date${sortIcon('date')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('property')">Property${sortIcon('property')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('status')">Status${sortIcon('status')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('cleaner')">Cleaner${sortIcon('cleaner')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('charge')">Charge${sortIcon('charge')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('payout')">Payout${sortIcon('payout')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('profit')">Profit${sortIcon('profit')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('flags')">Flags${sortIcon('flags')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="sortJobsTable('paydate')">Pay date${sortIcon('paydate')}</th>
+        <th>Source</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${jobs.map(job => `
+        <tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name || '—'}</td>
+          <td><span class="badge badge-${job.status}">${job.status}</span></td>
+          <td style="font-size:13px;color:var(--text-muted)">${job.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
+          <td>${job.charge_cents ? '$' + Math.round(job.charge_cents / 100) : '—'}</td>
+          <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
+          <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
+          <td>
+            <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
+              ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑</span>' : ''}
+              ${job.pet_fee_required ? '<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">🐶</span>' : ''}
+              ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
+              ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
+            </div>
+          </td>
+          <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
+          <td>${job.source === 'airbnb' ? '<span style="background:#FF5A5F;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">Airbnb</span>' : job.source === 'vrbo' ? '<span style="background:#1A5276;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">VRBO</span>' : '<span style="color:#B0A896;font-size:12px">Manual</span>'}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
+              ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
+              ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
+              ${job.cleaner_paid_at ? '<span style="font-size:12px;color:var(--success)">✓ Paid</span>' : ''}
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openEditJobModal(id) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+
+  // Populate property dropdown
+  document.getElementById('edit-job-property').innerHTML =
+    '<option value="">Select a property…</option>' +
+    properties.map(p => `<option value="${p.id}" ${p.id === job.property_id ? 'selected' : ''}>${p.name}</option>`).join('');
+
+  // Populate cleaner dropdown
+  document.getElementById('edit-job-cleaner').innerHTML =
+    '<option value="">Unassigned</option>' +
+    cleaners.map(c => `<option value="${c.id}" ${c.id === job.assigned_cleaner_id ? 'selected' : ''}>${c.full_name}</option>`).join('');
+
+  document.getElementById('edit-job-id').value          = job.id;
+  document.getElementById('edit-job-date').value        = job.scheduled_date || '';
+  document.getElementById('edit-job-time').value        = job.scheduled_time || '';
+  // Pre-fill payout from job, or fall back to property default
+  const jobProp = properties.find(p => p.id === job.property_id);
+  const payoutCents = job.payout_cents || (jobProp && jobProp.default_payout_cents) || null;
+  const chargeCents = job.charge_cents || (jobProp && jobProp.default_charge_cents) || null;
+  document.getElementById('edit-job-charge').value = chargeCents ? Math.round(chargeCents / 100) : '';
+  document.getElementById('edit-job-payout').value = payoutCents ? Math.round(payoutCents / 100) : '';
+  document.getElementById('edit-job-checkout').value    = job.guest_checkout ? job.guest_checkout.slice(0,16) : '';
+  document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
+  document.getElementById('edit-job-status').value      = job.status;
+  document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
+  document.getElementById('edit-job-flagged').checked   = job.is_short_window;
+  document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
+  document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
+  document.getElementById('edit-job-notes').value                     = job.notes || '';
+  // Show calculated pay date
+  const payDateEl = document.getElementById('edit-job-pay-date-display');
+  if (payDateEl) {
+    const pd = job.cleaner_pay_date || calcPayDate(job.scheduled_date);
+    payDateEl.textContent = pd ? 'Pay date: ' + formatDate(pd) : '';
+  }
+
+  document.getElementById('modal-edit-job').classList.add('open');
+}
+
+async function saveEditJob() {
+  const id         = document.getElementById('edit-job-id').value;
+  const propertyId = document.getElementById('edit-job-property').value;
+  const date       = document.getElementById('edit-job-date').value;
+  if (!propertyId) { showToast('Please select a property'); return; }
+  if (!date)       { showToast('Please select a date'); return; }
+
+  const cleanerId = document.getElementById('edit-job-cleaner').value;
+  const checkout  = document.getElementById('edit-job-checkout').value || null;
+  const checkin   = document.getElementById('edit-job-checkin').value || null;
+  const status    = document.getElementById('edit-job-status').value;
+
+  let isShortWindow = document.getElementById('edit-job-flagged').checked;
+  if (checkout && checkin) {
+    const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
+    if (gap < 8) isShortWindow = true;
+  }
+
+  const { error } = await db.from('jobs').update({
+    property_id:      propertyId,
+    scheduled_date:   date,
+    scheduled_time:   document.getElementById('edit-job-time').value || null,
+    guest_checkout:   checkout,
+    guest_checkin:    checkin,
+    status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
+    is_short_window:  isShortWindow,
+    pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
+    notes:            document.getElementById('edit-job-notes').value || null,
+    cleaner_pay_date: calcPayDate(date),
+    charge_cents:              document.getElementById('edit-job-charge').value ? Math.round(parseFloat(document.getElementById('edit-job-charge').value) * 100) : null,
+    payout_cents:              document.getElementById('edit-job-payout').value ? Math.round(parseFloat(document.getElementById('edit-job-payout').value) * 100) : null,
+    additional_cleaning_cents: document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : null,
+    additional_cleaning_notes: document.getElementById('edit-job-additional-cleaning-notes').value || null
+  }).eq('id', id);
+
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  // Update assignment if cleaner changed
+  if (cleanerId) {
+    await db.from('job_assignments')
+      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
+  } else {
+    await db.from('job_assignments').delete().eq('job_id', id);
+  }
+
+  closeModal('modal-edit-job');
+  showToast('Job updated ✓');
+  await loadJobs();
+}
+
+async function markComplete(jobId) {
+  const job = allJobs.find(j => j.id === jobId);
+  const payDate = job ? calcPayDate(job.scheduled_date) : null;
+  const { error } = await db.from('jobs').update({
+    status: 'completed',
+    completed_at: new Date().toISOString(),
+    cleaner_pay_date: payDate
+  }).eq('id', jobId);
+  if (error) { showToast('Error updating job'); return; }
+  showToast('Job marked complete ✓' + (payDate ? ' — pay date: ' + formatDate(payDate) : ''));
+  await loadJobs();
+}
+
+async function markPaid(jobId) {
+  const { error } = await db.from('jobs').update({ cleaner_paid_at: new Date().toISOString() }).eq('id', jobId);
+  if (error) { showToast('Error marking paid'); return; }
+  showToast('Cleaner marked as paid ✓');
+  await loadJobs();
+}
+
+function openDeleteJobModal(jobId) {
+  document.getElementById('delete-job-id').value = jobId;
+  document.getElementById('delete-job-reason').value = '';
+  closeModal('modal-edit-job');
+  document.getElementById('modal-delete-job').classList.add('open');
+}
+
+async function confirmDeleteJob() {
+  const jobId = document.getElementById('delete-job-id').value;
+  const reason = document.getElementById('delete-job-reason').value.trim();
+  if (!reason) { showToast('Please enter a reason for deletion'); return; }
+  const { error } = await db.from('jobs').update({
+    deleted_at: new Date().toISOString(),
+    deleted_reason: reason
+  }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-delete-job');
+  showToast('Job moved to trash');
+  await loadJobs();
+}
+
+async function restoreJob(jobId) {
+  const { error } = await db.from('jobs').update({ deleted_at: null, deleted_reason: null }).eq('id', jobId);
+  if (error) { showToast('Error restoring job'); return; }
+  showToast('Job restored ✓');
+  await loadJobs();
+  renderTrashInline();
+}
+
+async function permanentDeleteJob(jobId) {
+  if (!confirm('Permanently delete this job? This CANNOT be undone.')) return;
+  const { error } = await db.from('jobs').delete().eq('id', jobId);
+  if (error) { showToast('Error deleting job'); return; }
+  showToast('Job permanently deleted');
+  await loadJobs();
+  renderTrashInline();
+}
+
+// Pay date = Friday of the week AFTER the cleaning
+function calcPayDate(scheduledDate) {
+  if (!scheduledDate) return null;
+  const d = new Date(scheduledDate + 'T12:00:00');
+  // Get to the following Monday (start of next week)
+  const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
+  const daysUntilNextMonday = (8 - day) % 7 || 7;
+  const nextMonday = new Date(d);
+  nextMonday.setDate(d.getDate() + daysUntilNextMonday);
+  // Friday of that week = nextMonday + 4
+  const payFriday = new Date(nextMonday);
+  payFriday.setDate(nextMonday.getDate() + 4);
+  return payFriday.toISOString().split('T')[0];
+}
+
+// ── NEW JOB MODAL ──
+function openNewJobModal() {
+  document.getElementById('job-property').innerHTML =
+    '<option value="">Select a property…</option>' +
+    properties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('job-cleaner').innerHTML =
+    '<option value="">Leave unassigned</option>' +
+    cleaners.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
+  document.getElementById('job-date').value = today();
+  document.getElementById('job-time').value = '';
+  document.getElementById('job-checkout').value = '';
+  document.getElementById('job-checkin').value = '';
+
+  // When property is selected, pre-fill checkout/checkin/payout from property defaults
+  document.getElementById('job-property').onchange = function() {
+    const prop = properties.find(p => p.id === this.value);
+    if (!prop) return;
+    const date = document.getElementById('job-date').value || today();
+    if (prop.default_checkout_time) {
+      document.getElementById('job-checkout').value = date + 'T' + prop.default_checkout_time;
+    }
+    if (prop.default_checkin_time) {
+      document.getElementById('job-checkin').value = date + 'T' + prop.default_checkin_time;
+    }
+    if (prop.default_charge_cents) {
+      document.getElementById('job-charge').value = Math.round(prop.default_charge_cents / 100);
+    }
+    if (prop.default_payout_cents) {
+      document.getElementById('job-payout').value = Math.round(prop.default_payout_cents / 100);
+    }
+  };
+  document.getElementById('job-notes').value = '';
+  document.getElementById('job-pet-fee').checked = false;
+  document.getElementById('job-flagged').checked = false;
+  document.getElementById('modal-job').classList.add('open');
+}
+
+async function saveJob() {
+  const propertyId = document.getElementById('job-property').value;
+  const date       = document.getElementById('job-date').value;
+  if (!propertyId) { showToast('Please select a property'); return; }
+  if (!date)       { showToast('Please select a date'); return; }
+
+  const cleanerId = document.getElementById('job-cleaner').value;
+  const checkout  = document.getElementById('job-checkout').value || null;
+  const checkin   = document.getElementById('job-checkin').value || null;
+
+  let isShortWindow = document.getElementById('job-flagged').checked;
+  if (checkout && checkin) {
+    const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
+    if (gap < 8) isShortWindow = true;
+  }
+    property_id:      propertyId,
+    scheduled_date:   date,
+    scheduled_time:   document.getElementById('job-time').value || null,
+    guest_checkout:   checkout,
+    guest_checkin:    checkin,
+    status:           cleanerId ? 'assigned' : 'unassigned',
+    is_short_window:  isShortWindow,
+    pet_fee_required: document.getElementById('job-pet-fee').checked,
+    notes:            document.getElementById('job-notes').value || null,
+    source:           'manual',
+    cleaner_pay_date: calcPayDate(date),
+    charge_cents:              document.getElementById('job-charge').value ? Math.round(parseFloat(document.getElementById('job-charge').value) * 100) : null,
+    payout_cents:              document.getElementById('job-payout').value ? Math.round(parseFloat(document.getElementById('job-payout').value) * 100) : null,
+    additional_cleaning_cents: document.getElementById('job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('job-additional-cleaning').value) * 100) : null,
+    additional_cleaning_notes: document.getElementById('job-additional-cleaning-notes').value || null
+  }).select().single();
+
+  if (error) { showToast('Error creating job: ' + error.message); return; }
+
+  if (cleanerId && job) {
+    await db.from('job_assignments').insert({ job_id: job.id, cleaner_id: cleanerId, response: 'pending' });
+  }
+
+  closeModal('modal-job');
+  showToast('Job created ✓');
+  await loadJobs();
+}
+
+// ── PROPERTIES ──
+async function loadProperties() {
+  const { data } = await db.from('properties').select('*').order('name');
+  properties = data || [];
+}
+
+function renderProperties() {
+  const wrap = document.getElementById('properties-table-wrap');
+  if (!properties.length) {
+    wrap.innerHTML = '<div class="empty-state">🏠<p>No properties yet. Add your first property.</p></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody>${properties.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.address}</td>
+          <td>${p.airbnb_ical_url ? '✓ Set' : '—'}</td>
+          <td>${p.vrbo_ical_url ? '✓ Set' : '—'}</td>
+          <td>${p.default_charge_cents ? '$' + Math.round(p.default_charge_cents / 100) : '—'}</td>
+          <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
+          <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
+          <td style="color:var(--text-muted);font-size:13px">${p.notes || '—'}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
+            <button class="btn btn-outline btn-sm" onclick="openPropertyChecklist('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📋 Checklist</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openEditPropertyModal(id) {
+  const p = properties.find(p => p.id === id);
+  if (!p) return;
+  document.getElementById('edit-prop-id').value      = p.id;
+  document.getElementById('edit-prop-name').value    = p.name;
+  document.getElementById('edit-prop-address').value = p.address;
+  document.getElementById('edit-prop-airbnb').value         = p.airbnb_ical_url || '';
+  document.getElementById('edit-prop-vrbo').value           = p.vrbo_ical_url || '';
+  document.getElementById('edit-prop-checkout-time').value  = p.default_checkout_time || '';
+  document.getElementById('edit-prop-checkin-time').value   = p.default_checkin_time || '';
+  document.getElementById('edit-prop-charge').value         = p.default_charge_cents ? Math.round(p.default_charge_cents / 100) : '';
+  document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
+  document.getElementById('edit-prop-notes').value          = p.notes || '';
+  document.getElementById('modal-edit-property').classList.add('open');
+}
+
+async function saveEditProperty() {
+  const id      = document.getElementById('edit-prop-id').value;
+  const name    = document.getElementById('edit-prop-name').value.trim();
+  const address = document.getElementById('edit-prop-address').value.trim();
+  if (!name)    { showToast('Please enter a property name'); return; }
+  if (!address) { showToast('Please enter an address'); return; }
+
+  const { error } = await db.from('properties').update({
+    name,
+    address,
+    airbnb_ical_url:        document.getElementById('edit-prop-airbnb').value.trim() || null,
+    vrbo_ical_url:          document.getElementById('edit-prop-vrbo').value.trim() || null,
+    default_checkout_time:  document.getElementById('edit-prop-checkout-time').value || null,
+    default_checkin_time:   document.getElementById('edit-prop-checkin-time').value || null,
+    default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
+    default_payout_cents:   document.getElementById('edit-prop-payout').value ? Math.round(parseFloat(document.getElementById('edit-prop-payout').value) * 100) : null,
+    notes:                  document.getElementById('edit-prop-notes').value.trim() || null
+  }).eq('id', id);
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-property');
+  showToast('Property updated ✓');
+  await loadProperties();
+  renderProperties();
+}
+
+function openNewPropertyModal() {
+  ['prop-name','prop-address','prop-airbnb','prop-vrbo','prop-notes','prop-checkout-time','prop-checkin-time','prop-charge','prop-payout'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-property').classList.add('open');
+}
+
+async function saveProperty() {
+  const name    = document.getElementById('prop-name').value.trim();
+  const address = document.getElementById('prop-address').value.trim();
+  if (!name)    { showToast('Please enter a property name'); return; }
+  if (!address) { showToast('Please enter an address'); return; }
+
+  const { error } = await db.from('properties').insert({
+    name, address,
+    airbnb_ical_url:        document.getElementById('prop-airbnb').value.trim() || null,
+    vrbo_ical_url:          document.getElementById('prop-vrbo').value.trim() || null,
+    default_checkout_time:  document.getElementById('prop-checkout-time').value || null,
+    default_checkin_time:   document.getElementById('prop-checkin-time').value || null,
+    default_charge_cents:   document.getElementById('prop-charge').value ? Math.round(parseFloat(document.getElementById('prop-charge').value) * 100) : null,
+    default_payout_cents:   document.getElementById('prop-payout').value ? Math.round(parseFloat(document.getElementById('prop-payout').value) * 100) : null,
+    notes:                  document.getElementById('prop-notes').value.trim() || null
+  });
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-property');
+  showToast('Property added ✓');
+  await loadProperties();
+  renderProperties();
+}
+
+// ── CLEANERS ──
+async function loadCleaners() {
+  const { data } = await db.from('profiles').select('*').eq('role', 'cleaner').order('full_name');
+  cleaners = data || [];
+}
+
+function renderCleaners() {
+  const wrap = document.getElementById('cleaners-table-wrap');
+  if (!cleaners.length) {
+    wrap.innerHTML = '<div class="empty-state">👤<p>No cleaners yet. Add your first cleaner.</p></div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${cleaners.map(c => `
+        <tr>
+          <td><strong>${c.full_name}</strong></td>
+          <td>${c.email}</td>
+          <td>${c.phone || '—'}</td>
+          <td><span class="badge ${c.is_active ? 'badge-accepted' : 'badge-declined'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="openEditCleanerModal('${c.id}')">Edit</button>
+            <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="resetCleanerPassword('${c.id}', '${c.email}')">Reset password</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function openNewCleanerModal() {
+  ['cleaner-name','cleaner-email','cleaner-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-cleaner').classList.add('open');
+}
+
+async function saveCleaner() {
+  const name  = document.getElementById('cleaner-name').value.trim();
+  const email = document.getElementById('cleaner-email').value.trim();
+  const phone = document.getElementById('cleaner-phone').value.trim() || null;
+  if (!name)  { showToast('Please enter a name'); return; }
+  if (!email) { showToast('Please enter an email'); return; }
+
+  const { data, error } = await db.rpc('create_cleaner', {
+    p_name: name,
+    p_email: email,
+    p_phone: phone
+  });
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-cleaner');
+  showToast('Cleaner added ✓ — temp password: ChangeMe123!');
+  await loadCleaners();
+  renderCleaners();
+}
+
+function openEditCleanerModal(id) {
+  const c = cleaners.find(c => c.id === id);
+  if (!c) return;
+  document.getElementById('edit-cleaner-id').value    = c.id;
+  document.getElementById('edit-cleaner-name').value  = c.full_name;
+  document.getElementById('edit-cleaner-email').value = c.email;
+  document.getElementById('edit-cleaner-phone').value = c.phone || '';
+  document.getElementById('modal-edit-cleaner').classList.add('open');
+}
+
+async function saveEditCleaner() {
+  const id    = document.getElementById('edit-cleaner-id').value;
+  const name  = document.getElementById('edit-cleaner-name').value.trim();
+  const email = document.getElementById('edit-cleaner-email').value.trim();
+  const phone = document.getElementById('edit-cleaner-phone').value.trim() || null;
+  if (!name)  { showToast('Please enter a name'); return; }
+  if (!email) { showToast('Please enter an email'); return; }
+
+  const { error } = await db.from('profiles').update({
+    full_name: name,
+    email,
+    phone
+  }).eq('id', id);
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-cleaner');
+  showToast('Cleaner updated ✓');
+  await loadCleaners();
+  renderCleaners();
+}
+
+async function resetCleanerPassword(cleanerId, cleanerEmail) {
+  if (!confirm('Send a password reset email to ' + cleanerEmail + '?')) return;
+
+  const { error } = await db.auth.resetPasswordForEmail(cleanerEmail, {
+    redirectTo: window.location.origin + '/login.html'
+  });
+
+  if (error) {
+    // If email not configured, show manual instructions
+    showToast('Email not configured — set password manually in Supabase');
+  } else {
+    showToast('Password reset email sent to ' + cleanerEmail + ' ✓');
+  }
+}
+
+// ── PAYMENTS ──
+function renderPayments() {
+  document.getElementById('payments-table-wrap').innerHTML =
+    '<div class="empty-state">💰<p>Payment tracking coming soon. Completed jobs will appear here.</p></div>';
+}
+
+// ── PROPERTY CHECKLIST ──
+let masterChecklistItems = [];
+let propChecklistItems = [];
+
+async function openPropertyChecklist(propId, propName) {
+  document.getElementById('checklist-prop-id').value = propId;
+  document.getElementById('checklist-modal-title').textContent = propName + ' — Checklist';
+
+  // Load master checklist
+  const { data: master } = await db.from('checklist_templates').select('items').eq('is_master', true).single();
+  masterChecklistItems = master?.items || [];
+
+  // Load property-specific checklist
+  const { data: propCl } = await db.from('checklist_templates').select('items').eq('property_id', propId).single();
+  propChecklistItems = propCl?.items ? JSON.parse(JSON.stringify(propCl.items)) : [];
+
+  renderMasterChecklist();
+  renderPropChecklist();
+  document.getElementById('modal-prop-checklist').classList.add('open');
+}
+
+function renderMasterChecklist() {
+  const wrap = document.getElementById('checklist-master-items');
+  if (!masterChecklistItems.length) {
+    wrap.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">No master checklist items yet.</p>';
+    return;
+  }
+  const sections = {};
+  masterChecklistItems.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
+  wrap.innerHTML = Object.entries(sections).map(([section, items]) => `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--cream-dark)">${section}</div>
+      ${items.map(item => `<div style="padding:6px 0;font-size:14px;color:var(--text);display:flex;align-items:center;gap:8px"><span style="color:var(--text-muted)">☐</span> ${item.text}</div>`).join('')}
+    </div>`).join('');
+}
+
+function renderPropChecklist() {
+  const wrap = document.getElementById('checklist-prop-items');
+  if (!propChecklistItems.length) {
+    wrap.innerHTML = '<p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">No property-specific items yet. Click "+ Add item" to add one.</p>';
+    return;
+  }
+  wrap.innerHTML = propChecklistItems.map((item, i) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select onchange="propChecklistItems[${i}].section = this.value" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit;flex-shrink:0">
+        ${['Bedroom','Bathroom','Kitchen','Living Room','Laundry','Outdoor','General'].map(s =>
+          `<option value="${s}" ${item.section === s ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+      <input type="text" value="${item.text}" oninput="propChecklistItems[${i}].text = this.value"
+        style="flex:1;padding:7px 10px;font-size:14px;border:1.5px solid var(--cream-dark);border-radius:8px;background:var(--cream);font-family:inherit;color:var(--text)"/>
+      <button onclick="removePropChecklistItem(${i})" style="background:none;border:none;color:#C0392B;font-size:18px;cursor:pointer;padding:4px;line-height:1">×</button>
+    </div>`).join('');
+}
+
+function addChecklistItem() {
+  propChecklistItems.push({ id: 'prop-' + Date.now(), section: 'General', text: '' });
+  renderPropChecklist();
+  // Focus last input
+  const inputs = document.querySelectorAll('#checklist-prop-items input[type="text"]');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removePropChecklistItem(index) {
+  propChecklistItems.splice(index, 1);
+  renderPropChecklist();
+}
+
+async function savePropertyChecklist() {
+  const propId = document.getElementById('checklist-prop-id').value;
+  const items = propChecklistItems.filter(i => i.text.trim());
+
+  // Check if record exists
+  const { data: existing } = await db.from('checklist_templates').select('id').eq('property_id', propId).single();
+
+  let error;
+  if (existing) {
+    ({ error } = await db.from('checklist_templates').update({ items }).eq('property_id', propId));
+  } else {
+    ({ error } = await db.from('checklist_templates').insert({ property_id: propId, items, is_master: false }));
+  }
+
+  if (error) { showToast('Error saving checklist: ' + error.message); return; }
+  closeModal('modal-prop-checklist');
+  showToast('Checklist saved ✓');
+}
+
+// ── MODALS ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── SIGN OUT ──
+async function signOut() {
+  await db.auth.signOut();
+  window.location.replace('login.html?signout=1');
+}
+
+// ── HELPERS ──
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatTime(t) {
+  if (!t) return '—';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maid to Getaway — Staff Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #F4EFE4;
+      --cream-dark: #EDE6D6;
+      --navy: #1C2B3A;
+      --gold: #C49A2A;
+      --gold-dark: #A07D1C;
+      --text: #1C2B3A;
+      --text-muted: #7A7060;
+      --white: #FFFFFF;
+      --error: #C0392B;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(196,154,42,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(28,43,58,0.05) 0%, transparent 50%);
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 40px rgba(28,43,58,0.10), 0 1px 4px rgba(28,43,58,0.06);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 52px;
+      height: 52px;
+      background: var(--cream);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 26px;
+    }
+
+    .logo-area h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .logo-area h1 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .logo-area p {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--cream-dark);
+      margin: 0 0 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--cream);
+      border: 1.5px solid var(--cream-dark);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 18px;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--gold);
+      background: var(--white);
+    }
+
+    input::placeholder { color: #B0A896; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--gold);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 4px;
+      letter-spacing: 0.01em;
+    }
+
+    .btn:hover { background: var(--gold-dark); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .error-msg {
+      display: none;
+      background: #FDF0EE;
+      border: 1px solid #F0C4BE;
+      color: var(--error);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .error-msg.visible { display: block; }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 24px;
+    }
+
+    .footer-note a { color: var(--gold); text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-area">
+    <div class="logo-icon">🧹</div>
+    <h1>Maid to <em>Getaway</em></h1>
+    <p>Staff Portal · Kansas City</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div id="error-msg" class="error-msg"></div>
+
+  <label for="email">Email address</label>
+  <input type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
+
+  <label for="password">Password</label>
+  <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+
+  <button class="btn" id="login-btn" onclick="handleLogin()">Sign in</button>
+
+  <p class="footer-note">
+    Having trouble? <a href="/cdn-cgi/l/email-protection#9cffe9e8fff3f6f3f4f2fbf5f0f1f3eef9dcfbf1fdf5f0b2fff3f1">Contact admin</a>
+  </p>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // If already logged in, redirect — but only if not a fresh arrival after signout
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session && !window.location.search.includes('signout')) {
+      redirectByRole(session.user.id);
+    }
+  });
+
+  async function handleLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('login-btn');
+    const errBox   = document.getElementById('error-msg');
+
+    errBox.classList.remove('visible');
+
+    if (!email || !password) {
+      showError('Please enter your email and password.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span>Signing in…';
+
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      showError('Incorrect email or password. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Sign in';
+      return;
+    }
+
+    await redirectByRole(data.user.id);
+  }
+
+  async function redirectByRole(userId) {
+    const { data: profile, error } = await db
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    // If profile can't be read, go to admin.html anyway (for testing)
+    if (error || !profile) {
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    if (profile.role === 'admin')   window.location.href = 'admin.html';
+    if (profile.role === 'cleaner') window.location.href = 'cleaner.html';
+    if (profile.role === 'owner')   window.location.href = 'owner.html';
+  }
+
+  function showError(msg) {
+    const errBox = document.getElementById('error-msg');
+    errBox.textContent = msg;
+    errBox.classList.add('visible');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+</script>
+
+</body>
+</html>

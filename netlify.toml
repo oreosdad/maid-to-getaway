@@ -1,0 +1,19 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Disable post-processing that rewrites email links and can corrupt JS
+[build.processing]
+  skip_processing = true
+
+# Run iCal sync every hour
+[[scheduled-functions]]
+  name = "sync-ical"
+  cron = "0 * * * *"
+
+# Redirect www to apex
+[[redirects]]
+  from = "https://www.maidtogetaway.com/*"
+  to   = "https://maidtogetaway.com/:splat"
+  status = 301
+  force = true
