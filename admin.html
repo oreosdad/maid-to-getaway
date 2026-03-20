@@ -978,13 +978,19 @@ async function init() {
     return;
   }
 
-  // Auth confirmed — show the app, hide loading screen
+  // Show the app immediately — don't wait for data to load
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
   authChecked = true;
 
-  await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
-  await autoPurgeTrash();
+  // Load data in background — page is already visible
+  try {
+    await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
+    await autoPurgeTrash();
+  } catch(e) {
+    console.error('Data load error:', e);
+    showToast('Error loading data — please refresh');
+  }
 }
 
 // Only redirect on explicit sign-out, not on every state change
