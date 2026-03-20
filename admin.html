@@ -1496,6 +1496,7 @@ async function saveJob() {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
   }
+  const { data: job, error } = await db.from('jobs').insert({
     property_id:      propertyId,
     scheduled_date:   date,
     scheduled_time:   document.getElementById('job-time').value || null,
