@@ -733,7 +733,7 @@
       </div>
       <div class="form-group">
         <label>Pet fee amount ($)</label>
-        <input type="number" id="job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1"/>
+        <input type="number" id="job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('job-pet-fee').checked=true"/>
       </div>
     </div>
     <div class="form-row">
@@ -747,13 +747,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="job-flagged"/>
-        ⚑ Flag as short window / urgent
-      </label>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
+      <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="job-notes" placeholder="Any special instructions…"></textarea>
     </div>
     <div class="modal-footer">
@@ -970,7 +964,7 @@
       </div>
       <div class="form-group">
         <label>Pet fee amount ($)</label>
-        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1"/>
+        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
       </div>
     </div>
     <div class="form-row">
@@ -984,13 +978,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="edit-job-flagged"/>
-        ⚑ Flag as short window / urgent
-      </label>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
+      <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="edit-job-notes" placeholder="Any special instructions…"></textarea>
     </div>
     <p id="edit-job-pay-date-display" style="font-size:13px;color:var(--gold-dark);margin-bottom:8px;font-weight:500"></p>
