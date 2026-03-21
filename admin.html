@@ -444,6 +444,9 @@
       <a class="nav-item" id="nav-payments" onclick="showPage('payments', this)">
         <span class="nav-icon">💰</span> Payments
       </a>
+      <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
+        <span class="nav-icon">📋</span> Reports
+      </a>
     </nav>
     <div class="sidebar-footer">
       <button class="signout-btn" onclick="signOut()">Sign out</button>
@@ -577,6 +580,38 @@
           </div>
         </div>
         <div id="payments-table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div class="page" id="page-reports">
+      <div class="page-header"><h2>Reports</h2></div>
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="report-filter-type" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All types</option>
+          <option value="supply">Supply needed</option>
+          <option value="plumbing">Plumbing</option>
+          <option value="appliance">Appliance</option>
+          <option value="cosmetic">Cosmetic</option>
+          <option value="electrical">Electrical</option>
+          <option value="other">Other</option>
+          <option value="good_idea">Good Ideas</option>
+          <option value="job_released">Job Released</option>
+          <option value="evidence">Excessive Clean</option>
+        </select>
+        <select id="report-filter-status" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <select id="report-filter-property" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All properties</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearReportFilters()">Clear</button>
+      </div>
+      <div class="card">
+        <div id="admin-reports-wrap"><div class="loading-inline">Loading reports…</div></div>
       </div>
     </div>
 
@@ -1036,6 +1071,7 @@ function showPage(name, el) {
   if (name === 'properties') renderProperties();
   if (name === 'cleaners')   renderCleaners();
   if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
+  if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
 }
 
 // ── JOBS ──
@@ -2010,6 +2046,118 @@ function formatTime(t) {
   const [h, m] = t.split(':');
   const hour = parseInt(h);
   return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+// ── ADMIN REPORTS ──
+let allAdminReports = [];
+
+async function renderAdminReports() {
+  if (!allAdminReports.length) {
+    const { data } = await db
+      .from('maintenance_requests')
+      .select('*, properties(name), profiles!submitted_by(full_name)')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    allAdminReports = data || [];
+
+    // Populate property filter
+    const propSel = document.getElementById('report-filter-property');
+    if (propSel && propSel.options.length <= 1) {
+      const seen = {};
+      allAdminReports.forEach(r => {
+        if (r.properties?.name && !seen[r.property_id]) {
+          seen[r.property_id] = true;
+          const opt = document.createElement('option');
+          opt.value = r.property_id;
+          opt.textContent = r.properties.name;
+          propSel.appendChild(opt);
+        }
+      });
+    }
+  }
+
+  const typeFilter     = document.getElementById('report-filter-type')?.value     || '';
+  const statusFilter   = document.getElementById('report-filter-status')?.value   || '';
+  const propertyFilter = document.getElementById('report-filter-property')?.value || '';
+
+  let filtered = [...allAdminReports];
+  if (typeFilter)     filtered = filtered.filter(r => r.category === typeFilter);
+  if (statusFilter)   filtered = filtered.filter(r => r.status === statusFilter);
+  if (propertyFilter) filtered = filtered.filter(r => r.property_id === propertyFilter);
+
+  const wrap = document.getElementById('admin-reports-wrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">📋<p>No reports match your filters.</p></div>';
+    return;
+  }
+
+  const categoryLabel = {
+    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
+    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
+    good_idea:'💡 Good Idea', job_released:'↩ Job Released', evidence:'📸 Excessive Clean'
+  };
+  const statusColor = { open:'#C0392B', in_progress:'#A07D1C', resolved:'#1E7B4B' };
+  const statusBg    = { open:'#FDEEEE', in_progress:'#FBF3D5', resolved:'#EAF7F0' };
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Date</th><th>Property</th><th>Submitted by</th><th>Type</th>
+      <th>Notes</th><th>Photos</th><th>Status</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${filtered.map(r => `
+      <tr id="report-row-${r.id}">
+        <td style="font-size:12px;white-space:nowrap">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+        <td>${r.properties?.name || '—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${r.profiles?.full_name || '—'}</td>
+        <td><span style="font-size:12px;font-weight:500">${categoryLabel[r.category] || r.category}</span></td>
+        <td style="font-size:13px;max-width:200px">${r.notes}</td>
+        <td>
+          ${r.photo_urls?.length ? `
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              ${r.photo_urls.map(url => `
+                <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')">
+                  <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+                </div>`).join('')}
+            </div>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}
+        </td>
+        <td>
+          <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
+            <option value="open" ${r.status==='open'?'selected':''}>Open</option>
+            <option value="in_progress" ${r.status==='in_progress'?'selected':''}>In progress</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>Resolved</option>
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteAdminReport('${r.id}')">Delete</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function updateReportStatus(reportId, status) {
+  const { error } = await db.from('maintenance_requests').update({ status }).eq('id', reportId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Status updated ✓');
+  // Update local cache
+  allAdminReports = allAdminReports.map(r => r.id === reportId ? { ...r, status } : r);
+}
+
+async function deleteAdminReport(reportId) {
+  if (!confirm('Permanently delete this report?')) return;
+  const { error } = await db.from('maintenance_requests').delete().eq('id', reportId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Report deleted ✓');
+  allAdminReports = allAdminReports.filter(r => r.id !== reportId);
+  renderAdminReports();
+}
+
+function clearReportFilters() {
+  document.getElementById('report-filter-type').value     = '';
+  document.getElementById('report-filter-status').value   = '';
+  document.getElementById('report-filter-property').value = '';
+  allAdminReports = [];
+  renderAdminReports();
 }
 
 init();
