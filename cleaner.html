@@ -226,19 +226,6 @@
 
   <!-- EARNINGS -->
   <div class="tab-content" id="tab-my-earnings">
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
-      <select id="earnings-year" onchange="renderEarnings()" style="font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);color:var(--text);font-family:inherit">
-      </select>
-      <select id="earnings-month" onchange="renderEarnings()" style="font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);color:var(--text);font-family:inherit">
-        <option value="">All months</option>
-        <option value="0">January</option><option value="1">February</option>
-        <option value="2">March</option><option value="3">April</option>
-        <option value="4">May</option><option value="5">June</option>
-        <option value="6">July</option><option value="7">August</option>
-        <option value="8">September</option><option value="9">October</option>
-        <option value="10">November</option><option value="11">December</option>
-      </select>
-    </div>
     <div id="pay-pending-list"></div>
     <div class="section-label">Payment history</div>
     <div id="pay-paid-list"></div>
@@ -253,14 +240,18 @@
   <!-- REPORT -->
   <div class="tab-content" id="tab-report">
     <div class="section-label">What type of report?</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openMaintenanceModal()">
-        🔧<br><strong style="display:block;margin-top:6px;font-size:14px">Property Issue</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs, maintenance</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openMaintenanceModal()">
+        🔧<br><strong style="display:block;margin-top:6px;font-size:13px">Property Issue</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs</span>
       </button>
-      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openEvidenceModal()">
-        📸<br><strong style="display:block;margin-top:6px;font-size:14px">Excessive Clean</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess, pet issues</span>
+      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openEvidenceModal()">
+        📸<br><strong style="display:block;margin-top:6px;font-size:13px">Excessive Clean</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess</span>
+      </button>
+      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openGoodIdeasModal()">
+        💡<br><strong style="display:block;margin-top:6px;font-size:13px">Good Ideas</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Property suggestions</span>
       </button>
     </div>
     <div class="section-label">Your recent submissions</div>
@@ -518,6 +509,54 @@
   </div>
 </div>
 
+<!-- PROPERTY DETAIL MODAL -->
+<div class="modal-overlay" id="modal-property-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="prop-detail-title">Property</div>
+    <div id="prop-detail-body"></div>
+    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-property-detail')">Close</button>
+  </div>
+</div>
+
+<!-- GOOD IDEAS MODAL -->
+<div class="modal-overlay" id="modal-good-ideas">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💡 Good Ideas</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Share property-specific suggestions with your admin.</p>
+    <div class="form-group">
+      <label>Property</label>
+      <select id="ideas-property"></select>
+    </div>
+    <div class="form-group">
+      <label>Your suggestion</label>
+      <textarea id="ideas-notes" placeholder="e.g. Guests always ask about extra towels — maybe stock an extra set in the closet?" style="min-height:100px"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-good-ideas')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="submitGoodIdea()">Submit idea</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT REPORT MODAL -->
+<div class="modal-overlay" id="modal-edit-report">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit report</div>
+    <input type="hidden" id="edit-report-id"/>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="edit-report-notes" style="min-height:100px"></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-full" onclick="closeModal('modal-edit-report')">Cancel</button>
+      <button class="btn btn-gold btn-full" onclick="saveEditReport()">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- HIGH FIVE OVERLAY -->
 <div id="highfive-overlay">
   <div class="highfive-hand">🖐️</div>
@@ -710,8 +749,9 @@ function jobCard(assignment) {
           <button class="btn btn-danger"  onclick="openResponseModal('${assignment.id}','${job.id}','decline')">Decline</button>
         ` : ''}
         ${isAccepted ? `
+          <button class="btn btn-outline btn-sm" style="margin-bottom:8px;width:100%" onclick="openPropertyDetail('${job.property_id}')">📋 View checklist</button>
           <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
-          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at || ''}')">↩ Release job back to pool</button>
+          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;padding:10px;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at||''}')">↩ Release job back to pool</button>
         ` : ''}
         ${(isDeclined || isUnsure) ? `
           <button class="btn btn-outline" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Actually, I can do it</button>
@@ -719,40 +759,6 @@ function jobCard(assignment) {
       </div>
     </div>
   </div>`;
-}
-
-async function releaseJob(assignmentId, jobId, respondedAt) {
-  if (!confirm('Release this job back to the open pool?')) return;
-
-  // Check if cleaner held it for more than 5 minutes
-  const heldMinutes = respondedAt
-    ? (Date.now() - new Date(respondedAt).getTime()) / 60000
-    : 0;
-
-  // Delete assignment and reset job
-  await db.from('job_assignments').delete().eq('id', assignmentId);
-  const { error } = await db.from('jobs').update({
-    status: 'unassigned',
-    assigned_cleaner_id: null
-  }).eq('id', jobId);
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  // If held > 5 minutes, notify admin via maintenance_requests as a workaround
-  if (heldMinutes > 5) {
-    const job = myJobs.find(a => a.id === assignmentId)?.jobs;
-    const propName = job?.properties?.name || 'Unknown property';
-    const date = job?.scheduled_date ? formatDate(job.scheduled_date) : '—';
-    await db.from('maintenance_requests').insert({
-      property_id: job?.property_id || null,
-      submitted_by: currentUser.id,
-      category: 'job_released',
-      notes: `${currentProfile.full_name} released a job back to the pool after holding it for ${Math.round(heldMinutes)} minutes. Property: ${propName}, Date: ${date}. Job needs to be reassigned.`
-    });
-  }
-
-  showToast('Job released back to pool ✓');
-  await loadMyJobs();
-  await loadOpenJobs();
 }
 
 // ── JOB RESPONSES ──
@@ -982,21 +988,6 @@ async function confirmSubmitJob() {
 
 // ── EARNINGS ──
 async function renderEarnings() {
-  // Populate year dropdown if empty
-  const yearSel = document.getElementById('earnings-year');
-  if (yearSel && yearSel.options.length === 0) {
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= currentYear - 3; y--) {
-      const opt = document.createElement('option');
-      opt.value = y; opt.textContent = y;
-      if (y === currentYear) opt.selected = true;
-      yearSel.appendChild(opt);
-    }
-  }
-
-  const selectedYear  = parseInt(document.getElementById('earnings-year')?.value  || new Date().getFullYear());
-  const selectedMonth = document.getElementById('earnings-month')?.value;
-
   // Load completed jobs
   const { data: completedData } = await db
     .from('job_assignments')
@@ -1018,23 +1009,10 @@ async function renderEarnings() {
     .gte('jobs.scheduled_date', today)
     .order('created_at', { ascending: false });
 
-  let completed = (completedData || []).filter(a => a.jobs);
-  const upcoming = (upcomingData || []).filter(a => a.jobs);
+  const completed = (completedData || []).filter(a => a.jobs);
+  const upcoming  = (upcomingData  || []).filter(a => a.jobs);
 
-  // Apply year filter
-  completed = completed.filter(a => {
-    const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
-    return d.getFullYear() === selectedYear;
-  });
-
-  // Apply month filter
-  if (selectedMonth !== '' && selectedMonth !== undefined) {
-    completed = completed.filter(a => {
-      const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
-      return d.getMonth() === parseInt(selectedMonth);
-    });
-  }
-
+  // MTD = completed jobs this calendar month
   const now = new Date();
   const mtd = completed.filter(a => {
     const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
@@ -1050,6 +1028,7 @@ async function renderEarnings() {
   const pendingEl = document.getElementById('pay-pending-list');
   const paidEl    = document.getElementById('pay-paid-list');
 
+  // Summary cards
   const monthName = now.toLocaleDateString('en-US', { month: 'long' });
   pendingEl.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
@@ -1063,6 +1042,7 @@ async function renderEarnings() {
       </div>
     </div>`;
 
+  // Upcoming jobs
   if (upcoming.length) {
     pendingEl.innerHTML += `<div class="section-label" style="margin-top:0">Upcoming jobs</div>` +
       upcoming.map(a => {
@@ -1081,6 +1061,7 @@ async function renderEarnings() {
       }).join('');
   }
 
+  // Pending payment (completed but not paid)
   if (!pending.length) {
     pendingEl.innerHTML += '<div class="section-label">Awaiting payment</div><div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:24px">⏳</div><p>No pending payments.</p></div>';
   } else {
@@ -1128,17 +1109,118 @@ async function renderProperties() {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No properties found.</p></div>';
     return;
   }
-  list.innerHTML = allProperties.map(p => `
-    <div class="prop-card">
+  list.innerHTML = allProperties.map(p => {
+    // Extract door code from notes if present
+    const doorCodeMatch = p.notes ? p.notes.match(/(?:door|lock|code|entry|access)[^\d]*(\d{4,8})/i) : null;
+    const doorCode = doorCodeMatch ? doorCodeMatch[1] : null;
+    return `
+    <div class="prop-card" onclick="openPropertyDetail('${p.id}')" style="cursor:pointer">
       <div class="prop-name">${p.name}</div>
-      <div class="prop-address">📍 ${p.address}</div>
+      <div class="prop-address">📍 ${p.address || '—'}</div>
+      ${doorCode ? `<div style="background:var(--navy);color:white;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🔑</span>
+        <div><div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.08em">Door code</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:0.15em">${doorCode}</div></div>
+      </div>` : ''}
       ${p.notes ? `<div class="prop-notes">📌 ${p.notes}</div>` : ''}
       ${p.default_checkout_time || p.default_checkin_time ? `
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           ${p.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(p.default_checkout_time)}</span>` : ''}
           ${p.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(p.default_checkin_time)}</span>`  : ''}
         </div>` : ''}
+      <button class="btn btn-gold btn-full" style="margin-top:12px" onclick="event.stopPropagation();openPropertyDetail('${p.id}')">📋 View checklist</button>
+    </div>`;
+  }).join('');
+}
+
+// ── PROPERTY DETAIL (checklist + door code) ──
+async function openPropertyDetail(propertyId) {
+  const prop = allProperties.find(p => p.id === propertyId);
+  if (!prop) return;
+
+  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
+  let items = [...masterChecklist];
+  if (propChecklist?.items?.length) {
+    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
+  }
+  const sections = {};
+  items.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
+
+  const doorCodeMatch = prop.notes ? prop.notes.match(/(?:door|lock|code|entry|access)[^\d]*(\d{4,8})/i) : null;
+  const doorCode = doorCodeMatch ? doorCodeMatch[1] : null;
+
+  const checklistHtml = Object.entries(sections).map(([section, sectionItems]) => `
+    <div class="checklist-section">
+      <div class="checklist-section-title">${section}</div>
+      ${sectionItems.map(item => `
+        <label class="checklist-item">
+          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
+          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
+        </label>`).join('')}
     </div>`).join('');
+
+  document.getElementById('prop-detail-title').textContent = prop.name;
+  document.getElementById('prop-detail-body').innerHTML = `
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">📍 ${prop.address || '—'}</div>
+    ${doorCode ? `<div style="background:var(--navy);color:white;border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px">🔑</span>
+      <div><div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.08em">Door code</div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:0.2em">${doorCode}</div></div>
+    </div>` : ''}
+    ${prop.default_checkout_time || prop.default_checkin_time ? `
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        ${prop.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(prop.default_checkout_time)}</span>` : ''}
+        ${prop.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(prop.default_checkin_time)}</span>`  : ''}
+      </div>` : ''}
+    ${prop.notes ? `<div class="prop-notes" style="margin-bottom:14px">📌 ${prop.notes}</div>` : ''}
+    ${checklistHtml || '<p style="font-size:13px;color:var(--text-muted)">No checklist items yet.</p>'}
+  `;
+  document.getElementById('modal-property-detail').classList.add('open');
+}
+
+// ── GOOD IDEAS ──
+function openGoodIdeasModal() {
+  const sel = document.getElementById('ideas-property');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('ideas-notes').value = '';
+  document.getElementById('modal-good-ideas').classList.add('open');
+}
+
+async function submitGoodIdea() {
+  const propertyId = document.getElementById('ideas-property').value;
+  const notes      = document.getElementById('ideas-notes').value.trim();
+  if (!notes) { showToast('Please describe your idea'); return; }
+  const { error } = await db.from('maintenance_requests').insert({
+    property_id: propertyId,
+    submitted_by: currentUser.id,
+    category: 'good_idea',
+    notes
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-good-ideas');
+  showToast('Idea submitted ✓ Admin will review it');
+  renderReportHistory();
+}
+
+// ── RELEASE JOB ──
+async function releaseJob(assignmentId, jobId, respondedAt) {
+  if (!confirm('Release this job back to the open pool?')) return;
+  const heldMinutes = respondedAt ? (Date.now() - new Date(respondedAt).getTime()) / 60000 : 0;
+  await db.from('job_assignments').delete().eq('id', assignmentId);
+  const { error } = await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  if (heldMinutes > 5) {
+    const job = myJobs.find(a => a.id === assignmentId)?.jobs;
+    await db.from('maintenance_requests').insert({
+      property_id: job?.property_id || null,
+      submitted_by: currentUser.id,
+      category: 'job_released',
+      notes: `${currentProfile.full_name} released a job after holding it ${Math.round(heldMinutes)} mins. Property: ${job?.properties?.name || '—'}, Date: ${formatDate(job?.scheduled_date)}. Needs reassignment.`
+    });
+  }
+  showToast('Job released back to pool ✓');
+  await loadMyJobs();
+  await loadOpenJobs();
 }
 
 // ── REPORT ──
@@ -1186,11 +1268,12 @@ async function submitEvidence() {
 
 async function renderReportHistory() {
   const list = document.getElementById('report-history-list');
-  const { data } = await db.from('maintenance_requests').select('*, properties(name)').eq('submitted_by', currentUser.id).order('created_at', { ascending: false }).limit(10);
+  const { data } = await db.from('maintenance_requests').select('*, properties(name)').eq('submitted_by', currentUser.id).order('created_at', { ascending: false }).limit(20);
   if (!data?.length) {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No recent submissions</p></div>';
     return;
   }
+  const categoryLabel = { plumbing:'Plumbing', appliance:'Appliance', cosmetic:'Cosmetic', electrical:'Electrical', other:'Other', good_idea:'💡 Good Idea', job_released:'Job Released', evidence:'Excessive Clean' };
   list.innerHTML = data.map(r => `
     <div class="job-card" style="margin-bottom:10px">
       <div class="job-card-body">
@@ -1198,10 +1281,40 @@ async function renderReportHistory() {
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
           <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status}</span>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${r.category} · ${timeAgo(r.created_at)}</div>
-        <div style="font-size:13px">${r.notes}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${categoryLabel[r.category] || r.category} · ${timeAgo(r.created_at)}</div>
+        <div style="font-size:13px;margin-bottom:10px">${r.notes}</div>
+        ${r.status !== 'resolved' ? `
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="openEditReport('${r.id}', ${JSON.stringify(r.notes).replace(/'/g,"&#39;")})">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">🗑️ Delete</button>
+        </div>` : ''}
       </div>
     </div>`).join('');
+}
+
+function openEditReport(id, notes) {
+  document.getElementById('edit-report-id').value = id;
+  document.getElementById('edit-report-notes').value = notes;
+  document.getElementById('modal-edit-report').classList.add('open');
+}
+
+async function saveEditReport() {
+  const id    = document.getElementById('edit-report-id').value;
+  const notes = document.getElementById('edit-report-notes').value.trim();
+  if (!notes) { showToast('Please enter notes'); return; }
+  const { error } = await db.from('maintenance_requests').update({ notes }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-report');
+  showToast('Report updated ✓');
+  renderReportHistory();
+}
+
+async function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  const { error } = await db.from('maintenance_requests').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Report deleted ✓');
+  renderReportHistory();
 }
 
 // ── SETTINGS ──
