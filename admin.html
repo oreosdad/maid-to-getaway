@@ -447,6 +447,9 @@
       <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
         <span class="nav-icon">📋</span> Reports
       </a>
+      <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
+        <span class="nav-icon">👥</span> Users
+      </a>
     </nav>
     <div class="sidebar-footer">
       <button class="signout-btn" onclick="signOut()">Sign out</button>
@@ -618,7 +621,62 @@
       </div>
     </div>
 
+    <!-- USERS PAGE -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <h2>Users</h2>
+        <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All users</span>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterUsers('all',this)">All</button>
+            <button class="filter-btn" onclick="filterUsers('admin',this)">Admins</button>
+            <button class="filter-btn" onclick="filterUsers('cleaner',this)">Cleaners</button>
+            <button class="filter-btn" onclick="filterUsers('owner',this)">Owners</button>
+          </div>
+        </div>
+        <div id="users-table-wrap"><div class="loading-inline">Loading users…</div></div>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- New User Modal -->
+<div class="modal-overlay" id="modal-new-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add user</span>
+      <button class="modal-close" onclick="closeModal('modal-new-user')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Full name</label>
+      <input type="text" id="new-user-name" placeholder="Jane Smith"/>
+    </div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="new-user-email" placeholder="jane@example.com"/>
+    </div>
+    <div class="form-group">
+      <label>Phone (optional)</label>
+      <input type="tel" id="new-user-phone" placeholder="(816) 555-0100"/>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="new-user-role">
+        <option value="cleaner">Cleaner</option>
+        <option value="owner">Owner</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:-8px">Temporary password: <strong>ChangeMe123!</strong> — user should change on first login.</p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-new-user')">Cancel</button>
+      <button class="btn" onclick="saveNewUser()">Create user</button>
+    </div>
+  </div>
 </div>
 
 <!-- New Job Modal -->
@@ -1091,6 +1149,7 @@ function showPage(name, el) {
   if (name === 'cleaners')   renderCleaners();
   if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
+  if (name === 'users')      { loadUsers(); }
 }
 
 // ── JOBS ──
@@ -2063,6 +2122,18 @@ async function signOut() {
 }
 
 // ── HELPERS ──
+async function addAdminComment(reportId) {
+  const input = document.getElementById(`admin-comment-input-${reportId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  const { data: { session } } = await db.auth.getSession();
+  const { error } = await db.from('report_comments').insert({ report_id: reportId, author_id: session.user.id, content });
+  if (error) { showToast('Error: ' + error.message); return; }
+  input.value = '';
+  await loadReportComments(reportId, `admin-comments-${reportId}`);
+  showToast('Comment sent ✓');
+}
+
 function today() { return new Date().toISOString().split('T')[0]; }
 
 function formatDate(d) {
@@ -2135,39 +2206,37 @@ async function renderAdminReports() {
   const statusColor = { open:'#C0392B', resolved:'#1E7B4B' };
   const statusBg    = { open:'#FDEEEE', resolved:'#EAF7F0' };
 
-  wrap.innerHTML = `<table>
-    <thead><tr>
-      <th>Date</th><th>Property</th><th>Submitted by</th><th>Type</th>
-      <th>Notes</th><th>Photos</th><th>Status</th><th>Actions</th>
-    </tr></thead>
-    <tbody>${filtered.map(r => `
-      <tr id="report-row-${r.id}">
-        <td style="font-size:12px;white-space:nowrap">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
-        <td>${r.properties?.name || '—'}</td>
-        <td style="font-size:13px;color:var(--text-muted)">${r.profiles?.full_name || '—'}</td>
-        <td><span style="font-size:12px;font-weight:500">${categoryLabel[r.category] || r.category}</span></td>
-        <td style="font-size:13px;max-width:200px">${r.notes}</td>
-        <td>
-          ${r.photo_urls?.length ? `
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
-              ${r.photo_urls.map(url => `
-                <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')">
-                  <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
-                </div>`).join('')}
-            </div>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}
-        </td>
-        <td>
+  wrap.innerHTML = filtered.map(r => `
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);padding:20px;margin-bottom:16px" id="admin-report-${r.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="font-size:15px">${categoryLabel[r.category] || r.category}</strong>
+          <span style="font-size:13px;color:var(--text-muted);margin-left:8px">${r.properties?.name||'—'} · ${r.profiles?.full_name||'—'}</span>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
           <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
             <option value="open" ${r.status==='open'?'selected':''}>Open</option>
             <option value="resolved" ${r.status==='resolved'?'selected':''}>Closed</option>
           </select>
-        </td>
-        <td>
           <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteAdminReport('${r.id}')">Delete</button>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
+      ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
+      <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
+        <div id="admin-comments-${r.id}"><span style="font-size:12px;color:var(--text-muted)">Loading…</span></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="admin-comment-input-${r.id}" placeholder="Reply…" onkeydown="if(event.key==='Enter')addAdminComment('${r.id}')"
+            style="flex:1;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--cream-dark);border-radius:8px;background:var(--cream);outline:none;color:var(--text)"/>
+          <button class="btn btn-sm" onclick="addAdminComment('${r.id}')">Send</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Load comments for all reports
+  filtered.forEach(r => loadReportComments(r.id, `admin-comments-${r.id}`));
 }
 
 async function updateReportStatus(reportId, status) {
@@ -2198,6 +2267,139 @@ function clearReportFilters() {
   document.getElementById('report-filter-property').value = '';
   allAdminReports = [];
   renderAdminReports();
+}
+
+// ── USER MANAGEMENT ──
+let allUsers = [];
+let userRoleFilter = 'all';
+
+async function loadUsers() {
+  const { data } = await db.from('profiles').select('*').order('full_name');
+  allUsers = data || [];
+  renderUsers();
+}
+
+function filterUsers(role, btn) {
+  userRoleFilter = role;
+  document.querySelectorAll('#page-users .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsers();
+}
+
+function renderUsers() {
+  const wrap = document.getElementById('users-table-wrap');
+  let users = [...allUsers];
+  if (userRoleFilter !== 'all') users = users.filter(u => u.role === userRoleFilter);
+
+  if (!users.length) {
+    wrap.innerHTML = '<div class="empty-state">👥<p>No users found.</p></div>';
+    return;
+  }
+
+  const roleColors = { admin:'#1A56A4', cleaner:var('--success'), owner:var('--gold-dark') };
+  const roleBg     = { admin:'#E8F0FB', cleaner:'var(--success-bg)', owner:'var(--gold-light)' };
+
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Owner/Operator</th><th>Actions</th></tr></thead>
+    <tbody>${users.map(u => `<tr>
+      <td><strong>${u.full_name}</strong></td>
+      <td style="font-size:13px">${u.email}</td>
+      <td><span style="background:${u.role==='admin'?'#E8F0FB':u.role==='owner'?'var(--gold-light)':'var(--success-bg)'};color:${u.role==='admin'?'#1A56A4':u.role==='owner'?'var(--gold-dark)':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${u.role}</span></td>
+      <td><span class="badge ${u.is_active?'badge-accepted':'badge-declined'}">${u.is_active?'Active':'Inactive'}</span></td>
+      <td style="font-size:13px;color:var(--text-muted)">${u.is_owner_operator?'✓ Owner/operator':'—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset password</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleUserActive('${u.id}',${u.is_active})">${u.is_active?'Deactivate':'Activate'}</button>
+          <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteUser('${u.id}','${u.full_name}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function openNewUserModal() {
+  ['new-user-name','new-user-email','new-user-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('new-user-role').value = 'cleaner';
+  document.getElementById('modal-new-user').classList.add('open');
+}
+
+async function saveNewUser() {
+  const name  = document.getElementById('new-user-name').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  const phone = document.getElementById('new-user-phone').value.trim() || null;
+  const role  = document.getElementById('new-user-role').value;
+  if (!name)  { showToast('Please enter a name'); return; }
+  if (!email) { showToast('Please enter an email'); return; }
+
+  const { data, error } = await db.rpc('create_cleaner', {
+    p_name: name, p_email: email, p_phone: phone
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  // Update role if not cleaner
+  if (role !== 'cleaner') {
+    await db.from('profiles').update({ role, is_owner_operator: false }).eq('email', email);
+  }
+
+  closeModal('modal-new-user');
+  showToast(`User created ✓ — temp password: ChangeMe123!`);
+  loadUsers();
+}
+
+async function resetUserPassword(userId, userEmail) {
+  if (!confirm(`Send password reset email to ${userEmail}?`)) return;
+  const { error } = await db.auth.resetPasswordForEmail(userEmail, {
+    redirectTo: window.location.origin + '/login.html'
+  });
+  if (error) {
+    showToast('Email not configured — reset manually in Supabase');
+  } else {
+    showToast(`Password reset email sent to ${userEmail} ✓`);
+  }
+}
+
+async function toggleUserActive(userId, isActive) {
+  const { error } = await db.from('profiles').update({ is_active: !isActive }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(isActive ? 'User deactivated' : 'User activated ✓');
+  loadUsers();
+}
+
+async function deleteUser(userId, userName) {
+  if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
+  const { error } = await db.from('profiles').delete().eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('User deleted');
+  loadUsers();
+}
+
+// ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
+async function loadReportComments(reportId, wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const { data } = await db.from('report_comments')
+    .select('*, profiles(full_name, role)')
+    .eq('report_id', reportId)
+    .order('created_at', { ascending: true });
+
+  if (!data?.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet.</p>';
+    return;
+  }
+
+  const roleLabel = { admin:'Admin', owner:'Owner', cleaner:'Cleaner' };
+  wrap.innerHTML = data.map(c => {
+    const role = c.profiles?.role || 'cleaner';
+    const bg   = role==='admin' ? 'var(--navy)' : role==='owner' ? 'var(--gold-light)' : 'var(--cream)';
+    const color = role==='admin' ? 'white' : 'var(--text)';
+    const border = role==='admin' ? '' : 'border:1px solid var(--cream-dark)';
+    return `<div style="padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:13px;background:${bg};color:${color};${border}">
+      <div style="font-size:11px;opacity:0.65;margin-bottom:3px;font-weight:500">${c.profiles?.full_name||'—'} · ${roleLabel[role]||role} · ${timeAgo(c.created_at)}</div>
+      ${c.content}
+    </div>`;
+  }).join('');
 }
 
 init();
