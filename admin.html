@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -543,7 +542,40 @@
 
     <div class="page" id="page-payments">
       <div class="page-header"><h2>Payments</h2></div>
+      <div class="stats-row" id="payment-stats-row" style="margin-bottom:20px"></div>
       <div class="card">
+        <div class="card-header">
+          <span class="card-title">Cleaner payments</span>
+          <div class="filter-row">
+            <select id="pay-filter-cleaner" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All cleaners</option>
+            </select>
+            <select id="pay-filter-month" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="pay-filter-year" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All years</option>
+            </select>
+            <select id="pay-filter-status" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All statuses</option>
+              <option value="unpaid">Unpaid only</option>
+              <option value="paid">Paid only</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="clearPaymentFilters()">Clear</button>
+          </div>
+        </div>
         <div id="payments-table-wrap"></div>
       </div>
     </div>
@@ -979,19 +1011,13 @@ async function init() {
     return;
   }
 
-  // Show the app immediately — don't wait for data to load
+  // Auth confirmed — show the app, hide loading screen
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
   authChecked = true;
 
-  // Load data in background — page is already visible
-  try {
-    await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
-    await autoPurgeTrash();
-  } catch(e) {
-    console.error('Data load error:', e);
-    showToast('Error loading data — please refresh');
-  }
+  await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
+  await autoPurgeTrash();
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1009,7 +1035,7 @@ function showPage(name, el) {
   el.classList.add('active');
   if (name === 'properties') renderProperties();
   if (name === 'cleaners')   renderCleaners();
-  if (name === 'payments')   renderPayments();
+  if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
 }
 
 // ── JOBS ──
@@ -1388,7 +1414,9 @@ async function markPaid(jobId) {
   const { error } = await db.from('jobs').update({ cleaner_paid_at: new Date().toISOString() }).eq('id', jobId);
   if (error) { showToast('Error marking paid'); return; }
   showToast('Cleaner marked as paid ✓');
+  allPaymentJobs = [];
   await loadJobs();
+  if (document.getElementById('page-payments').classList.contains('active')) await renderPayments();
 }
 
 function openDeleteJobModal(jobId) {
@@ -1496,6 +1524,7 @@ async function saveJob() {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
   }
+
   const { data: job, error } = await db.from('jobs').insert({
     property_id:      propertyId,
     scheduled_date:   date,
@@ -1732,9 +1761,134 @@ async function resetCleanerPassword(cleanerId, cleanerEmail) {
 }
 
 // ── PAYMENTS ──
-function renderPayments() {
-  document.getElementById('payments-table-wrap').innerHTML =
-    '<div class="empty-state">💰<p>Payment tracking coming soon. Completed jobs will appear here.</p></div>';
+let allPaymentJobs = [];
+
+async function loadPaymentData() {
+  const { data } = await db
+    .from('jobs')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id))')
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .order('scheduled_date', { ascending: false });
+  allPaymentJobs = data || [];
+}
+
+function clearPaymentFilters() {
+  document.getElementById('pay-filter-cleaner').value = '';
+  document.getElementById('pay-filter-month').value   = '';
+  document.getElementById('pay-filter-year').value    = '';
+  document.getElementById('pay-filter-status').value  = '';
+  renderPayments();
+}
+
+async function renderPayments() {
+  // Load data if not yet loaded
+  if (!allPaymentJobs.length) await loadPaymentData();
+
+  const cleanerFilter = document.getElementById('pay-filter-cleaner')?.value || '';
+  const monthFilter   = document.getElementById('pay-filter-month')?.value   || '';
+  const yearFilter    = document.getElementById('pay-filter-year')?.value    || '';
+  const statusFilter  = document.getElementById('pay-filter-status')?.value  || '';
+
+  // Populate cleaner dropdown
+  const cleanerSel = document.getElementById('pay-filter-cleaner');
+  if (cleanerSel && cleanerSel.options.length <= 1) {
+    const uniqueCleaners = {};
+    allPaymentJobs.forEach(j => {
+      const c = j.job_assignments?.[0]?.profiles;
+      if (c) uniqueCleaners[c.id] = c.full_name;
+    });
+    Object.entries(uniqueCleaners).forEach(([id, name]) => {
+      const opt = document.createElement('option');
+      opt.value = id; opt.textContent = name;
+      cleanerSel.appendChild(opt);
+    });
+  }
+
+  // Populate year dropdown
+  const yearSel = document.getElementById('pay-filter-year');
+  if (yearSel && yearSel.options.length <= 1) {
+    const years = [...new Set(allPaymentJobs
+      .filter(j => j.scheduled_date)
+      .map(j => j.scheduled_date.slice(0, 4)))].sort().reverse();
+    years.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      yearSel.appendChild(opt);
+    });
+  }
+
+  let filtered = [...allPaymentJobs];
+
+  if (cleanerFilter) filtered = filtered.filter(j => j.job_assignments?.[0]?.profiles?.id === cleanerFilter);
+  if (monthFilter)   filtered = filtered.filter(j => j.scheduled_date && new Date(j.scheduled_date + 'T12:00:00').getMonth() + 1 === parseInt(monthFilter));
+  if (yearFilter)    filtered = filtered.filter(j => j.scheduled_date?.startsWith(yearFilter));
+  if (statusFilter === 'unpaid') filtered = filtered.filter(j => !j.cleaner_paid_at);
+  if (statusFilter === 'paid')   filtered = filtered.filter(j =>  j.cleaner_paid_at);
+
+  // Summary stats
+  const totalOwed   = filtered.filter(j => !j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
+  const totalPaid   = filtered.filter(j =>  j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
+  const statsEl = document.getElementById('payment-stats-row');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-card flagged">
+        <div class="stat-label">Owed to cleaners</div>
+        <div class="stat-value">$${Math.round(totalOwed / 100)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Paid out</div>
+        <div class="stat-value">$${Math.round(totalPaid / 100)}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Jobs shown</div>
+        <div class="stat-value">${filtered.length}</div>
+      </div>`;
+  }
+
+  const wrap = document.getElementById('payments-table-wrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">💰<p>No completed jobs match your filters.</p></div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Property</th><th>Cleaner</th><th>Payout</th>
+        <th>Pay date</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${filtered.map(job => {
+        const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
+        const isPaid  = !!job.cleaner_paid_at;
+        return `<tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name || '—'}</td>
+          <td>${cleaner}</td>
+          <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
+          <td>
+            ${isPaid
+              ? `<span class="badge badge-accepted">✓ Paid ${job.cleaner_paid_at ? new Date(job.cleaner_paid_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}</span>`
+              : `<span class="badge badge-flagged">Unpaid</span>`}
+          </td>
+          <td>
+            ${!isPaid
+              ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPaid('${job.id}')">Mark paid</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="unmarkPaid('${job.id}')">Undo</button>`}
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function unmarkPaid(jobId) {
+  const { error } = await db.from('jobs').update({ cleaner_paid_at: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Payment undone ✓');
+  allPaymentJobs = [];
+  await renderPayments();
 }
 
 // ── PROPERTY CHECKLIST ──
