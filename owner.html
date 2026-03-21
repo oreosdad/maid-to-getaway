@@ -179,19 +179,14 @@
       <div class="page-header">
         <h2>Overview</h2>
         <div style="display:flex;gap:8px;align-items:center">
-          <select class="inline-sel" id="overview-range" onchange="renderOverview()">
-            <option value="7">Next 7 days</option>
-            <option value="14" selected>Next 14 days</option>
-            <option value="30">Next 30 days</option>
-            <option value="60">Next 60 days</option>
-          </select>
           <select class="inline-sel" id="overview-prop" onchange="renderOverview()">
             <option value="">All properties</option>
           </select>
         </div>
       </div>
       <div class="stats-row" id="overview-stats"></div>
-      <div id="overview-table"></div>
+      <div id="overview-alerts"></div>
+      <div id="overview-upcoming"></div>
     </div>
 
     <!-- SCHEDULE -->
@@ -208,6 +203,7 @@
             <option value="upcoming">Upcoming</option>
             <option value="past">Past 90 days</option>
             <option value="all">All</option>
+            <option value="unpaid">💰 Unpaid</option>
             <option value="pet">🐶 Pet fee jobs</option>
             <option value="short">⚑ Short turnarounds</option>
           </select>
@@ -431,6 +427,20 @@ function formatTime12h(t) {
   return `${hour%12||12}:${m} ${hour<12?'AM':'PM'}`;
 }
 
+// Get display times - prefer property defaults, fall back to iCal times
+// iCal times are UTC and may display incorrectly due to timezone conversion
+function getJobTimes(j) {
+  const prop = ownerProps.find(p => p.id === j.property_id);
+  const checkoutTime = prop?.default_checkout_time
+    ? formatTime12h(prop.default_checkout_time)
+    : j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+  const checkinTime = prop?.default_checkin_time
+    ? formatTime12h(prop.default_checkin_time)
+    : j.guest_checkin ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+  const str = [checkoutTime?'🚪 '+checkoutTime:null, checkinTime?'🏠 '+checkinTime:null].filter(Boolean).join(' → ') || '—';
+  return { checkoutTime, checkinTime, str };
+}
+
 function guestName(j) {
   if (!j.ical_summary) return '—';
   // Airbnb iCal summary is usually "FirstName LastInitial." or "Reserved"
@@ -447,151 +457,131 @@ function sourceTag(source) {
 
 // ── OVERVIEW ──
 function renderOverview() {
-  const days    = parseInt(document.getElementById('overview-range').value);
-  const propId  = document.getElementById('overview-prop').value;
-  const now     = new Date();
+  const propId   = document.getElementById('overview-prop').value;
+  const now      = new Date();
   const todayStr = now.toISOString().split('T')[0];
-  const endStr   = new Date(Date.now() + days*864e5).toISOString().split('T')[0];
-  const monthStr = now.toLocaleDateString('en-US', {month:'long'});
-  const nextMonthStr = new Date(now.getFullYear(), now.getMonth()+1, 1).toLocaleDateString('en-US', {month:'long'});
+  const in14     = new Date(Date.now() + 14*864e5).toISOString().split('T')[0];
+  const monthName = now.toLocaleDateString('en-US',{month:'long'});
+  const nextMonthName = new Date(now.getFullYear(), now.getMonth()+1, 1).toLocaleDateString('en-US',{month:'long'});
 
   let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
 
-  // Stat calculations
-  const windowJobs   = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
+  const upcoming = jobs.filter(j => j.scheduled_date >= todayStr);
+  const next14   = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= in14);
   const mtdCompleted = jobs.filter(j => {
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return j.status === 'completed' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    const d = new Date(j.scheduled_date+'T12:00:00');
+    return j.status==='completed' && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
   });
-  const mtdAirbnb   = mtdCompleted.filter(j => j.source === 'airbnb');
-  const mtdOwesJobs = mtdCompleted.filter(j => j.source !== 'airbnb');
+  const mtdAirbnb   = mtdCompleted.filter(j => j.source==='airbnb');
+  const mtdOwes     = mtdCompleted.filter(j => j.source!=='airbnb');
+  const mtdUnpaid   = mtdOwes.filter(j => !j.owner_paid_at);
   const nextMonthJobs = jobs.filter(j => {
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return d.getMonth() === now.getMonth()+1 && d.getFullYear() === now.getFullYear();
+    const d = new Date(j.scheduled_date+'T12:00:00');
+    return d.getMonth()===now.getMonth()+1 && d.getFullYear()===now.getFullYear();
   });
-  const upcomingThisMonth = jobs.filter(j => {
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return j.scheduled_date >= todayStr && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
+  const openReports = ownerReports.filter(r => r.status==='open' && (!propId || r.property_id===propId));
 
-  const mtdAirbnbTotal   = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const mtdOwesTotal     = mtdOwesJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const upcomingMtdTotal = upcomingThisMonth.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const nextMonthTotal   = nextMonthJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const openReports      = ownerReports.filter(r => r.status === 'open' && (!propId || r.property_id === propId)).length;
+  const mtdAirbnbTotal = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdOwesTotal   = mtdOwes.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdUnpaidTotal = mtdUnpaid.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const nextMonthTotal = nextMonthJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
 
+  // Badge
+  const badge = document.getElementById('maint-badge');
+  if (openReports.length) { badge.style.display='inline-flex'; badge.textContent=openReports.length; }
+
+  // Stats — all clickable, navigate to relevant tab/filter
   document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card clickable success" onclick="filterOverviewTo('airbnb-paid')">
-      <div class="stat-label">${monthStr} — Airbnb paid</div>
+    <div class="stat-card clickable success" onclick="goToSchedule('upcoming')">
+      <div class="stat-label">Upcoming cleanings</div>
+      <div class="stat-value">${upcoming.length}</div>
+      <div class="stat-sub">Click to view schedule →</div>
+    </div>
+    <div class="stat-card clickable gold" onclick="goToSchedule('unpaid')">
+      <div class="stat-label">${monthName} — You owe</div>
+      <div class="stat-value">$${Math.round(mtdOwesTotal/100)}</div>
+      <div class="stat-sub">${mtdUnpaidTotal>0?`<span style="color:var(--error)">$${Math.round(mtdUnpaidTotal/100)} unpaid</span>`:'All paid ✓'}</div>
+    </div>
+    <div class="stat-card clickable success" onclick="goToSchedule('all')">
+      <div class="stat-label">${monthName} — Airbnb paid</div>
       <div class="stat-value">$${Math.round(mtdAirbnbTotal/100)}</div>
       <div class="stat-sub">Platform handles payment</div>
     </div>
-    <div class="stat-card clickable gold" onclick="filterOverviewTo('owner-owes')">
-      <div class="stat-label">${monthStr} — You owe</div>
-      <div class="stat-value">$${Math.round(mtdOwesTotal/100)}</div>
-      <div class="stat-sub">VRBO + manual jobs</div>
-    </div>
-    <div class="stat-card clickable" onclick="filterOverviewTo('upcoming-mtd')">
-      <div class="stat-label">${monthStr} upcoming</div>
-      <div class="stat-value">$${Math.round(upcomingMtdTotal/100)}</div>
-      <div class="stat-sub">${upcomingThisMonth.length} job${upcomingThisMonth.length!==1?'s':''}</div>
-    </div>
-    <div class="stat-card clickable" onclick="filterOverviewTo('next-month')">
-      <div class="stat-label">${nextMonthStr} upcoming</div>
+    <div class="stat-card clickable" onclick="goToSchedule('all')">
+      <div class="stat-label">${nextMonthName} projected</div>
       <div class="stat-value">$${Math.round(nextMonthTotal/100)}</div>
       <div class="stat-sub">${nextMonthJobs.length} job${nextMonthJobs.length!==1?'s':''}</div>
     </div>
-    <div class="stat-card clickable ${openReports?'':'success'}" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">
+    <div class="stat-card clickable ${openReports.length?'':'success'}" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">
       <div class="stat-label">Open reports</div>
-      <div class="stat-value" style="${openReports?'color:var(--error)':''}">${openReports}</div>
-      <div class="stat-sub">Click to view</div>
+      <div class="stat-value" style="${openReports.length?'color:var(--error)':''}">${openReports.length}</div>
+      <div class="stat-sub">Click to view →</div>
     </div>`;
 
-  renderOverviewTable(windowJobs);
-}
-
-let overviewFilter = null;
-function filterOverviewTo(type) {
-  overviewFilter = type;
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  const propId = document.getElementById('overview-prop').value;
-  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
-
-  if (type === 'airbnb-paid') {
-    jobs = jobs.filter(j => j.source === 'airbnb' && j.status === 'completed' && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
-  } else if (type === 'owner-owes') {
-    jobs = jobs.filter(j => j.source !== 'airbnb' && j.status === 'completed' && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
-  } else if (type === 'upcoming-mtd') {
-    jobs = jobs.filter(j => j.scheduled_date >= todayStr && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
-  } else if (type === 'next-month') {
-    jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth()+1);
+  // Alerts
+  let alerts = '';
+  if (mtdUnpaidTotal > 0) {
+    alerts += `<div style="background:#FDF0EE;border:1px solid #F0C4BE;color:var(--error);padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <span>💰 You have <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> in unpaid cleaning fees this month</span>
+      <button class="btn btn-sm" style="background:var(--error);color:white" onclick="goToSchedule('unpaid')">View unpaid →</button>
+    </div>`;
   }
-  renderOverviewTable(jobs);
-}
+  if (openReports.length) {
+    alerts += `<div style="background:var(--gold-light);border:1px solid #F0D98A;color:var(--gold-dark);padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <span>🔧 <strong>${openReports.length}</strong> open maintenance report${openReports.length!==1?'s':''}</span>
+      <button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">View →</button>
+    </div>`;
+  }
+  document.getElementById('overview-alerts').innerHTML = alerts;
 
-function renderOverviewTable(jobs) {
-  const wrap = document.getElementById('overview-table');
-  if (!jobs.length) {
-    wrap.innerHTML = '<div class="card"><div class="empty-state">📅<p>No cleanings in this window.</p></div></div>';
+  // Next 14 days compact view
+  if (!next14.length) {
+    document.getElementById('overview-upcoming').innerHTML = `<div class="card"><div class="empty-state">📅<p>No cleanings in the next 14 days.</p></div></div>`;
     return;
   }
 
-  // Group by property
-  let html = '';
-  ownerProps.forEach(prop => {
-    const pj = jobs.filter(j => j.property_id === prop.id);
-    if (!pj.length) return;
-    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
-    <div class="card"><table>
-      <thead><tr>
-        <th>Date</th><th>Times</th><th>Source</th>
-        <th>Charge</th><th>Additional fees</th><th>Payment status</th><th></th>
-      </tr></thead>
-      <tbody>${pj.map(j => {
-        const charge = j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—';
-        const extra  = j.additional_cleaning_cents;
-        const isPaid = !!j.owner_paid_at;
-        const isCompleted = j.status === 'completed';
-        const prop = ownerProps.find(p => p.id === j.property_id);
-        // Use job times if available, fall back to property defaults
-        const checkoutTime = j.guest_checkout
-          ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-          : prop?.default_checkout_time ? formatTime12h(prop.default_checkout_time) : null;
-        const checkinTime = j.guest_checkin
-          ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-          : prop?.default_checkin_time ? formatTime12h(prop.default_checkin_time) : null;
-        const timesStr = checkoutTime && checkinTime ? `🚪 ${checkoutTime} → 🏠 ${checkinTime}`
-          : checkoutTime ? `🚪 ${checkoutTime}` : checkinTime ? `🏠 ${checkinTime}` : '—';
-        const paymentInfo = j.owner_payment_method ? ` via ${j.owner_payment_method}` : '';
-        const paymentNotes = j.owner_payment_notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${j.owner_payment_notes}</div>` : '';
-        const total = (j.charge_cents||0) + (extra||0) + (j.owner_pet_fee_cents||0);
-        return `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
-          <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-          <td style="font-size:12px;color:var(--text-muted)">${timesStr}</td>
-          <td>${sourceTag(j.source)}</td>
-          <td>$${Math.round((j.charge_cents||0)/100)}</td>
-          <td>
-            ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>` : ''}
-            ${j.pet_fee_required ? '<span class="fee-pet">🐶 Pet</span>' : ''}
-            ${!extra && !j.pet_fee_required ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
-          </td>
-          <td onclick="event.stopPropagation()">
-            ${j.source === 'airbnb' ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>' :
-              isPaid ? `<span class="paid-tag">✓ Paid${paymentInfo}</span>${paymentNotes}
-                <button class="btn btn-sm btn-outline" style="margin-top:4px;display:block" onclick="unmarkOwnerPaid('${j.id}')">Undo</button>` :
-              isCompleted ? `<span class="unpaid-tag">Unpaid</span>` :
-              '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
-          </td>
-          <td onclick="event.stopPropagation()">
-            ${j.source !== 'airbnb' && isCompleted && !isPaid ?
-              `<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop?.name||''}','${j.scheduled_date}')">Mark paid</button>` : ''}
-          </td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>`;
+  let upHtml = `<div class="card">
+    <div class="card-header">
+      <span class="card-title">Next 14 days</span>
+      <button class="btn btn-outline btn-sm" onclick="showPage('schedule', document.getElementById('nav-schedule'))">View full schedule →</button>
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Property</th><th>Times</th><th>Source</th><th>Charge</th><th>Payment</th><th></th></tr></thead>
+      <tbody>`;
+
+  next14.forEach(j => {
+    const prop = ownerProps.find(p => p.id === j.property_id);
+    const { str: times } = getJobTimes(j);
+    const isCompleted = j.status === 'completed';
+    const isPaid = !!j.owner_paid_at;
+    upHtml += `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
+      <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+      <td>${prop?.name||'—'}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${times}</td>
+      <td>${sourceTag(j.source)}</td>
+      <td>${j.charge_cents?'$'+Math.round(j.charge_cents/100):'—'}</td>
+      <td onclick="event.stopPropagation()">
+        ${j.source==='airbnb' ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb</span>' :
+          isPaid ? `<span class="paid-tag">✓ Paid</span>` :
+          isCompleted ? '<span class="unpaid-tag">Unpaid</span>' :
+          '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
+      </td>
+      <td onclick="event.stopPropagation()">
+        ${j.source!=='airbnb' && isCompleted && !isPaid ?
+          `<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop?.name||''}','${j.scheduled_date}')">Mark paid</button>` :
+          isPaid ? `<button class="btn btn-sm btn-outline" onclick="unmarkOwnerPaid('${j.id}')">Undo</button>` : ''}
+      </td>
+    </tr>`;
   });
-  wrap.innerHTML = html;
+
+  upHtml += `</tbody></table></div>`;
+  document.getElementById('overview-upcoming').innerHTML = upHtml;
+}
+
+function goToSchedule(filter) {
+  const schedFilter = document.getElementById('sched-filter');
+  if (schedFilter) schedFilter.value = filter;
+  showPage('schedule', document.getElementById('nav-schedule'));
 }
 
 // ── PAYMENT MODAL ──
@@ -692,9 +682,10 @@ function renderScheduleList() {
 
   let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
 
-  if (filter === 'upcoming')  jobs = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
-  else if (filter === 'past') jobs = jobs.filter(j => j.scheduled_date < todayStr);
-  else if (filter === 'pet')  jobs = jobs.filter(j => j.pet_fee_required);
+  if (filter === 'upcoming')   jobs = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
+  else if (filter === 'past')  jobs = jobs.filter(j => j.scheduled_date < todayStr);
+  else if (filter === 'unpaid') jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
+  else if (filter === 'pet')   jobs = jobs.filter(j => j.pet_fee_required);
   else if (filter === 'short') jobs = jobs.filter(j => j.is_short_window);
 
   if (!jobs.length) { wrap.innerHTML = '<div class="empty-state">📅<p>No cleanings found.</p></div>'; return; }
@@ -707,13 +698,7 @@ function renderScheduleList() {
     <div class="card"><table>
       <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Fees</th><th>Payment</th></tr></thead>
       <tbody>${pj.map(j => {
-        const checkoutTime = j.guest_checkout
-          ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-          : prop.default_checkout_time ? formatTime12h(prop.default_checkout_time) : null;
-        const checkinTime = j.guest_checkin
-          ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-          : prop.default_checkin_time ? formatTime12h(prop.default_checkin_time) : null;
-        const times = [checkoutTime?'🚪 '+checkoutTime:null, checkinTime?'🏠 '+checkinTime:null].filter(Boolean).join(' → ') || '—';
+        const { str: times } = getJobTimes(j);
         const isCompleted = j.status === 'completed';
         const isPaid = !!j.owner_paid_at;
         const isShort = j.is_short_window;
@@ -1008,8 +993,7 @@ function openJobDetail(jobId) {
   const isAirbnb = j.source === 'airbnb';
   const isCompleted = j.status === 'completed';
 
-  const checkoutTime = j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
-  const checkinTime  = j.guest_checkin  ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+  const { checkoutTime, checkinTime } = getJobTimes(j);
 
   document.getElementById('jd-title').textContent = `${prop?.name || 'Cleaning'} — ${formatDate(j.scheduled_date)}`;
 
