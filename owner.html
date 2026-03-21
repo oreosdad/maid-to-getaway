@@ -720,7 +720,7 @@ function togglePaidBucket(header) {
 
 function buildJobTable(jobs) {
   return `<table>
-    <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Additional</th><th>Payment</th></tr></thead>
+    <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Cleaning Fee</th><th>Additional Fee</th><th>Payment</th></tr></thead>
     <tbody>${jobs.map(j => {
       const { str: times } = getJobTimes(j);
       const isPaid     = !!j.owner_paid_at;
@@ -765,12 +765,13 @@ function openJobModal(jobId) {
     ${guest?`<div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Guests</div><div style="font-size:14px">${guest}</div></div>`:''}
     ${cout||cin?`<div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Times</div><div style="font-size:13px">${[cout?'🚪 Out '+cout:null,cin?'🏠 In '+cin:null].filter(Boolean).join('<br>')}</div></div>`:''}`;
 
-  const base = j.charge_cents||0, extra = j.additional_cleaning_cents||0;
+  const base = j.charge_cents||0, extra = j.additional_cleaning_cents||0, petFeeAdmin = j.pet_fee_cents||0;
   document.getElementById('job-modal-charges').innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--text-muted);font-size:13px">Base charge</span><strong>$${Math.round(base/100)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--text-muted);font-size:13px">Cleaning fee</span><strong>$${Math.round(base/100)}</strong></div>
     ${extra?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--error);font-size:13px">📸 Extra clean${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span><strong style="color:var(--error)">+$${Math.round(extra/100)}</strong></div>`:''}
-    ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--gold-dark);font-size:13px">🐶 Pet fee</span><strong>see below</strong></div>`:''}
-    <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--cream-dark)"><strong>Expected total</strong><strong style="font-size:17px;color:var(--navy)">$${Math.round((base+extra)/100)}</strong></div>`;
+    ${petFeeAdmin?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--gold-dark);font-size:13px">🐶 Pet fee</span><strong style="color:var(--gold-dark)">$${Math.round(petFeeAdmin/100)} <span style="font-weight:400;font-size:11px">(editable below)</span></strong></div>`:''}
+    ${j.pet_fee_required&&!petFeeAdmin?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--gold-dark);font-size:13px">🐶 Pet fee</span><strong>enter below</strong></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--cream-dark)"><strong>Expected total</strong><strong style="font-size:17px;color:var(--navy)">$${Math.round((base+extra+petFeeAdmin)/100)}</strong></div>`;
 
   document.getElementById('job-modal-airbnb-notice').style.display = isAirbnb?'block':'none';
   document.getElementById('job-modal-payment-form').style.display  = 'block';
@@ -779,8 +780,8 @@ function openJobModal(jobId) {
 
   document.getElementById('job-date-paid').value       = isPaid ? j.owner_paid_at.split('T')[0] : new Date().toISOString().split('T')[0];
   document.getElementById('job-payment-method').value  = j.owner_payment_method || localStorage.getItem('owner_last_payment_method') || '';
-  document.getElementById('job-pet-fee').value         = j.owner_pet_fee_cents ? Math.round(j.owner_pet_fee_cents/100) : '';
-  document.getElementById('job-amount-paid').value     = j.owner_payment_amount ? Math.round(j.owner_payment_amount/100) : (base+extra > 0 ? Math.round((base+extra)/100) : '');
+  document.getElementById('job-pet-fee').value         = j.owner_pet_fee_cents ? Math.round(j.owner_pet_fee_cents/100) : (j.pet_fee_cents ? Math.round(j.pet_fee_cents/100) : '');
+  document.getElementById('job-amount-paid').value     = j.owner_payment_amount ? Math.round(j.owner_payment_amount/100) : (base+extra+petFeeAdmin > 0 ? Math.round((base+extra+petFeeAdmin)/100) : '');
   document.getElementById('job-payment-notes').value   = j.owner_payment_notes || '';
   document.getElementById('job-total-note').textContent = '';
   document.getElementById('job-save-btn').onclick = () => saveJobPayment(jobId);
@@ -905,13 +906,13 @@ async function renderProperties() {
   let html = '';
   ownerProps.forEach(prop => {
     const propPhotos = photosByProp[prop.id]||[];
-    html += `<div class="prop-card">
+    html += `<div class="prop-card" style="cursor:pointer" onclick="openEditPropertyModal('${prop.id}')">
       <div class="prop-card-header">
         <div>
           <div class="prop-name">${prop.name}</div>
           <div class="prop-address">📍 ${prop.address||'—'}</div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px" onclick="event.stopPropagation()">
           <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${prop.id}')">✏️ Edit</button>
           <button class="btn btn-outline btn-sm" onclick="openInviteOwnerModal('${prop.id}')">👥 Invite co-owner</button>
           <button class="btn btn-danger btn-sm" onclick="removeProperty('${prop.id}','${prop.name.replace(/'/g,"\\'")}')">Remove</button>
