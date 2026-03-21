@@ -732,7 +732,7 @@ function buildJobTable(jobs) {
         <td style="font-size:12px;color:var(--text-muted)">${times}</td>
         <td>${sourceTag(j.source)}</td>
         <td>$${Math.round((j.charge_cents||0)/100)}</td>
-        <td>${extra?`<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>`:''}${j.pet_fee_required?'<span class="fee-pet">🐶</span>':''}${!extra&&!j.pet_fee_required?'<span style="color:var(--text-muted);font-size:12px">—</span>':''}</td>
+        <td>${extra?`<span class="fee-excessive">📸 $${Math.round(extra/100)}</span> `:''}${j.pet_fee_required||j.pet_fee_cents?`<span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 8px;border-radius:10px;font-size:13px;font-weight:500">🐶${j.pet_fee_cents?' $'+Math.round(j.pet_fee_cents/100):''}</span>`:''}${!extra&&!j.pet_fee_required&&!j.pet_fee_cents?'<span style="color:var(--text-muted);font-size:12px">—</span>':''}</td>
         <td>${isAirbnb?'<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>':isPaid?`<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>`:isCompleted?'<span class="unpaid-tag">Unpaid</span>':'<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}</td>
       </tr>`;
     }).join('')}</tbody>
