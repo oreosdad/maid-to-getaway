@@ -587,6 +587,19 @@
       <label>Notes</label>
       <textarea id="edit-report-notes" style="min-height:100px"></textarea>
     </div>
+    <div id="edit-report-photos-section" style="margin-bottom:14px;display:none">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos <span style="font-size:11px;color:var(--text-muted);font-weight:400">— tap ✕ to remove</span></label>
+      <div id="edit-report-photos-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Add more photos</label>
+      <label class="photo-upload-area">
+        <input type="file" id="edit-report-new-photos" multiple accept="image/*" onchange="previewPhotos(this, 'edit-report-new-preview')"/>
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Tap to add photos</div>
+      </label>
+      <div class="photo-grid" id="edit-report-new-preview"></div>
+    </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-outline btn-full" onclick="closeModal('modal-edit-report')">Cancel</button>
       <button class="btn btn-gold btn-full" onclick="saveEditReport()">Save changes</button>
@@ -1391,7 +1404,7 @@ async function renderReportHistory() {
   }
   const categoryLabel = { supply:'🛍️ Supply needed', plumbing:'Plumbing', appliance:'Appliance', cosmetic:'Cosmetic', electrical:'Electrical', other:'Other', good_idea:'💡 Good Idea', job_released:'Job Released', evidence:'Excessive Clean' };
   list.innerHTML = data.map(r => `
-    <div class="job-card" style="margin-bottom:10px" data-report-id="${r.id}" data-report-notes="${encodeURIComponent(r.notes)}" data-report-category="${r.category || ''}">
+    <div class="job-card" style="margin-bottom:10px" data-report-id="${r.id}" data-report-notes="${encodeURIComponent(r.notes)}" data-report-category="${r.category || ''}" data-report-photos="${encodeURIComponent(JSON.stringify(r.photo_urls || []))}">
       <div class="job-card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
@@ -1421,11 +1434,47 @@ function openEditReportFromCard(btn) {
   const id       = card.getAttribute('data-report-id');
   const notes    = decodeURIComponent(card.getAttribute('data-report-notes'));
   const category = card.getAttribute('data-report-category');
+  const photos   = card.getAttribute('data-report-photos') ? JSON.parse(decodeURIComponent(card.getAttribute('data-report-photos'))) : [];
+
   document.getElementById('edit-report-id').value = id;
   document.getElementById('edit-report-notes').value = notes;
   const catSel = document.getElementById('edit-report-category');
   if (catSel) catSel.value = category || 'other';
+  document.getElementById('edit-report-new-preview').innerHTML = '';
+  selectedFilesMap['edit-report-new-photos'] = [];
+
+  // Show existing photos with X buttons
+  const photosSection = document.getElementById('edit-report-photos-section');
+  const photosGrid = document.getElementById('edit-report-photos-grid');
+  if (photos.length) {
+    photosSection.style.display = 'block';
+    photosGrid.innerHTML = photos.map((url, i) => `
+      <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden" id="edit-photo-${i}">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+        <button onclick="removeExistingPhoto('${id}', ${i}, '${encodeURIComponent(url)}')"
+          style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);color:white;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>`).join('');
+  } else {
+    photosSection.style.display = 'none';
+  }
+
   document.getElementById('modal-edit-report').classList.add('open');
+}
+
+async function removeExistingPhoto(reportId, photoIndex, encodedUrl) {
+  const url = decodeURIComponent(encodedUrl);
+  // Remove from storage
+  const path = url.split('/job%20photos/')[1] || url.split('/job photos/')[1];
+  if (path) await db.storage.from('job photos').remove([decodeURIComponent(path)]);
+
+  // Get current photo_urls and remove this one
+  const { data } = await db.from('maintenance_requests').select('photo_urls').eq('id', reportId).single();
+  const updated = (data?.photo_urls || []).filter(u => u !== url);
+  await db.from('maintenance_requests').update({ photo_urls: updated }).eq('id', reportId);
+
+  // Remove from DOM
+  document.getElementById(`edit-photo-${photoIndex}`)?.remove();
+  showToast('Photo removed ✓');
 }
 
 async function deleteReportFromCard(btn) {
@@ -1450,6 +1499,18 @@ async function saveEditReport() {
   if (!notes) { showToast('Please enter notes'); return; }
   const { error } = await db.from('maintenance_requests').update({ notes, category }).eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
+
+  // Upload any new photos added
+  if ((selectedFilesMap['edit-report-new-photos'] || []).length > 0) {
+    const { data } = await db.from('maintenance_requests').select('photo_urls').eq('id', id).single();
+    const existing = data?.photo_urls || [];
+    const newUrls = await uploadMaintenancePhotos('edit-report-new-photos', id);
+    if (newUrls.length) {
+      await db.from('maintenance_requests').update({ photo_urls: [...existing, ...newUrls] }).eq('id', id);
+    }
+    selectedFilesMap['edit-report-new-photos'] = [];
+  }
+
   closeModal('modal-edit-report');
   showToast('Report updated ✓');
   renderReportHistory();
@@ -1562,6 +1623,32 @@ document.addEventListener('click', e => {
 // ── PHOTO UPLOAD ──
 // ── PHOTO UPLOAD ──
 const MAX_FILE_SIZE_MB = 10;
+
+// Compress image to max 1200px wide and ~80% quality before upload
+async function compressImage(file, maxWidth = 1200, quality = 0.8) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 // Store selected files per input since we can't modify FileList directly
 const selectedFilesMap = {};
 
@@ -1573,23 +1660,22 @@ async function uploadMaintenancePhotos(inputId, requestId) {
       showToast(`"${file.name}" is too large — try a screenshot instead`);
       continue;
     }
-    // Use same path structure as job photos so existing storage policies apply
-    const path = `jobs/maintenance-${requestId}/${Date.now()}-${file.name}`;
-    const { data: uploadData, error } = await db.storage.from('job photos').upload(path, file);
-    if (error) { showToast('Upload failed: ' + error.message); console.error('Upload error:', error); continue; }
+    const compressed = await compressImage(file);
+    const path = `jobs/maintenance-${requestId}/${Date.now()}-${compressed.name}`;
+    const { error } = await db.storage.from('job photos').upload(path, compressed);
+    if (error) { showToast('Upload failed: ' + error.message); continue; }
     const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
     urls.push(publicUrl);
   }
   if (urls.length > 0) {
     const { error: updateError } = await db.from('maintenance_requests').update({ photo_urls: urls }).eq('id', requestId);
-    if (updateError) { console.error('Photo URL save error:', updateError); showToast('Photos uploaded but failed to save links: ' + updateError.message); }
+    if (updateError) showToast('Photos uploaded but failed to save links: ' + updateError.message);
   }
   return urls;
 }
 
 async function uploadPhotos(inputIdOrFiles, jobId, type) {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  // Accept either a file list or an input ID
   const files = typeof inputIdOrFiles === 'string'
     ? (selectedFilesMap[inputIdOrFiles] || [])
     : Array.from(inputIdOrFiles);
@@ -1599,13 +1685,15 @@ async function uploadPhotos(inputIdOrFiles, jobId, type) {
       showToast(`"${file.name}" is too large — try a screenshot instead`);
       continue;
     }
-    const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
-    const { error } = await db.storage.from('job photos').upload(path, file);
+    const compressed = await compressImage(file);
+    const path = `jobs/${jobId}/${type}/${Date.now()}-${compressed.name}`;
+    const { error } = await db.storage.from('job photos').upload(path, compressed);
     if (error) { showToast('Upload failed: ' + error.message); continue; }
     const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
     await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
   }
 }
+
 
 function previewPhotos(input, previewId) {
   const preview = document.getElementById(previewId);
