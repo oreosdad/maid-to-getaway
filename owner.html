@@ -216,8 +216,8 @@
           <button class="fin-tab active" data-filter="upcoming" onclick="setFinTab('upcoming',this)">Upcoming</button>
           <button class="fin-tab" data-filter="all" onclick="setFinTab('all',this)">All</button>
           <button class="fin-tab" data-filter="unpaid" onclick="setFinTab('unpaid',this)">🔥 Needs paid</button>
-          <button class="fin-tab" data-filter="completed" onclick="setFinTab('completed',this)">Completed</button>
-          <button class="fin-tab" data-filter="airbnb" onclick="setFinTab('airbnb',this)">Airbnb</button>
+          <button class="fin-tab" data-filter="past" onclick="setFinTab('past',this)">Past</button>
+          <button class="fin-tab" data-filter="paid" onclick="setFinTab('paid',this)">Paid</button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <select class="inline-sel" id="fin-prop" onchange="renderFinancials()"><option value="">All properties</option></select>
@@ -321,7 +321,7 @@
           </div>
           <div class="form-group">
             <label>Payment method</label>
-            <select id="job-payment-method">
+            <select id="job-payment-method" onchange="if(this.value) localStorage.setItem('owner_last_payment_method', this.value)">
               <option value="">Select…</option>
               <option value="PayPal">PayPal</option>
               <option value="Venmo">Venmo</option>
@@ -336,7 +336,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Pet fee collected ($)</label>
+            <label>Pet fee paid ($)</label>
             <input type="number" id="job-pet-fee" placeholder="0" min="0" step="1" oninput="recalcJobTotal()"/>
           </div>
           <div class="form-group">
@@ -673,8 +673,8 @@ function renderFinancials() {
   let jobs = [...allJobs];
   if (finTabFilter==='upcoming')       jobs = jobs.filter(j => j.scheduled_date>=todayStr);
   else if (finTabFilter==='unpaid')    jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
-  else if (finTabFilter==='completed') jobs = jobs.filter(j => j.status==='completed');
-  else if (finTabFilter==='airbnb')    jobs = jobs.filter(j => j.source==='airbnb');
+  else if (finTabFilter==='past')      jobs = jobs.filter(j => j.scheduled_date<todayStr);
+  else if (finTabFilter==='paid')      jobs = jobs.filter(j => !!j.owner_paid_at);
 
   // Sort
   jobs.sort((a,b) => {
