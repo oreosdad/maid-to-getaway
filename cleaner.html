@@ -226,6 +226,19 @@
 
   <!-- EARNINGS -->
   <div class="tab-content" id="tab-my-earnings">
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+      <select id="earnings-year" onchange="renderEarnings()" style="font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);color:var(--text);font-family:inherit">
+      </select>
+      <select id="earnings-month" onchange="renderEarnings()" style="font-size:13px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--white);color:var(--text);font-family:inherit">
+        <option value="">All months</option>
+        <option value="0">January</option><option value="1">February</option>
+        <option value="2">March</option><option value="3">April</option>
+        <option value="4">May</option><option value="5">June</option>
+        <option value="6">July</option><option value="7">August</option>
+        <option value="8">September</option><option value="9">October</option>
+        <option value="10">November</option><option value="11">December</option>
+      </select>
+    </div>
     <div id="pay-pending-list"></div>
     <div class="section-label">Payment history</div>
     <div id="pay-paid-list"></div>
@@ -969,6 +982,21 @@ async function confirmSubmitJob() {
 
 // ── EARNINGS ──
 async function renderEarnings() {
+  // Populate year dropdown if empty
+  const yearSel = document.getElementById('earnings-year');
+  if (yearSel && yearSel.options.length === 0) {
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= currentYear - 3; y--) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      if (y === currentYear) opt.selected = true;
+      yearSel.appendChild(opt);
+    }
+  }
+
+  const selectedYear  = parseInt(document.getElementById('earnings-year')?.value  || new Date().getFullYear());
+  const selectedMonth = document.getElementById('earnings-month')?.value;
+
   // Load completed jobs
   const { data: completedData } = await db
     .from('job_assignments')
@@ -990,10 +1018,23 @@ async function renderEarnings() {
     .gte('jobs.scheduled_date', today)
     .order('created_at', { ascending: false });
 
-  const completed = (completedData || []).filter(a => a.jobs);
-  const upcoming  = (upcomingData  || []).filter(a => a.jobs);
+  let completed = (completedData || []).filter(a => a.jobs);
+  const upcoming = (upcomingData || []).filter(a => a.jobs);
 
-  // MTD = completed jobs this calendar month
+  // Apply year filter
+  completed = completed.filter(a => {
+    const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
+    return d.getFullYear() === selectedYear;
+  });
+
+  // Apply month filter
+  if (selectedMonth !== '' && selectedMonth !== undefined) {
+    completed = completed.filter(a => {
+      const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
+      return d.getMonth() === parseInt(selectedMonth);
+    });
+  }
+
   const now = new Date();
   const mtd = completed.filter(a => {
     const d = new Date((a.jobs.scheduled_date || '') + 'T12:00:00');
@@ -1009,7 +1050,6 @@ async function renderEarnings() {
   const pendingEl = document.getElementById('pay-pending-list');
   const paidEl    = document.getElementById('pay-paid-list');
 
-  // Summary cards
   const monthName = now.toLocaleDateString('en-US', { month: 'long' });
   pendingEl.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
@@ -1023,7 +1063,6 @@ async function renderEarnings() {
       </div>
     </div>`;
 
-  // Upcoming jobs
   if (upcoming.length) {
     pendingEl.innerHTML += `<div class="section-label" style="margin-top:0">Upcoming jobs</div>` +
       upcoming.map(a => {
@@ -1042,7 +1081,6 @@ async function renderEarnings() {
       }).join('');
   }
 
-  // Pending payment (completed but not paid)
   if (!pending.length) {
     pendingEl.innerHTML += '<div class="section-label">Awaiting payment</div><div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:24px">⏳</div><p>No pending payments.</p></div>';
   } else {
