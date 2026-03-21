@@ -19,7 +19,7 @@
     #app { display:none; }
     #app.ready { display:flex;min-height:100vh; }
 
-    /* ── SIDEBAR ── */
+    /* SIDEBAR */
     .sidebar { width:var(--sidebar);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;z-index:100; }
     .sidebar-brand { padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.08); }
     .sidebar-brand h1 { font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.3; }
@@ -34,15 +34,15 @@
     .signout-btn { width:100%;padding:9px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius);color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s; }
     .signout-btn:hover { background:rgba(255,255,255,0.12);color:var(--white); }
 
-    /* ── MAIN ── */
+    /* MAIN */
     .main { margin-left:var(--sidebar);flex:1;padding:32px; }
     .page { display:none; }
     .page.active { display:block; }
     .page-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px; }
     .page-header h2 { font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--navy); }
 
-    /* ── STATS ── */
-    .stats-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:28px; }
+    /* STATS */
+    .stats-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px; }
     .stat-card { background:var(--white);border-radius:var(--radius);padding:18px 20px;border:1px solid var(--cream-dark);transition:all 0.15s; }
     .stat-card.clickable { cursor:pointer; }
     .stat-card.clickable:hover { border-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.08); }
@@ -52,21 +52,22 @@
     .stat-card.success .stat-value { color:var(--success); }
     .stat-sub { font-size:11px;color:var(--text-muted);margin-top:4px; }
 
-    /* ── CARDS / TABLES ── */
+    /* CARDS */
     .card { background:var(--white);border-radius:14px;border:1px solid var(--cream-dark);overflow:hidden;margin-bottom:24px; }
     .card-header { padding:16px 24px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
     .card-title { font-size:15px;font-weight:500;color:var(--navy); }
+
+    /* TABLE */
     table { width:100%;border-collapse:collapse; }
     th { text-align:left;padding:11px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark); }
     td { padding:13px 20px;font-size:14px;border-bottom:1px solid var(--cream-dark);vertical-align:middle; }
     tr:last-child td { border-bottom:none; }
     tr:hover td { background:#FDFBF7; }
 
-    /* ── BADGES / TAGS ── */
+    /* BADGES */
     .badge { display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500; }
     .badge-completed { background:var(--success-bg);color:var(--success); }
     .badge-scheduled { background:#E8F0FB;color:#1A56A4; }
-    .badge-pending { background:var(--gold-light);color:var(--gold-dark); }
     .source-airbnb { background:#FF5A5F;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
     .source-vrbo { background:#1A5276;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
     .source-manual { background:#7A7060;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
@@ -75,7 +76,7 @@
     .paid-tag { background:var(--success-bg);color:var(--success);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500; }
     .unpaid-tag { background:#FDEEEE;color:var(--error);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500; }
 
-    /* ── BUTTONS ── */
+    /* BUTTONS */
     .btn { padding:9px 18px;background:var(--gold);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:var(--radius);cursor:pointer;transition:background 0.15s; }
     .btn:hover { background:var(--gold-dark); }
     .btn-outline { background:transparent;border:1.5px solid var(--cream-dark);color:var(--text-muted); }
@@ -83,38 +84,51 @@
     .btn-sm { padding:5px 12px;font-size:12px; }
     .btn-success { background:var(--success);color:white; }
     .btn-success:hover { background:#176b40; }
+    .btn-danger { background:transparent;border:1.5px solid #F0C4BE;color:var(--error); }
+    .btn-danger:hover { background:#FDEEEE; }
+    .btn-navy { background:var(--navy);color:white; }
+    .btn-navy:hover { background:#152130; }
 
-    /* ── FILTERS ── */
+    /* FILTERS */
     .filter-row { display:flex;gap:8px;flex-wrap:wrap; }
     .filter-btn { padding:5px 14px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all 0.15s; }
     .filter-btn.active,.filter-btn:hover { background:var(--navy);color:var(--white);border-color:var(--navy); }
+    select.inline-sel { font-size:13px;padding:5px 9px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit;cursor:pointer; }
 
-    /* ── CALENDAR ── */
+    /* CALENDAR */
     .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--cream-dark);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden; }
     .cal-day-header { background:var(--cream);padding:8px 4px;text-align:center;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted); }
-    .cal-day { background:var(--white);min-height:90px;padding:6px;position:relative;vertical-align:top; }
-    .cal-day.other-month { background:#FAFAF8;opacity:0.6; }
+    .cal-day { background:var(--white);min-height:90px;padding:6px;vertical-align:top; }
+    .cal-day.other-month { background:#FAFAF8;opacity:0.5; }
     .cal-day.today { background:#FFFBF0; }
     .cal-day-num { font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:4px; }
-    .cal-day.today .cal-day-num { background:var(--gold);color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px; }
-    .cal-event { padding:2px 5px;border-radius:3px;font-size:10px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer; }
+    .cal-day.today .cal-day-num { background:var(--gold);color:white;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px; }
+    .cal-event { padding:2px 6px;border-radius:3px;font-size:10px;font-weight:500;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.15s; }
+    .cal-event:hover { opacity:0.8; }
     .cal-event-airbnb { background:#FF5A5F;color:white; }
     .cal-event-vrbo { background:#1A5276;color:white; }
     .cal-event-manual { background:#7A7060;color:white; }
     .cal-event-clean { background:var(--success-bg);color:var(--success);border:1px solid #C3E6D5; }
-    .cal-nav { display:flex;align-items:center;gap:12px; }
     .cal-nav button { background:none;border:1.5px solid var(--cream-dark);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);transition:all 0.15s; }
     .cal-nav button:hover { background:var(--cream-dark); }
-    .cal-month-label { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);min-width:160px; }
 
-    /* ── PROP SECTION HEADER ── */
-    .prop-section-title { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--cream-dark);display:flex;align-items:center;gap:8px; }
+    /* PROPERTY CARDS */
+    .prop-card { background:var(--white);border:1px solid var(--cream-dark);border-radius:14px;padding:20px;margin-bottom:16px; }
+    .prop-card-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px; }
+    .prop-name { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy); }
+    .prop-address { font-size:13px;color:var(--text-muted);margin-top:2px; }
+    .prop-section-title { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--cream-dark); }
     .prop-section-title:first-child { margin-top:0; }
+    .photo-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px; }
+    .photo-thumb { aspect-ratio:1;border-radius:8px;overflow:hidden;position:relative; }
+    .photo-thumb img { width:100%;height:100%;object-fit:cover; }
+    .photo-thumb .del-btn { position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:white;border:none;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center; }
 
-    /* ── MODALS ── */
+    /* MODALS */
     .modal-overlay { display:none;position:fixed;inset:0;background:rgba(28,43,58,0.5);z-index:200;align-items:center;justify-content:center;padding:24px; }
     .modal-overlay.open { display:flex; }
-    .modal { background:var(--white);border-radius:16px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease both; }
+    .modal { background:var(--white);border-radius:16px;padding:32px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease both; }
+    .modal-lg { max-width:680px; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
     .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px; }
     .modal-title { font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy); }
@@ -125,9 +139,10 @@
     .form-group input,.form-group select,.form-group textarea { width:100%;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--cream);border:1.5px solid var(--cream-dark);border-radius:var(--radius);outline:none;transition:border-color 0.2s; }
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--gold);background:var(--white); }
     .form-group textarea { resize:vertical;min-height:70px; }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
     .modal-footer { display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-dark); }
 
-    /* ── MAINTENANCE / COMMENTS ── */
+    /* MAINTENANCE */
     .report-card { background:var(--white);border-radius:var(--radius);border:1px solid var(--cream-dark);padding:18px 20px;margin-bottom:12px; }
     .comment { padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.5; }
     .comment-admin { background:var(--navy);color:white;margin-left:24px; }
@@ -137,14 +152,18 @@
     .comment-box input { flex:1;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--cream-dark);border-radius:var(--radius);background:var(--cream);outline:none;color:var(--text); }
     .comment-box input:focus { border-color:var(--gold);background:var(--white); }
 
-    /* ── MISC ── */
+    /* MISC */
+    .alert-banner { padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px; }
+    .alert-danger { background:#FDF0EE;border:1px solid #F0C4BE;color:var(--error); }
+    .alert-warning { background:var(--gold-light);border:1px solid #F0D98A;color:var(--gold-dark); }
     .empty-state { text-align:center;padding:48px 20px;color:var(--text-muted); }
     .empty-state p { font-size:15px;margin-top:8px; }
     .loading-inline { text-align:center;padding:40px;color:var(--text-muted);font-size:14px; }
     .toast { position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:14px;z-index:999;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none; }
     .toast.show { opacity:1;transform:translateY(0); }
-    .divider { height:1px;background:var(--cream-dark);margin:20px 0; }
-    select.inline-sel { font-size:13px;padding:5px 9px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit;cursor:pointer; }
+    .photo-upload-area { border:2px dashed var(--cream-dark);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--cream);display:block;margin-top:8px; }
+    .photo-upload-area:hover { border-color:var(--gold);background:var(--gold-light); }
+    .photo-upload-area input { display:none; }
   </style>
 </head>
 <body>
@@ -158,9 +177,9 @@
       <p>Owner Portal</p>
     </div>
     <nav>
-      <a class="nav-item active" id="nav-overview" onclick="showPage('overview',this)"><span class="nav-icon">🏠</span> Overview</a>
+      <a class="nav-item active" id="nav-financials" onclick="showPage('financials',this)"><span class="nav-icon">💰</span> Financials</a>
       <a class="nav-item" id="nav-schedule" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span> Schedule</a>
-      <a class="nav-item" id="nav-financials" onclick="showPage('financials',this)"><span class="nav-icon">💰</span> Financials</a>
+      <a class="nav-item" id="nav-properties" onclick="showPage('properties',this)"><span class="nav-icon">🏠</span> Properties</a>
       <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance',this)">
         <span class="nav-icon">🔧</span> Maintenance
         <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
@@ -174,67 +193,19 @@
 
   <main class="main">
 
-    <!-- OVERVIEW -->
-    <div class="page active" id="page-overview">
-      <div class="page-header">
-        <h2>Overview</h2>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select class="inline-sel" id="overview-prop" onchange="renderOverview()">
-            <option value="">All properties</option>
-          </select>
-        </div>
-      </div>
-      <div class="stats-row" id="overview-stats"></div>
-      <div id="overview-alerts"></div>
-      <div id="overview-upcoming"></div>
-    </div>
-
-    <!-- SCHEDULE -->
-    <div class="page" id="page-schedule">
-      <div class="page-header">
-        <h2>Schedule</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div class="filter-row">
-            <button class="filter-btn active" id="view-btn-list" onclick="switchScheduleView('list',this)">☰ List</button>
-            <button class="filter-btn" id="view-btn-cal" onclick="switchScheduleView('cal',this)">📅 Calendar</button>
-          </div>
-          <select class="inline-sel" id="sched-prop" onchange="renderScheduleView()"><option value="">All properties</option></select>
-          <select class="inline-sel" id="sched-filter" onchange="renderScheduleView()">
-            <option value="upcoming">Upcoming</option>
-            <option value="past">Past 90 days</option>
-            <option value="all">All</option>
-            <option value="unpaid">💰 Unpaid</option>
-            <option value="pet">🐶 Pet fee jobs</option>
-            <option value="short">⚑ Short turnarounds</option>
-          </select>
-          <select class="inline-sel" id="sched-range" onchange="renderScheduleView()">
-            <option value="30" selected>30 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-            <option value="60">60 days</option>
-            <option value="90">90 days</option>
-          </select>
-        </div>
-      </div>
-      <div id="schedule-list-view"></div>
-      <div id="schedule-cal-view" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div class="cal-nav">
-            <button onclick="calPrev()">← Prev</button>
-            <span class="cal-month-label" id="cal-month-label"></span>
-            <button onclick="calNext()">Next →</button>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="calToday()">Today</button>
-        </div>
-        <div class="cal-grid" id="cal-grid"></div>
-      </div>
-    </div>
-
-    <!-- FINANCIALS -->
-    <div class="page" id="page-financials">
+    <!-- FINANCIALS (dashboard + list) -->
+    <div class="page active" id="page-financials">
       <div class="page-header">
         <h2>Financials</h2>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select class="inline-sel" id="fin-prop" onchange="renderFinancials()"><option value="">All properties</option></select>
+          <select class="inline-sel" id="fin-filter" onchange="renderFinancials()">
+            <option value="all">All jobs</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="unpaid">Unpaid only</option>
+            <option value="airbnb">Airbnb only</option>
+          </select>
           <select class="inline-sel" id="fin-year" onchange="renderFinancials()"></select>
           <select class="inline-sel" id="fin-month" onchange="renderFinancials()">
             <option value="">All months</option>
@@ -245,10 +216,47 @@
             <option value="8">September</option><option value="9">October</option>
             <option value="10">November</option><option value="11">December</option>
           </select>
-          <select class="inline-sel" id="fin-prop" onchange="renderFinancials()"><option value="">All properties</option></select>
         </div>
       </div>
-      <div id="financials-content"></div>
+      <div class="stats-row" id="fin-stats"></div>
+      <div id="fin-alerts"></div>
+      <div id="fin-table"></div>
+    </div>
+
+    <!-- SCHEDULE (calendar only) -->
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <h2>Schedule</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="inline-sel" id="cal-prop" onchange="renderCalendar()"><option value="">All properties</option></select>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-outline btn-sm" onclick="calPrev()">← Prev</button>
+            <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);min-width:160px;text-align:center" id="cal-month-label"></span>
+            <button class="btn btn-outline btn-sm" onclick="calNext()">Next →</button>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="calToday()">Today</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text-muted)">Legend:</span>
+        <span class="source-airbnb" style="font-size:11px">Airbnb guest</span>
+        <span class="source-vrbo" style="font-size:11px">VRBO guest</span>
+        <span class="source-manual" style="font-size:11px">Manual</span>
+        <span style="background:var(--success-bg);color:var(--success);padding:2px 8px;border-radius:4px;font-size:11px;border:1px solid #C3E6D5">🧹 Cleaning</span>
+      </div>
+    </div>
+
+    <!-- PROPERTIES -->
+    <div class="page" id="page-properties">
+      <div class="page-header">
+        <h2>Properties</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="openClaimPropertyModal()">Claim existing</button>
+          <button class="btn" onclick="openAddPropertyModal()">+ Add new property</button>
+        </div>
+      </div>
+      <div id="properties-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
     <!-- MAINTENANCE -->
@@ -277,6 +285,10 @@
     <input type="hidden" id="payment-job-id"/>
     <div id="payment-summary" style="background:var(--cream);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px"></div>
     <div class="form-group">
+      <label>Date paid</label>
+      <input type="date" id="payment-date"/>
+    </div>
+    <div class="form-group">
       <label>Payment method <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
       <select id="payment-method">
         <option value="">Select method…</option>
@@ -291,13 +303,13 @@
       </select>
     </div>
     <div class="form-group">
-      <label>Pet fee collected ($) <span style="color:var(--text-muted);font-weight:400">(optional — updates total)</span></label>
+      <label>Pet fee collected ($) <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
       <input type="number" id="payment-pet-fee" placeholder="0" min="0" step="1" oninput="recalcPaymentTotal()"/>
     </div>
     <div class="form-group">
       <label>Amount paid ($)</label>
       <input type="number" id="payment-amount" placeholder="e.g. 120" min="0" step="0.01" oninput="recalcPaymentTotal()"/>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:4px" id="payment-total-note"></p>
+      <p style="font-size:11px;margin-top:4px" id="payment-total-note"></p>
     </div>
     <div class="form-group">
       <label>Notes <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
@@ -320,7 +332,105 @@
     <div id="jd-body"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-job-detail')">Close</button>
-      <button class="btn btn-success" id="jd-pay-btn" style="display:none" onclick="closeModal('modal-job-detail')">Mark as paid →</button>
+      <button class="btn btn-success" id="jd-pay-btn" style="display:none">Mark as paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PROPERTY MODAL -->
+<div class="modal-overlay" id="modal-property">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="prop-modal-title">Add Property</span>
+      <button class="modal-close" onclick="closeModal('modal-property')">✕</button>
+    </div>
+    <input type="hidden" id="prop-modal-id"/>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Property name *</label>
+        <input type="text" id="prop-modal-name" placeholder="e.g. Westport Loft"/>
+      </div>
+      <div class="form-group">
+        <label>Address *</label>
+        <input type="text" id="prop-modal-address" placeholder="123 Main St, Kansas City, MO"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default checkout time</label>
+        <input type="time" id="prop-modal-checkout"/>
+      </div>
+      <div class="form-group">
+        <label>Default check-in time</label>
+        <input type="time" id="prop-modal-checkin"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Cleaning charge rate ($ per clean) *</label>
+      <input type="number" id="prop-modal-charge" placeholder="e.g. 120" min="0" step="1"/>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:4px">This is what you pay Maid to Getaway per cleaning. Admin is notified if you change this.</p>
+    </div>
+    <div class="form-group">
+      <label>Notes <span style="color:var(--text-muted);font-weight:400">(gate code, parking, special instructions)</span></label>
+      <textarea id="prop-modal-notes" placeholder="e.g. Gate code: 1234, park in driveway…"></textarea>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:4px">These notes are visible to your cleaners.</p>
+    </div>
+    <div class="form-group">
+      <label>Airbnb iCal URL <span style="color:var(--text-muted);font-weight:400">(optional — for calendar sync)</span></label>
+      <input type="url" id="prop-modal-airbnb" placeholder="https://www.airbnb.com/calendar/ical/…"/>
+    </div>
+    <div class="form-group">
+      <label>VRBO iCal URL <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input type="url" id="prop-modal-vrbo" placeholder="https://www.vrbo.com/icalendar/…"/>
+    </div>
+    <div class="form-group">
+      <label>Property photos</label>
+      <div id="prop-modal-photo-grid" class="photo-grid" style="margin-bottom:8px"></div>
+      <label class="photo-upload-area">
+        <input type="file" id="prop-modal-photos" multiple accept="image/*" onchange="previewPropPhotos(this)"/>
+        <div style="font-size:22px;margin-bottom:4px">📷</div>
+        <div style="font-size:13px;color:var(--text-muted)">Tap to upload photos</div>
+      </label>
+      <div id="prop-modal-photo-preview" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-property')">Cancel</button>
+      <button class="btn" onclick="saveProperty()">Save property</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIM PROPERTY MODAL -->
+<div class="modal-overlay" id="modal-claim-property">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Claim a Property</span>
+      <button class="modal-close" onclick="closeModal('modal-claim-property')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Select an existing property to add to your account. Your admin will be notified.</p>
+    <div id="claimable-properties-list"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-claim-property')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE CO-OWNER MODAL -->
+<div class="modal-overlay" id="modal-invite-owner">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Invite Co-owner</span>
+      <button class="modal-close" onclick="closeModal('modal-invite-owner')">✕</button>
+    </div>
+    <input type="hidden" id="invite-prop-id"/>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Invite someone to co-manage this property. They'll receive an email invite.</p>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="invite-email" placeholder="co-owner@example.com"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-invite-owner')">Cancel</button>
+      <button class="btn" onclick="sendCoOwnerInvite()">Send invite</button>
     </div>
   </div>
 </div>
@@ -335,12 +445,13 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
+let currentProfile = null;
 let ownerProps = [];
 let ownerJobs = [];
 let ownerReports = [];
-let schedView = 'list';
-let maintFilter = 'open';
 let calDate = new Date();
+let maintFilter = 'open';
+let newPropPhotos = []; // files staged for upload
 
 // ── AUTH ──
 async function init() {
@@ -349,6 +460,7 @@ async function init() {
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (!profile || profile.role !== 'owner') { window.location.replace('login.html'); return; }
   currentUser = session.user;
+  currentProfile = profile;
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
   document.getElementById('owner-name').textContent = profile.full_name;
@@ -356,7 +468,7 @@ async function init() {
   // Year filter
   const yr = document.getElementById('fin-year');
   const now = new Date();
-  for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) {
+  for (let y = now.getFullYear(); y >= now.getFullYear()-3; y--) {
     const o = document.createElement('option');
     o.value = y; o.textContent = y;
     if (y === now.getFullYear()) o.selected = true;
@@ -365,18 +477,16 @@ async function init() {
 
   await loadData();
 }
-db.auth.onAuthStateChange(e => { if (e === 'SIGNED_OUT') window.location.replace('login.html?signout=1'); });
+db.auth.onAuthStateChange(e => { if (e==='SIGNED_OUT') window.location.replace('login.html?signout=1'); });
 
 async function loadData() {
   const { data: props } = await db.from('properties').select('*').eq('owner_id', currentUser.id).order('name');
   ownerProps = props || [];
 
-  if (!ownerProps.length) return;
-  const propIds = ownerProps.map(p => p.id);
-
-  // Populate property dropdowns
-  ['overview-prop','sched-prop','fin-prop'].forEach(id => {
+  // Populate dropdowns
+  ['fin-prop','cal-prop'].forEach(id => {
     const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">All properties</option>';
     ownerProps.forEach(p => {
       const o = document.createElement('option');
       o.value = p.id; o.textContent = p.name;
@@ -384,90 +494,94 @@ async function loadData() {
     });
   });
 
-  const ninetyAgo = new Date(Date.now() - 90*864e5).toISOString().split('T')[0];
+  if (!ownerProps.length) {
+    renderFinancials();
+    return;
+  }
+  const propIds = ownerProps.map(p => p.id);
+  const ninetyAgo = new Date(Date.now()-90*864e5).toISOString().split('T')[0];
+
   const [jobsRes, reportsRes] = await Promise.all([
-    db.from('jobs')
-      .select('*, properties(name), job_assignments(profiles(full_name))')
-      .in('property_id', propIds)
-      .is('deleted_at', null)
-      .gte('scheduled_date', ninetyAgo)
-      .order('scheduled_date', { ascending: true }),
-    db.from('maintenance_requests')
-      .select('*, properties(name), profiles!submitted_by(full_name, role)')
-      .in('property_id', propIds)
-      .order('created_at', { ascending: false })
+    db.from('jobs').select('*, properties(name), job_assignments(profiles(full_name))')
+      .in('property_id', propIds).is('deleted_at', null)
+      .gte('scheduled_date', ninetyAgo).order('scheduled_date', { ascending:true }),
+    db.from('maintenance_requests').select('*, properties(name), profiles!submitted_by(full_name, role)')
+      .in('property_id', propIds).order('created_at', { ascending:false })
   ]);
 
   ownerJobs    = jobsRes.data    || [];
   ownerReports = reportsRes.data || [];
 
-  const openCount = ownerReports.filter(r => r.status === 'open').length;
+  const openCount = ownerReports.filter(r => r.status==='open').length;
   const badge = document.getElementById('maint-badge');
-  if (openCount) { badge.style.display = 'inline-flex'; badge.textContent = openCount; }
+  if (openCount) { badge.style.display='inline-flex'; badge.textContent=openCount; }
 
-  renderOverview();
+  renderFinancials();
 }
 
-// ── NAVIGATION ──
+// ── NAV ──
 function showPage(name, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
-  if (name === 'schedule')    renderScheduleView();
-  if (name === 'financials')  renderFinancials();
-  if (name === 'maintenance') renderMaintenance();
+  if (name==='schedule')    renderCalendar();
+  if (name==='properties')  renderProperties();
+  if (name==='maintenance') renderMaintenance();
 }
 
-// ── SOURCE TAG ──
-function formatTime12h(t) {
-  if (!t) return null;
-  const [h, m] = t.split(':');
-  const hour = parseInt(h);
-  return `${hour%12||12}:${m} ${hour<12?'AM':'PM'}`;
-}
-
-// Get display times - prefer property defaults, fall back to iCal times
-// iCal times are UTC and may display incorrectly due to timezone conversion
-function getJobTimes(j) {
-  const prop = ownerProps.find(p => p.id === j.property_id);
-  const checkoutTime = prop?.default_checkout_time
-    ? formatTime12h(prop.default_checkout_time)
-    : j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
-  const checkinTime = prop?.default_checkin_time
-    ? formatTime12h(prop.default_checkin_time)
-    : j.guest_checkin ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
-  const str = [checkoutTime?'🚪 '+checkoutTime:null, checkinTime?'🏠 '+checkinTime:null].filter(Boolean).join(' → ') || '—';
-  return { checkoutTime, checkinTime, str };
-}
-
-function guestName(j) {
-  if (!j.ical_summary) return '—';
-  // Airbnb iCal summary is usually "FirstName LastInitial." or "Reserved"
-  const s = j.ical_summary.trim();
-  if (s.toLowerCase() === 'reserved' || s.toLowerCase() === 'not available' || s.toLowerCase() === 'blocked') return '—';
-  return s;
-}
-
-function sourceTag(source) {
-  if (source === 'airbnb') return '<span class="source-airbnb">Airbnb</span>';
-  if (source === 'vrbo')   return '<span class="source-vrbo">VRBO</span>';
+// ── HELPERS ──
+function sourceTag(s) {
+  if (s==='airbnb') return '<span class="source-airbnb">Airbnb</span>';
+  if (s==='vrbo')   return '<span class="source-vrbo">VRBO</span>';
   return '<span class="source-manual">Manual</span>';
 }
+function formatTime12h(t) {
+  if (!t) return null;
+  const [h,m] = t.split(':');
+  const hr = parseInt(h);
+  return `${hr%12||12}:${m} ${hr<12?'AM':'PM'}`;
+}
+function getJobTimes(j) {
+  const prop = ownerProps.find(p => p.id===j.property_id);
+  const cout = prop?.default_checkout_time ? formatTime12h(prop.default_checkout_time)
+    : j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+  const cin  = prop?.default_checkin_time  ? formatTime12h(prop.default_checkin_time)
+    : j.guest_checkin  ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+  const str  = [cout?'🚪 '+cout:null, cin?'🏠 '+cin:null].filter(Boolean).join(' → ') || '—';
+  return { cout, cin, str };
+}
+function guestName(j) {
+  if (!j.ical_summary) return null;
+  const s = j.ical_summary.trim();
+  if (['reserved','not available','blocked'].includes(s.toLowerCase())) return null;
+  return s;
+}
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function timeAgo(dt) {
+  const diff=Date.now()-new Date(dt).getTime(), mins=Math.floor(diff/60000);
+  if(mins<1) return 'just now'; if(mins<60) return `${mins}m ago`;
+  const hrs=Math.floor(mins/60); if(hrs<24) return `${hrs}h ago`;
+  return `${Math.floor(hrs/24)}d ago`;
+}
 
-// ── OVERVIEW ──
-function renderOverview() {
-  const propId   = document.getElementById('overview-prop').value;
-  const now      = new Date();
+// ── FINANCIALS ──
+function renderFinancials() {
+  const propId  = document.getElementById('fin-prop').value;
+  const filter  = document.getElementById('fin-filter').value;
+  const year    = parseInt(document.getElementById('fin-year').value);
+  const month   = document.getElementById('fin-month').value;
+  const now     = new Date();
   const todayStr = now.toISOString().split('T')[0];
-  const in14     = new Date(Date.now() + 14*864e5).toISOString().split('T')[0];
   const monthName = now.toLocaleDateString('en-US',{month:'long'});
-  const nextMonthName = new Date(now.getFullYear(), now.getMonth()+1, 1).toLocaleDateString('en-US',{month:'long'});
+  const nextMonthName = new Date(now.getFullYear(),now.getMonth()+1,1).toLocaleDateString('en-US',{month:'long'});
 
-  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
+  let jobs = ownerJobs.filter(j => !propId || j.property_id===propId);
 
-  const upcoming = jobs.filter(j => j.scheduled_date >= todayStr);
-  const next14   = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= in14);
+  // Stats (always use all jobs for dashboard)
   const mtdCompleted = jobs.filter(j => {
     const d = new Date(j.scheduled_date+'T12:00:00');
     return j.status==='completed' && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
@@ -475,44 +589,34 @@ function renderOverview() {
   const mtdAirbnb   = mtdCompleted.filter(j => j.source==='airbnb');
   const mtdOwes     = mtdCompleted.filter(j => j.source!=='airbnb');
   const mtdUnpaid   = mtdOwes.filter(j => !j.owner_paid_at);
-  const nextMonthJobs = jobs.filter(j => {
+  const nextMonthJs = jobs.filter(j => {
     const d = new Date(j.scheduled_date+'T12:00:00');
     return d.getMonth()===now.getMonth()+1 && d.getFullYear()===now.getFullYear();
   });
-  const openReports = ownerReports.filter(r => r.status==='open' && (!propId || r.property_id===propId));
+  const openReports = ownerReports.filter(r => r.status==='open' && (!propId||r.property_id===propId));
 
-  const mtdAirbnbTotal = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const mtdOwesTotal   = mtdOwes.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const mtdUnpaidTotal = mtdUnpaid.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const nextMonthTotal = nextMonthJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdAirbnbTotal  = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdOwesTotal    = mtdOwes.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdUnpaidTotal  = mtdUnpaid.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const nextMonthTotal  = nextMonthJs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
 
-  // Badge
-  const badge = document.getElementById('maint-badge');
-  if (openReports.length) { badge.style.display='inline-flex'; badge.textContent=openReports.length; }
-
-  // Stats — all clickable, navigate to relevant tab/filter
-  document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card clickable success" onclick="goToSchedule('upcoming')">
-      <div class="stat-label">Upcoming cleanings</div>
-      <div class="stat-value">${upcoming.length}</div>
-      <div class="stat-sub">Click to view schedule →</div>
-    </div>
-    <div class="stat-card clickable gold" onclick="goToSchedule('unpaid')">
-      <div class="stat-label">${monthName} — You owe</div>
-      <div class="stat-value">$${Math.round(mtdOwesTotal/100)}</div>
-      <div class="stat-sub">${mtdUnpaidTotal>0?`<span style="color:var(--error)">$${Math.round(mtdUnpaidTotal/100)} unpaid</span>`:'All paid ✓'}</div>
-    </div>
-    <div class="stat-card clickable success" onclick="goToSchedule('all')">
+  document.getElementById('fin-stats').innerHTML = `
+    <div class="stat-card clickable success" onclick="setFinFilter('airbnb')">
       <div class="stat-label">${monthName} — Airbnb paid</div>
       <div class="stat-value">$${Math.round(mtdAirbnbTotal/100)}</div>
       <div class="stat-sub">Platform handles payment</div>
     </div>
-    <div class="stat-card clickable" onclick="goToSchedule('all')">
+    <div class="stat-card clickable gold" onclick="setFinFilter('unpaid')">
+      <div class="stat-label">${monthName} — You owe</div>
+      <div class="stat-value">$${Math.round(mtdOwesTotal/100)}</div>
+      <div class="stat-sub">${mtdUnpaidTotal>0?`<span style="color:var(--error)">$${Math.round(mtdUnpaidTotal/100)} unpaid</span>`:'✓ All paid'}</div>
+    </div>
+    <div class="stat-card clickable" onclick="setFinFilter('all')">
       <div class="stat-label">${nextMonthName} projected</div>
       <div class="stat-value">$${Math.round(nextMonthTotal/100)}</div>
-      <div class="stat-sub">${nextMonthJobs.length} job${nextMonthJobs.length!==1?'s':''}</div>
+      <div class="stat-sub">${nextMonthJs.length} job${nextMonthJs.length!==1?'s':''}</div>
     </div>
-    <div class="stat-card clickable ${openReports.length?'':'success'}" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">
+    <div class="stat-card clickable ${openReports.length?'':'success'}" onclick="showPage('maintenance',document.getElementById('nav-maintenance'))">
       <div class="stat-label">Open reports</div>
       <div class="stat-value" style="${openReports.length?'color:var(--error)':''}">${openReports.length}</div>
       <div class="stat-sub">Click to view →</div>
@@ -520,92 +624,175 @@ function renderOverview() {
 
   // Alerts
   let alerts = '';
-  if (mtdUnpaidTotal > 0) {
-    alerts += `<div style="background:#FDF0EE;border:1px solid #F0C4BE;color:var(--error);padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <span>💰 You have <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> in unpaid cleaning fees this month</span>
-      <button class="btn btn-sm" style="background:var(--error);color:white" onclick="goToSchedule('unpaid')">View unpaid →</button>
-    </div>`;
-  }
-  if (openReports.length) {
-    alerts += `<div style="background:var(--gold-light);border:1px solid #F0D98A;color:var(--gold-dark);padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <span>🔧 <strong>${openReports.length}</strong> open maintenance report${openReports.length!==1?'s':''}</span>
-      <button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">View →</button>
-    </div>`;
-  }
-  document.getElementById('overview-alerts').innerHTML = alerts;
+  if (mtdUnpaidTotal>0) alerts += `<div class="alert-banner alert-danger">
+    <span>💰 <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> in unpaid cleaning fees this month</span>
+    <button class="btn btn-sm" style="background:var(--error);color:white" onclick="setFinFilter('unpaid')">View unpaid →</button>
+  </div>`;
+  if (openReports.length) alerts += `<div class="alert-banner alert-warning">
+    <span>🔧 <strong>${openReports.length}</strong> open maintenance report${openReports.length!==1?'s':''}</span>
+    <button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance',document.getElementById('nav-maintenance'))">View →</button>
+  </div>`;
+  document.getElementById('fin-alerts').innerHTML = alerts;
 
-  // Next 14 days compact view
-  if (!next14.length) {
-    document.getElementById('overview-upcoming').innerHTML = `<div class="card"><div class="empty-state">📅<p>No cleanings in the next 14 days.</p></div></div>`;
+  // Apply table filters
+  if (filter==='upcoming')  jobs = jobs.filter(j => j.scheduled_date>=todayStr);
+  else if (filter==='completed') jobs = jobs.filter(j => j.status==='completed');
+  else if (filter==='unpaid')    jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
+  else if (filter==='airbnb')    jobs = jobs.filter(j => j.source==='airbnb');
+
+  // Year/month filter
+  if (year) jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getFullYear()===year);
+  if (month!=='') jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth()===parseInt(month));
+
+  if (!jobs.length) {
+    document.getElementById('fin-table').innerHTML = '<div class="card"><div class="empty-state">💰<p>No cleanings match your filters.</p></div></div>';
     return;
   }
 
-  let upHtml = `<div class="card">
-    <div class="card-header">
-      <span class="card-title">Next 14 days</span>
-      <button class="btn btn-outline btn-sm" onclick="showPage('schedule', document.getElementById('nav-schedule'))">View full schedule →</button>
-    </div>
-    <table>
-      <thead><tr><th>Date</th><th>Property</th><th>Times</th><th>Source</th><th>Charge</th><th>Payment</th><th></th></tr></thead>
-      <tbody>`;
-
-  next14.forEach(j => {
-    const prop = ownerProps.find(p => p.id === j.property_id);
-    const { str: times } = getJobTimes(j);
-    const isCompleted = j.status === 'completed';
-    const isPaid = !!j.owner_paid_at;
-    upHtml += `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
-      <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-      <td>${prop?.name||'—'}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${times}</td>
-      <td>${sourceTag(j.source)}</td>
-      <td>${j.charge_cents?'$'+Math.round(j.charge_cents/100):'—'}</td>
-      <td onclick="event.stopPropagation()">
-        ${j.source==='airbnb' ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb</span>' :
-          isPaid ? `<span class="paid-tag">✓ Paid</span>` :
-          isCompleted ? '<span class="unpaid-tag">Unpaid</span>' :
-          '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
-      </td>
-      <td onclick="event.stopPropagation()">
-        ${j.source!=='airbnb' && isCompleted && !isPaid ?
-          `<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop?.name||''}','${j.scheduled_date}')">Mark paid</button>` :
-          isPaid ? `<button class="btn btn-sm btn-outline" onclick="unmarkOwnerPaid('${j.id}')">Undo</button>` : ''}
-      </td>
-    </tr>`;
+  let html = '';
+  ownerProps.forEach(prop => {
+    const pj = jobs.filter(j => j.property_id===prop.id);
+    if (!pj.length) return;
+    const propTotal = pj.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
+    <div class="card"><table>
+      <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Additional</th><th>Payment</th><th></th></tr></thead>
+      <tbody>${pj.map(j => {
+        const { str: times } = getJobTimes(j);
+        const isPaid = !!j.owner_paid_at;
+        const isCompleted = j.status==='completed';
+        const isAirbnb = j.source==='airbnb';
+        const extra = j.additional_cleaning_cents;
+        return `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
+          <td><strong>${formatDate(j.scheduled_date)}</strong>
+            ${j.is_short_window?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}
+          </td>
+          <td style="font-size:12px;color:var(--text-muted)">${times}</td>
+          <td>${sourceTag(j.source)}</td>
+          <td>$${Math.round((j.charge_cents||0)/100)}</td>
+          <td>
+            ${extra?`<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>`:''}
+            ${j.pet_fee_required?'<span class="fee-pet">🐶</span>':''}
+            ${!extra&&!j.pet_fee_required?'<span style="color:var(--text-muted);font-size:12px">—</span>':''}
+          </td>
+          <td onclick="event.stopPropagation()">
+            ${isAirbnb ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>' :
+              isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>
+                ${j.owner_payment_notes?`<div style="font-size:11px;color:var(--text-muted)">${j.owner_payment_notes}</div>`:''}
+                <button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="unmarkPaid('${j.id}')">Undo</button>` :
+              isCompleted ? '<span class="unpaid-tag">Unpaid</span>' :
+              '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
+          </td>
+          <td onclick="event.stopPropagation()">
+            ${!isAirbnb&&isCompleted&&!isPaid?`<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop.name}','${j.scheduled_date}')">Mark paid</button>`:''}
+          </td>
+        </tr>`;
+      }).join('')}
+      ${pj.filter(j=>j.status==='completed').length>1?`
+      <tr style="background:var(--gold-light)">
+        <td colspan="3" style="font-weight:600">Property total</td>
+        <td style="font-weight:600">$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
+        <td style="font-weight:600">$${Math.round(pj.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
+        <td colspan="2" style="font-weight:700;color:var(--gold-dark)">$${Math.round(propTotal/100)}</td>
+      </tr>`:''}
+      </tbody>
+    </table></div>`;
   });
-
-  upHtml += `</tbody></table></div>`;
-  document.getElementById('overview-upcoming').innerHTML = upHtml;
+  document.getElementById('fin-table').innerHTML = html;
 }
 
-function goToSchedule(filter) {
-  const schedFilter = document.getElementById('sched-filter');
-  if (schedFilter) schedFilter.value = filter;
-  showPage('schedule', document.getElementById('nav-schedule'));
+function setFinFilter(f) {
+  document.getElementById('fin-filter').value = f;
+  renderFinancials();
+}
+
+// ── JOB DETAIL POPUP ──
+function openJobDetail(jobId) {
+  const j = ownerJobs.find(j => j.id===jobId);
+  if (!j) return;
+  const prop = ownerProps.find(p => p.id===j.property_id);
+  const isPaid = !!j.owner_paid_at;
+  const isAirbnb = j.source==='airbnb';
+  const isCompleted = j.status==='completed';
+  const { cout, cin } = getJobTimes(j);
+  const guest = guestName(j);
+
+  document.getElementById('jd-title').textContent = `${prop?.name||'Cleaning'} — ${formatDate(j.scheduled_date)}`;
+
+  const payBtn = document.getElementById('jd-pay-btn');
+  if (!isAirbnb && isCompleted && !isPaid) {
+    payBtn.style.display = 'inline-block';
+    payBtn.onclick = () => { closeModal('modal-job-detail'); openPaymentModal(j.id, prop?.name||'', j.scheduled_date); };
+  } else { payBtn.style.display = 'none'; }
+
+  document.getElementById('jd-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--cream);border-radius:8px;padding:10px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Source</div>
+        ${sourceTag(j.source)}
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:10px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Status</div>
+        <span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span>
+      </div>
+      ${guest?`<div style="background:var(--cream);border-radius:8px;padding:10px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Guests</div>
+        <div style="font-size:14px">${guest}</div>
+      </div>`:''}
+      ${cout||cin?`<div style="background:var(--cream);border-radius:8px;padding:10px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Times</div>
+        <div style="font-size:13px">${[cout?'🚪 Out '+cout:null,cin?'🏠 In '+cin:null].filter(Boolean).join('<br>')}</div>
+      </div>`:''}
+    </div>
+    <div style="border-top:1px solid var(--cream-dark);padding-top:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--text-muted)">Base charge</span>
+        <strong>$${Math.round((j.charge_cents||0)/100)}</strong>
+      </div>
+      ${j.additional_cleaning_cents?`<div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--error)">📸 Extra clean${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span>
+        <strong style="color:var(--error)">+$${Math.round(j.additional_cleaning_cents/100)}</strong>
+      </div>`:''}
+      ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--gold-dark)">🐶 Pet fee</span><strong>Collected</strong>
+      </div>`:''}
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--cream-dark)">
+        <strong>Total</strong>
+        <strong style="font-size:18px;color:var(--navy)">$${Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100)}</strong>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--cream-dark);padding-top:14px">
+      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Payment</div>
+      ${isAirbnb ? '<span style="color:var(--success)">✓ Airbnb handles this payment</span>' :
+        isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>
+          ${j.owner_payment_notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${j.owner_payment_notes}</div>`:''}` :
+        isCompleted ? '<span style="color:var(--error)">⚠ Not yet paid</span>' :
+        '<span style="color:var(--text-muted);font-size:13px">Job not yet completed</span>'}
+    </div>`;
+
+  document.getElementById('modal-job-detail').classList.add('open');
 }
 
 // ── PAYMENT MODAL ──
 function openPaymentModal(jobId, propName, date) {
-  const j = ownerJobs.find(j => j.id === jobId);
+  const j = ownerJobs.find(j => j.id===jobId);
   document.getElementById('payment-job-id').value = jobId;
   document.getElementById('payment-modal-title').textContent = `Record Payment — ${propName} ${formatDate(date)}`;
   document.getElementById('payment-notes').value = '';
   document.getElementById('payment-pet-fee').value = '';
   document.getElementById('payment-total-note').textContent = '';
+  document.getElementById('payment-date').value = new Date().toISOString().split('T')[0];
 
-  // Auto-fill method from localStorage
   const lastMethod = localStorage.getItem('owner_last_payment_method') || '';
   document.getElementById('payment-method').value = lastMethod;
 
-  // Auto-fill amount from job charge
   const defaultAmount = j ? Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100) : '';
   document.getElementById('payment-amount').value = defaultAmount;
 
-  // Show summary
   document.getElementById('payment-summary').innerHTML = j ? `
     <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Base charge</span><strong>$${Math.round((j.charge_cents||0)/100)}</strong></div>
     ${j.additional_cleaning_cents?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Additional fee</span><strong>$${Math.round(j.additional_cleaning_cents/100)}</strong></div>`:''}
-    ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>🐶 Pet fee (enter below)</span><strong>—</strong></div>`:''}
+    ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>🐶 Pet fee (enter below if applicable)</span><strong>—</strong></div>`:''}
     <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--cream-dark);font-weight:600"><span>Expected total</span><span>$${defaultAmount}</span></div>` : '';
 
   document.getElementById('modal-payment').classList.add('open');
@@ -615,17 +802,17 @@ function recalcPaymentTotal() {
   const amount  = parseFloat(document.getElementById('payment-amount').value) || 0;
   const petFee  = parseFloat(document.getElementById('payment-pet-fee').value) || 0;
   const jobId   = document.getElementById('payment-job-id').value;
-  const j       = ownerJobs.find(j => j.id === jobId);
+  const j       = ownerJobs.find(j => j.id===jobId);
   const expected = j ? Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100) : 0;
   const note    = document.getElementById('payment-total-note');
-  if (petFee > 0) {
+  if (petFee>0) {
     note.textContent = `Total with pet fee: $${(amount+petFee).toFixed(2)}`;
     note.style.color = 'var(--gold-dark)';
   } else {
     const diff = amount - expected;
-    if (diff < 0)      { note.textContent = `Short by $${Math.abs(diff).toFixed(2)}`; note.style.color='var(--error)'; }
-    else if (diff > 0) { note.textContent = `Over by $${diff.toFixed(2)}`; note.style.color='var(--success)'; }
-    else               { note.textContent = ''; }
+    if (diff<0)      { note.textContent=`Short by $${Math.abs(diff).toFixed(2)}`; note.style.color='var(--error)'; }
+    else if (diff>0) { note.textContent=`Over by $${diff.toFixed(2)}`; note.style.color='var(--success)'; }
+    else             { note.textContent=''; }
   }
 }
 
@@ -635,10 +822,11 @@ async function confirmPayment() {
   const amount = document.getElementById('payment-amount').value;
   const petFee = document.getElementById('payment-pet-fee').value;
   const notes  = document.getElementById('payment-notes').value.trim() || null;
+  const paidDate = document.getElementById('payment-date').value;
   if (method) localStorage.setItem('owner_last_payment_method', method);
-  const total  = (parseFloat(amount)||0) + (parseFloat(petFee)||0);
+  const total  = (parseFloat(amount)||0)+(parseFloat(petFee)||0);
   const { error } = await db.from('jobs').update({
-    owner_paid_at:        new Date().toISOString(),
+    owner_paid_at:        paidDate ? new Date(paidDate+'T12:00:00').toISOString() : new Date().toISOString(),
     owner_payment_method: method,
     owner_payment_notes:  notes,
     owner_payment_amount: total ? Math.round(total*100) : null,
@@ -650,243 +838,313 @@ async function confirmPayment() {
   await loadData();
 }
 
-async function unmarkOwnerPaid(jobId) {
+async function unmarkPaid(jobId) {
   if (!confirm('Remove this payment record?')) return;
   await db.from('jobs').update({ owner_paid_at:null, owner_payment_method:null, owner_payment_notes:null, owner_payment_amount:null, owner_pet_fee_cents:null }).eq('id', jobId);
   showToast('Payment removed');
   await loadData();
 }
 
-// ── SCHEDULE VIEW TOGGLE ──
-function switchScheduleView(view, btn) {
-  schedView = view;
-  document.querySelectorAll('#page-schedule .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('schedule-list-view').style.display = view === 'list' ? 'block' : 'none';
-  document.getElementById('schedule-cal-view').style.display  = view === 'cal'  ? 'block' : 'none';
-  renderScheduleView();
-}
-
-function renderScheduleView() {
-  if (schedView === 'list') renderScheduleList();
-  else renderCalendar();
-}
-
-function renderScheduleList() {
-  const wrap    = document.getElementById('schedule-list-view');
-  const filter  = document.getElementById('sched-filter').value;
-  const propId  = document.getElementById('sched-prop').value;
-  const days    = parseInt(document.getElementById('sched-range').value);
-  const todayStr = new Date().toISOString().split('T')[0];
-  const endStr   = new Date(Date.now() + days*864e5).toISOString().split('T')[0];
-
-  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
-
-  if (filter === 'upcoming')   jobs = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
-  else if (filter === 'past')  jobs = jobs.filter(j => j.scheduled_date < todayStr);
-  else if (filter === 'unpaid') jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
-  else if (filter === 'pet')   jobs = jobs.filter(j => j.pet_fee_required);
-  else if (filter === 'short') jobs = jobs.filter(j => j.is_short_window);
-
-  if (!jobs.length) { wrap.innerHTML = '<div class="empty-state">📅<p>No cleanings found.</p></div>'; return; }
-
-  let html = '';
-  ownerProps.forEach(prop => {
-    const pj = jobs.filter(j => j.property_id === prop.id);
-    if (!pj.length) return;
-    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
-    <div class="card"><table>
-      <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Fees</th><th>Payment</th></tr></thead>
-      <tbody>${pj.map(j => {
-        const { str: times } = getJobTimes(j);
-        const isCompleted = j.status === 'completed';
-        const isPaid = !!j.owner_paid_at;
-        const isShort = j.is_short_window;
-        return `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
-          <td><strong>${formatDate(j.scheduled_date)}</strong>${isShort?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}</td>
-          <td style="font-size:12px;color:var(--text-muted)">${times}</td>
-          <td>${sourceTag(j.source)}</td>
-          <td>${j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—'}</td>
-          <td>
-            ${j.additional_cleaning_cents ? `<span class="fee-excessive">📸 $${Math.round(j.additional_cleaning_cents/100)}</span>` : ''}
-            ${j.pet_fee_required ? '<span class="fee-pet">🐶</span>' : ''}
-            ${!j.additional_cleaning_cents && !j.pet_fee_required ? '—' : ''}
-          </td>
-          <td>
-            ${j.source==='airbnb' ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb</span>' :
-              isPaid ? `<span class="paid-tag">✓ Paid</span>` :
-              isCompleted ? '<span class="unpaid-tag">Unpaid</span>' :
-              '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
-          </td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>`;
-  });
-  wrap.innerHTML = html;
-}
-
 // ── CALENDAR ──
 function renderCalendar() {
-  const grid  = document.getElementById('cal-grid');
-  const label = document.getElementById('cal-month-label');
-  const propId = document.getElementById('sched-prop').value;
-  const year  = calDate.getFullYear();
-  const month = calDate.getMonth();
+  const propId = document.getElementById('cal-prop').value;
+  const grid   = document.getElementById('cal-grid');
+  const year   = calDate.getFullYear();
+  const month  = calDate.getMonth();
+  document.getElementById('cal-month-label').textContent = calDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
 
-  label.textContent = calDate.toLocaleDateString('en-US', {month:'long', year:'numeric'});
-
-  // Build day headers
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Jobs for this month (and surrounding days)
-  const jobs = ownerJobs.filter(j => {
-    if (propId && j.property_id !== propId) return false;
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return d.getFullYear() === year && d.getMonth() === month;
+  const monthJobs = ownerJobs.filter(j => {
+    if (propId && j.property_id!==propId) return false;
+    const d = new Date(j.scheduled_date+'T12:00:00');
+    return d.getFullYear()===year && d.getMonth()===month;
   });
 
-  // Previous month filler
-  const prevDays = new Date(year, month, 0).getDate();
-  for (let i = firstDay - 1; i >= 0; i--) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${prevDays - i}</div></div>`;
-  }
+  const prevDays = new Date(year,month,0).getDate();
+  for (let i=firstDay-1; i>=0; i--) html += `<div class="cal-day other-month"><div class="cal-day-num">${prevDays-i}</div></div>`;
 
-  // This month days
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let d=1; d<=daysInMonth; d++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = dateStr === todayStr;
-    const dayJobs = jobs.filter(j => j.scheduled_date === dateStr);
+    const isToday = dateStr===todayStr;
+    const dayJobs = monthJobs.filter(j => j.scheduled_date===dateStr);
     html += `<div class="cal-day ${isToday?'today':''}">
-      <div class="cal-day-num">${isToday ? `<span>${d}</span>` : d}</div>
+      <div class="cal-day-num">${isToday?`<span>${d}</span>`:d}</div>
       ${dayJobs.map(j => {
-        const cls = j.source === 'airbnb' ? 'cal-event-airbnb' : j.source === 'vrbo' ? 'cal-event-vrbo' : 'cal-event-manual';
-        const guestLabel = guestName(j);
+        const cls = j.source==='airbnb'?'cal-event-airbnb':j.source==='vrbo'?'cal-event-vrbo':'cal-event-manual';
+        const guest = guestName(j) || j.source||'Manual';
         const charge = j.charge_cents ? ' $'+Math.round(j.charge_cents/100) : '';
-        return `<div class="cal-event ${cls}" style="cursor:pointer" onclick="openJobDetail('${j.id}')" title="${j.properties?.name||''} — ${j.ical_summary||''}">${guestLabel}${charge}</div>
-                <div class="cal-event cal-event-clean" style="cursor:pointer" onclick="openJobDetail('${j.id}')">🧹 Clean</div>`;
+        return `<div class="cal-event ${cls}" onclick="openJobDetail('${j.id}')" title="${j.properties?.name||''}">${guest}${charge}</div>
+                <div class="cal-event cal-event-clean" onclick="openJobDetail('${j.id}')">🧹 Clean</div>`;
       }).join('')}
     </div>`;
   }
 
-  // Next month filler
-  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-  for (let d = 1; d <= totalCells - firstDay - daysInMonth; d++) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
-  }
-
+  const total = Math.ceil((firstDay+daysInMonth)/7)*7;
+  for (let d=1; d<=total-firstDay-daysInMonth; d++) html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
   grid.innerHTML = html;
 }
+function calPrev()  { calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1); renderCalendar(); }
+function calNext()  { calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1); renderCalendar(); }
+function calToday() { calDate=new Date(); renderCalendar(); }
 
-function calPrev()  { calDate = new Date(calDate.getFullYear(), calDate.getMonth()-1, 1); renderCalendar(); }
-function calNext()  { calDate = new Date(calDate.getFullYear(), calDate.getMonth()+1, 1); renderCalendar(); }
-function calToday() { calDate = new Date(); renderCalendar(); }
-
-// ── FINANCIALS ──
-function renderFinancials() {
-  const wrap  = document.getElementById('financials-content');
-  const year  = parseInt(document.getElementById('fin-year').value);
-  const month = document.getElementById('fin-month').value;
-  const propId = document.getElementById('fin-prop').value;
-
-  let jobs = ownerJobs.filter(j => j.status === 'completed' && (!propId || j.property_id === propId));
-  jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getFullYear() === year);
-  if (month !== '') jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth() === parseInt(month));
-
-  const airbnbJobs = jobs.filter(j => j.source === 'airbnb');
-  const owesJobs   = jobs.filter(j => j.source !== 'airbnb');
-  const paidJobs   = owesJobs.filter(j => j.owner_paid_at);
-  const unpaidJobs = owesJobs.filter(j => !j.owner_paid_at);
-
-  const airbnbTotal  = airbnbJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const owesTotal    = owesJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-  const paidTotal    = paidJobs.reduce((s,j)=>s+(j.owner_payment_amount||(j.charge_cents||0)+(j.additional_cleaning_cents||0)),0);
-  const unpaidTotal  = unpaidJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-
-  let html = `
-    <div class="stats-row">
-      <div class="stat-card success">
-        <div class="stat-label">Airbnb paid (platform)</div>
-        <div class="stat-value">$${Math.round(airbnbTotal/100)}</div>
-        <div class="stat-sub">${airbnbJobs.length} jobs — handled by Airbnb</div>
-      </div>
-      <div class="stat-card gold">
-        <div class="stat-label">Owner owes (VRBO + manual)</div>
-        <div class="stat-value">$${Math.round(owesTotal/100)}</div>
-        <div class="stat-sub">${owesJobs.length} jobs</div>
-      </div>
-      <div class="stat-card success">
-        <div class="stat-label">You've paid</div>
-        <div class="stat-value">$${Math.round(paidTotal/100)}</div>
-        <div class="stat-sub">${paidJobs.length} jobs marked paid</div>
-      </div>
-      <div class="stat-card ${unpaidTotal?'':'success'}">
-        <div class="stat-label" style="${unpaidTotal?'color:var(--error)':''}">Outstanding</div>
-        <div class="stat-value" style="${unpaidTotal?'color:var(--error)':''}">$${Math.round(unpaidTotal/100)}</div>
-        <div class="stat-sub">${unpaidJobs.length} jobs unpaid</div>
-      </div>
-    </div>`;
-
-  if (!jobs.length) {
-    html += '<div class="card"><div class="empty-state">💰<p>No completed cleanings in this period.</p></div></div>';
-    wrap.innerHTML = html;
+// ── PROPERTIES ──
+async function renderProperties() {
+  const wrap = document.getElementById('properties-content');
+  if (!ownerProps.length) {
+    wrap.innerHTML = `<div class="empty-state">🏠<p>You have no properties yet.</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+        <button class="btn btn-outline" onclick="openClaimPropertyModal()">Claim existing</button>
+        <button class="btn" onclick="openAddPropertyModal()">+ Add new property</button>
+      </div></div>`;
     return;
   }
 
+  // Load photos for all properties
+  const propIds = ownerProps.map(p => p.id);
+  const { data: photos } = await db.from('photos').select('*').in('property_id', propIds).eq('photo_type','property').order('created_at',{ascending:false});
+  const photosByProp = {};
+  (photos||[]).forEach(ph => { if (!photosByProp[ph.property_id]) photosByProp[ph.property_id]=[]; photosByProp[ph.property_id].push(ph); });
+
+  // Load co-owners
+  const { data: coOwners } = await db.from('profiles').select('id,full_name,email').eq('role','owner');
+
+  let html = '';
   ownerProps.forEach(prop => {
-    const pj = jobs.filter(j => j.property_id === prop.id);
-    if (!pj.length) return;
-
-    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
-    <div class="card"><table>
-      <thead><tr>
-        <th>Date</th><th>Source</th><th>Guests</th><th>Base fee</th><th>Additional fees</th><th>Total</th><th>Payment status</th>
-      </tr></thead>
-      <tbody>${pj.map(j => {
-        const base  = j.charge_cents || 0;
-        const extra = j.additional_cleaning_cents || 0;
-        const total = base + extra;
-        const isPaid = !!j.owner_paid_at;
-        const isAirbnb = j.source === 'airbnb';
-        return `<tr>
-          <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-          <td>${sourceTag(j.source)}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${guestName(j)}</td>
-          <td>$${Math.round(base/100)}</td>
-          <td>
-            ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)} — ${j.additional_cleaning_notes||'excessive clean'}</span>` : ''}
-            ${j.pet_fee_required ? '<span class="fee-pet">🐶 Pet fee</span>' : ''}
-            ${!extra && !j.pet_fee_required ? '—' : ''}
-          </td>
-          <td><strong>$${Math.round(total/100)}</strong></td>
-          <td>
-            ${isAirbnb ? '<span style="color:var(--success);font-size:13px">✓ Airbnb pays</span>' :
-              isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method ? ' via '+j.owner_payment_method : ''}</span>${j.owner_payment_notes?`<div style="font-size:11px;color:var(--text-muted)">${j.owner_payment_notes}</div>`:''}` :
-              `<span class="unpaid-tag">Unpaid</span>`}
-          </td>
-        </tr>`;
-      }).join('')}
-      <tr style="background:var(--gold-light);font-weight:600">
-        <td colspan="3">Property total</td>
-        <td>$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
-        <td>$${Math.round(pj.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
-        <td style="color:var(--gold-dark)">$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0)/100)}</td>
-        <td></td>
-      </tr>
-      </tbody>
-    </table></div>`;
+    const propPhotos = photosByProp[prop.id]||[];
+    html += `<div class="prop-card">
+      <div class="prop-card-header">
+        <div>
+          <div class="prop-name">${prop.name}</div>
+          <div class="prop-address">📍 ${prop.address||'—'}</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${prop.id}')">✏️ Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="openInviteOwnerModal('${prop.id}')">👥 Invite co-owner</button>
+          <button class="btn btn-danger btn-sm" onclick="removeProperty('${prop.id}','${prop.name.replace(/'/g,"\\'")}')">Remove</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
+        <div style="background:var(--cream);border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Times</div>
+          <div style="font-size:13px">
+            ${prop.default_checkout_time?`🚪 Checkout ${formatTime12h(prop.default_checkout_time)}`:'—'}
+            ${prop.default_checkin_time?`<br>🏠 Check-in ${formatTime12h(prop.default_checkin_time)}`:''}
+          </div>
+        </div>
+        <div style="background:var(--cream);border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Cleaning rate</div>
+          <div style="font-size:18px;font-weight:500;color:var(--gold-dark)">${prop.default_charge_cents?'$'+Math.round(prop.default_charge_cents/100)+'/clean':'Not set'}</div>
+        </div>
+        <div style="background:var(--cream);border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">iCal sync</div>
+          <div style="font-size:12px">
+            ${prop.airbnb_ical_url?'<span class="source-airbnb" style="font-size:10px">Airbnb ✓</span>':'<span style="color:var(--text-muted);font-size:12px">Airbnb —</span>'}
+            ${prop.vrbo_ical_url?'<span class="source-vrbo" style="font-size:10px;margin-left:4px">VRBO ✓</span>':''}
+          </div>
+        </div>
+      </div>
+      ${prop.notes?`<div style="background:var(--gold-light);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--gold-dark);margin-bottom:12px">📌 ${prop.notes}</div>`:''}
+      ${propPhotos.length?`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+        ${propPhotos.slice(0,8).map(ph=>`<div style="aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer" onclick="window.open('${ph.storage_path}','_blank')">
+          <img src="${ph.storage_path}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;
   });
-
   wrap.innerHTML = html;
 }
 
+function openAddPropertyModal() {
+  document.getElementById('prop-modal-title').textContent = 'Add New Property';
+  document.getElementById('prop-modal-id').value = '';
+  ['prop-modal-name','prop-modal-address','prop-modal-notes','prop-modal-airbnb','prop-modal-vrbo'].forEach(id => document.getElementById(id).value='');
+  ['prop-modal-checkout','prop-modal-checkin','prop-modal-charge'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('prop-modal-photo-grid').innerHTML = '';
+  document.getElementById('prop-modal-photo-preview').innerHTML = '';
+  newPropPhotos = [];
+  document.getElementById('modal-property').classList.add('open');
+}
+
+function openEditPropertyModal(propId) {
+  const p = ownerProps.find(p => p.id===propId);
+  if (!p) return;
+  document.getElementById('prop-modal-title').textContent = 'Edit Property';
+  document.getElementById('prop-modal-id').value = p.id;
+  document.getElementById('prop-modal-name').value = p.name;
+  document.getElementById('prop-modal-address').value = p.address||'';
+  document.getElementById('prop-modal-checkout').value = p.default_checkout_time||'';
+  document.getElementById('prop-modal-checkin').value = p.default_checkin_time||'';
+  document.getElementById('prop-modal-charge').value = p.default_charge_cents ? Math.round(p.default_charge_cents/100) : '';
+  document.getElementById('prop-modal-notes').value = p.notes||'';
+  document.getElementById('prop-modal-airbnb').value = p.airbnb_ical_url||'';
+  document.getElementById('prop-modal-vrbo').value = p.vrbo_ical_url||'';
+  document.getElementById('prop-modal-photo-preview').innerHTML = '';
+  newPropPhotos = [];
+  document.getElementById('modal-property').classList.add('open');
+}
+
+function previewPropPhotos(input) {
+  const preview = document.getElementById('prop-modal-photo-preview');
+  Array.from(input.files).forEach((file,i) => {
+    if (file.size > 10*1024*1024) { showToast(`"${file.name}" too large — try a screenshot`); return; }
+    newPropPhotos.push(file);
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.innerHTML += `<div style="aspect-ratio:1;border-radius:8px;overflow:hidden">
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover"/>
+      </div>`;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveProperty() {
+  const propId = document.getElementById('prop-modal-id').value;
+  const name   = document.getElementById('prop-modal-name').value.trim();
+  const address = document.getElementById('prop-modal-address').value.trim();
+  const charge = document.getElementById('prop-modal-charge').value;
+  if (!name)    { showToast('Please enter a property name'); return; }
+  if (!address) { showToast('Please enter an address'); return; }
+
+  const isEdit = !!propId;
+  const oldProp = isEdit ? ownerProps.find(p => p.id===propId) : null;
+  const chargeChanged = isEdit && oldProp && charge && Math.round(parseFloat(charge)*100) !== oldProp.default_charge_cents;
+
+  const data = {
+    name, address,
+    default_checkout_time: document.getElementById('prop-modal-checkout').value || null,
+    default_checkin_time:  document.getElementById('prop-modal-checkin').value  || null,
+    default_charge_cents:  charge ? Math.round(parseFloat(charge)*100) : null,
+    notes: document.getElementById('prop-modal-notes').value.trim() || null,
+    airbnb_ical_url: document.getElementById('prop-modal-airbnb').value.trim() || null,
+    vrbo_ical_url:   document.getElementById('prop-modal-vrbo').value.trim()   || null,
+    owner_id: currentUser.id
+  };
+
+  let savedPropId = propId;
+  if (isEdit) {
+    const { error } = await db.from('properties').update(data).eq('id', propId);
+    if (error) { showToast('Error: '+error.message); return; }
+  } else {
+    const { data: newProp, error } = await db.from('properties').insert(data).select().single();
+    if (error) { showToast('Error: '+error.message); return; }
+    savedPropId = newProp.id;
+    // Notify admin via maintenance_requests as a workaround
+    await db.from('maintenance_requests').insert({
+      property_id: savedPropId,
+      submitted_by: currentUser.id,
+      category: 'other',
+      notes: `Owner ${currentProfile.full_name} added a new property: ${name} at ${address}. Charge rate: ${charge?'$'+charge+'/clean':'not set'}.`
+    });
+  }
+
+  // If charge changed, notify admin
+  if (chargeChanged) {
+    await db.from('maintenance_requests').insert({
+      property_id: propId,
+      submitted_by: currentUser.id,
+      category: 'other',
+      notes: `Owner ${currentProfile.full_name} changed the cleaning charge rate for ${name} from $${Math.round((oldProp.default_charge_cents||0)/100)} to $${charge}/clean.`
+    });
+  }
+
+  // Upload new photos
+  for (const file of newPropPhotos) {
+    const compressed = await compressImage(file);
+    const path = `jobs/property-${savedPropId}/${Date.now()}-${compressed.name}`;
+    const { error } = await db.storage.from('job photos').upload(path, compressed);
+    if (!error) {
+      const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
+      await db.from('photos').insert({ property_id: savedPropId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type:'property' });
+    }
+  }
+
+  closeModal('modal-property');
+  showToast(isEdit ? 'Property updated ✓' : 'Property added ✓');
+  newPropPhotos = [];
+  await loadData();
+  renderProperties();
+}
+
+async function removeProperty(propId, propName) {
+  if (!confirm(`Remove "${propName}" from your account? This will not delete the property from the system, just remove it from your view. Admin will be notified.`)) return;
+  const { error } = await db.from('properties').update({ owner_id: null }).eq('id', propId);
+  if (error) { showToast('Error: '+error.message); return; }
+  await db.from('maintenance_requests').insert({
+    property_id: propId,
+    submitted_by: currentUser.id,
+    category: 'other',
+    notes: `Owner ${currentProfile.full_name} removed property "${propName}" from their account.`
+  });
+  showToast('Property removed from your account');
+  await loadData();
+  renderProperties();
+}
+
+async function openClaimPropertyModal() {
+  const { data: unowned } = await db.from('properties').select('id,name,address').is('owner_id', null).order('name');
+  const wrap = document.getElementById('claimable-properties-list');
+  if (!unowned?.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px">No unowned properties available. Contact your admin.</div>';
+  } else {
+    wrap.innerHTML = unowned.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--cream-dark)">
+        <div>
+          <div style="font-weight:500">${p.name}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${p.address||'—'}</div>
+        </div>
+        <button class="btn btn-sm" onclick="claimProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')">Claim</button>
+      </div>`).join('');
+  }
+  document.getElementById('modal-claim-property').classList.add('open');
+}
+
+async function claimProperty(propId, propName) {
+  const { error } = await db.from('properties').update({ owner_id: currentUser.id }).eq('id', propId);
+  if (error) { showToast('Error: '+error.message); return; }
+  await db.from('maintenance_requests').insert({
+    property_id: propId,
+    submitted_by: currentUser.id,
+    category: 'other',
+    notes: `Owner ${currentProfile.full_name} claimed property "${propName}".`
+  });
+  closeModal('modal-claim-property');
+  showToast(`"${propName}" added to your account ✓`);
+  await loadData();
+  renderProperties();
+}
+
+function openInviteOwnerModal(propId) {
+  document.getElementById('invite-prop-id').value = propId;
+  document.getElementById('invite-email').value = '';
+  document.getElementById('modal-invite-owner').classList.add('open');
+}
+
+async function sendCoOwnerInvite() {
+  const propId = document.getElementById('invite-prop-id').value;
+  const email  = document.getElementById('invite-email').value.trim();
+  if (!email) { showToast('Please enter an email'); return; }
+  const prop = ownerProps.find(p => p.id===propId);
+  // Log the invite as a maintenance note for admin to action
+  await db.from('maintenance_requests').insert({
+    property_id: propId,
+    submitted_by: currentUser.id,
+    category: 'other',
+    notes: `Owner ${currentProfile.full_name} wants to invite ${email} as a co-owner of "${prop?.name}". Please create an account for them and assign this property.`
+  });
+  closeModal('modal-invite-owner');
+  showToast('Invite request sent to admin ✓');
+}
+
 // ── MAINTENANCE ──
-function filterMaint(filter, btn) {
-  maintFilter = filter;
+function filterMaint(f, btn) {
+  maintFilter = f;
   document.querySelectorAll('#page-maintenance .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderMaintenance();
@@ -894,24 +1152,16 @@ function filterMaint(filter, btn) {
 
 function renderMaintenance() {
   const wrap = document.getElementById('maintenance-content');
-  const catLabel = {
-    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
-    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
-    good_idea:'💡 Good Idea', evidence:'📸 Excessive Clean', job_released:'↩ Job Released'
-  };
-
+  const catLabel = { supply:'🛍️ Supply needed',plumbing:'🔧 Plumbing',appliance:'⚙️ Appliance',cosmetic:'🎨 Cosmetic',electrical:'⚡ Electrical',other:'📝 Other',good_idea:'💡 Good Idea',evidence:'📸 Excessive Clean',job_released:'↩ Job Released' };
   let reports = [...ownerReports];
-  if (maintFilter === 'open')     reports = reports.filter(r => r.status === 'open');
-  if (maintFilter === 'resolved') reports = reports.filter(r => r.status === 'resolved');
+  if (maintFilter==='open')     reports = reports.filter(r => r.status==='open');
+  if (maintFilter==='resolved') reports = reports.filter(r => r.status==='resolved');
 
-  if (!reports.length) {
-    wrap.innerHTML = `<div class="empty-state">✅<p>${maintFilter === 'open' ? 'No open reports.' : 'No reports found.'}</p></div>`;
-    return;
-  }
+  if (!reports.length) { wrap.innerHTML=`<div class="empty-state">✅<p>${maintFilter==='open'?'No open reports.':'No reports found.'}</p></div>`; return; }
 
   let html = '';
   ownerProps.forEach(prop => {
-    const pr = reports.filter(r => r.property_id === prop.id);
+    const pr = reports.filter(r => r.property_id===prop.id);
     if (!pr.length) return;
     html += `<div class="prop-section-title">🏠 ${prop.name}</div>`;
     pr.forEach(r => {
@@ -919,15 +1169,15 @@ function renderMaintenance() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <strong style="font-size:15px">${catLabel[r.category]||r.category}</strong>
-            <span style="font-size:12px;color:var(--text-muted);margin-left:10px">by ${r.profiles?.full_name||'—'} · ${timeAgo(r.created_at)}</span>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:8px">by ${r.profiles?.full_name||'—'} · ${timeAgo(r.created_at)}</span>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            ${r.status === 'open' ? `<button class="btn btn-sm btn-success" onclick="closeReport('${r.id}')">Mark closed</button>` : `<button class="btn btn-sm btn-outline" onclick="reopenReport('${r.id}')">Reopen</button>`}
+            ${r.status==='open'?`<button class="btn btn-sm btn-success" onclick="closeReport('${r.id}')">Mark closed</button>`:`<button class="btn btn-sm btn-outline" onclick="reopenReport('${r.id}')">Reopen</button>`}
             <span style="background:${r.status==='resolved'?'var(--success-bg)':'#FDEEEE'};color:${r.status==='resolved'?'var(--success)':'var(--error)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${r.status==='resolved'?'✓ Closed':'Open'}</span>
           </div>
         </div>
         <p style="font-size:14px;line-height:1.5;margin-bottom:10px">${r.notes}</p>
-        ${r.photo_urls?.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:72px;height:72px;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--cream-dark)" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
+        ${r.photo_urls?.length?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:72px;height:72px;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--cream-dark)" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>`:''}
         <div id="comments-${r.id}"><div style="font-size:12px;color:var(--text-muted)">Loading…</div></div>
         <div class="comment-box">
           <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')addComment('${r.id}')"/>
@@ -936,45 +1186,40 @@ function renderMaintenance() {
       </div>`;
     });
   });
-
-  wrap.innerHTML = html || '<div class="empty-state">✅<p>No reports found.</p></div>';
+  wrap.innerHTML = html||'<div class="empty-state">✅<p>No reports found.</p></div>';
   reports.forEach(r => loadComments(r.id));
 }
 
 async function closeReport(id) {
-  await db.from('maintenance_requests').update({ status:'resolved' }).eq('id', id);
-  ownerReports = ownerReports.map(r => r.id===id ? {...r, status:'resolved'} : r);
-  // Update badge
-  const openCount = ownerReports.filter(r => r.status==='open').length;
+  await db.from('maintenance_requests').update({status:'resolved'}).eq('id',id);
+  ownerReports = ownerReports.map(r => r.id===id?{...r,status:'resolved'}:r);
+  const openCount = ownerReports.filter(r=>r.status==='open').length;
   const badge = document.getElementById('maint-badge');
-  badge.style.display = openCount ? 'inline-flex' : 'none';
+  badge.style.display = openCount?'inline-flex':'none';
   badge.textContent = openCount;
   showToast('Report closed ✓');
   renderMaintenance();
 }
-
 async function reopenReport(id) {
-  await db.from('maintenance_requests').update({ status:'open' }).eq('id', id);
-  ownerReports = ownerReports.map(r => r.id===id ? {...r, status:'open'} : r);
+  await db.from('maintenance_requests').update({status:'open'}).eq('id',id);
+  ownerReports = ownerReports.map(r => r.id===id?{...r,status:'open'}:r);
   showToast('Report reopened');
   renderMaintenance();
 }
 
-// ── COMMENTS ──
 async function loadComments(reportId) {
   const wrap = document.getElementById(`comments-${reportId}`);
   if (!wrap) return;
-  const { data } = await db.from('report_comments').select('*, profiles(full_name, role)').eq('report_id', reportId).order('created_at', { ascending:true });
-  if (!data?.length) { wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet.</p>'; return; }
+  const { data } = await db.from('report_comments').select('*, profiles(full_name, role)').eq('report_id', reportId).order('created_at',{ascending:true});
+  if (!data?.length) { wrap.innerHTML='<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet.</p>'; return; }
   wrap.innerHTML = data.map(c => {
-    const isAdmin = c.profiles?.role === 'admin';
+    const isAdmin = c.profiles?.role==='admin';
     return `<div class="comment ${isAdmin?'comment-admin':'comment-owner'}">
       <div class="comment-meta">${c.profiles?.full_name||'—'}${isAdmin?' · Admin':''} · ${timeAgo(c.created_at)}</div>
       ${c.content}
     </div>`;
   }).join('');
 }
-
 async function addComment(reportId) {
   const input = document.getElementById(`comment-input-${reportId}`);
   const content = input.value.trim();
@@ -985,98 +1230,31 @@ async function addComment(reportId) {
   await loadComments(reportId);
 }
 
-function openJobDetail(jobId) {
-  const j = ownerJobs.find(j => j.id === jobId);
-  if (!j) return;
-  const prop = ownerProps.find(p => p.id === j.property_id);
-  const isPaid = !!j.owner_paid_at;
-  const isAirbnb = j.source === 'airbnb';
-  const isCompleted = j.status === 'completed';
-
-  const { checkoutTime, checkinTime } = getJobTimes(j);
-
-  document.getElementById('jd-title').textContent = `${prop?.name || 'Cleaning'} — ${formatDate(j.scheduled_date)}`;
-
-  const payBtn = document.getElementById('jd-pay-btn');
-  if (!isAirbnb && isCompleted && !isPaid) {
-    payBtn.style.display = 'inline-block';
-    payBtn.onclick = () => { closeModal('modal-job-detail'); openPaymentModal(j.id, prop?.name||'', j.scheduled_date); };
-  } else {
-    payBtn.style.display = 'none';
-  }
-
-  document.getElementById('jd-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
-      <div style="background:var(--cream);border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Source</div>
-        <div>${sourceTag(j.source)}</div>
-      </div>
-      <div style="background:var(--cream);border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Status</div>
-        <div><span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span></div>
-      </div>
-      ${j.ical_summary ? `<div style="background:var(--cream);border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Guests</div>
-        <div style="font-size:14px">${guestName(j)}</div>
-      </div>` : ''}
-      ${checkoutTime||checkinTime ? `<div style="background:var(--cream);border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Times</div>
-        <div style="font-size:13px">${[checkoutTime?'🚪 Out '+checkoutTime:null, checkinTime?'🏠 In '+checkinTime:null].filter(Boolean).join('<br>')}</div>
-      </div>` : ''}
-    </div>
-    <div style="border-top:1px solid var(--cream-dark);padding-top:16px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:13px;color:var(--text-muted)">Base charge</span>
-        <strong>${j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—'}</strong>
-      </div>
-      ${j.additional_cleaning_cents ? `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:13px;color:var(--error)">📸 Excessive clean fee${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span>
-        <strong style="color:var(--error)">+$${Math.round(j.additional_cleaning_cents/100)}</strong>
-      </div>` : ''}
-      ${j.pet_fee_required ? `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:13px;color:var(--gold-dark)">🐶 Pet fee</span>
-        <strong style="color:var(--gold-dark)">Collected</strong>
-      </div>` : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--cream-dark)">
-        <strong>Total</strong>
-        <strong style="font-size:18px;color:var(--navy)">$${Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100)}</strong>
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--cream-dark);padding-top:16px">
-      <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Payment</div>
-      ${isAirbnb ? '<div style="color:var(--success);font-size:14px">✓ Airbnb handles payment directly</div>' :
-        isPaid ? `<div style="color:var(--success);font-size:14px">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}${j.owner_payment_notes?'<br><span style="font-size:12px;color:var(--text-muted)">'+j.owner_payment_notes+'</span>':''}</div>` :
-        isCompleted ? '<div style="color:var(--error);font-size:14px">⚠ Not yet paid</div>' :
-        '<div style="color:var(--text-muted);font-size:13px">Job not yet completed</div>'}
-    </div>`;
-
-  document.getElementById('modal-job-detail').classList.add('open');
+// ── IMAGE COMPRESSION ──
+async function compressImage(file, maxWidth=1200, quality=0.8) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width>maxWidth) { height=Math.round(height*maxWidth/width); width=maxWidth; }
+        canvas.width=width; canvas.height=height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/,'.jpg'),{type:'image/jpeg'})), 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ── UTILS ──
-function showPage(name, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  el.classList.add('active');
-  if (name === 'schedule')    renderScheduleView();
-  if (name === 'financials')  renderFinancials();
-  if (name === 'maintenance') renderMaintenance();
-}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
 async function signOut() { await db.auth.signOut(); window.location.replace('login.html?signout=1'); }
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
-function formatDate(d) { if(!d) return '—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
-function timeAgo(dt) {
-  const diff = Date.now()-new Date(dt).getTime(), mins=Math.floor(diff/60000);
-  if(mins<1) return 'just now'; if(mins<60) return `${mins}m ago`;
-  const hrs=Math.floor(mins/60); if(hrs<24) return `${hrs}h ago`;
-  const days=Math.floor(hrs/24); if(days<30) return `${days}d ago`;
-  return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-}
 
 init();
 </script>
