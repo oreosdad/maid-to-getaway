@@ -1408,7 +1408,7 @@ async function renderReportHistory() {
       <div class="job-card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
-          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status}</span>
+          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
         </div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${categoryLabel[r.category] || r.category} · ${timeAgo(r.created_at)}</div>
         <div style="font-size:13px;margin-bottom:${r.photo_urls?.length ? '10px' : '10px'}">${r.notes}</div>
