@@ -1219,7 +1219,7 @@ async function checkNewJobShortWindow() {
   alert.style.display = 'none';
 }
 
-function autoPurgeTrash() {
+async function autoPurgeTrash() {
   const cutoff = new Date(Date.now() - 90 * 864e5).toISOString();
   const toPurge = allJobs.filter(j => j.deleted_at && j.deleted_at < cutoff);
   for (const job of toPurge) {
