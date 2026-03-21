@@ -349,7 +349,7 @@
     <div style="margin-bottom:14px">
       <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Add cleaning evidence photos (optional)</label>
       <label class="photo-upload-area">
-        <input type="file" id="evidence-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'evidence-preview')"/>
+        <input type="file" id="evidence-photos" multiple accept="image/*" onchange="previewPhotos(this, 'evidence-preview')"/>
         <div class="photo-upload-icon">📷</div>
         <div class="photo-upload-text">Tap to take or upload photos</div>
         <div class="photo-upload-hint">💡 Try not to upload too many similar photos — we have limited storage</div>
@@ -420,7 +420,7 @@
     <div style="margin-bottom:14px">
       <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos (optional)</label>
       <label class="photo-upload-area">
-        <input type="file" id="submit-job-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'submit-job-preview')"/>
+        <input type="file" id="submit-job-photos" multiple accept="image/*" onchange="previewPhotos(this, 'submit-job-preview')"/>
         <div class="photo-upload-icon">📷</div>
         <div class="photo-upload-text">Tap to take or upload photos</div>
         <div class="photo-upload-hint">📱 If a photo is too large, try a screenshot instead</div>
@@ -460,7 +460,7 @@
     <div style="margin-bottom:14px">
       <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos (optional)</label>
       <label class="photo-upload-area">
-        <input type="file" id="maint-photos" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'maint-preview')"/>
+        <input type="file" id="maint-photos" multiple accept="image/*" onchange="previewPhotos(this, 'maint-preview')"/>
         <div class="photo-upload-icon">📷</div>
         <div class="photo-upload-text">Tap to take or upload photos</div>
         <div class="photo-upload-hint">📱 If a photo is too large, try a screenshot instead</div>
@@ -490,7 +490,7 @@
     <div style="margin-bottom:14px">
       <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos</label>
       <label class="photo-upload-area">
-        <input type="file" id="evidence-photos-standalone" multiple accept="image/*" capture="environment" onchange="previewPhotos(this, 'evidence-standalone-preview')"/>
+        <input type="file" id="evidence-photos-standalone" multiple accept="image/*" onchange="previewPhotos(this, 'evidence-standalone-preview')"/>
         <div class="photo-upload-icon">📷</div>
         <div class="photo-upload-text">Tap to take or upload photos</div>
         <div class="photo-upload-hint">💡 Try not to upload too many similar photos — we have limited storage</div>
@@ -698,7 +698,7 @@ function jobCard(assignment) {
         ` : ''}
         ${isAccepted ? `
           <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
-          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}')">↩ Release job back to pool</button>
+          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at || ''}')">↩ Release job back to pool</button>
         ` : ''}
         ${(isDeclined || isUnsure) ? `
           <button class="btn btn-outline" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Actually, I can do it</button>
@@ -708,11 +708,35 @@ function jobCard(assignment) {
   </div>`;
 }
 
-async function releaseJob(assignmentId, jobId) {
+async function releaseJob(assignmentId, jobId, respondedAt) {
   if (!confirm('Release this job back to the open pool?')) return;
+
+  // Check if cleaner held it for more than 5 minutes
+  const heldMinutes = respondedAt
+    ? (Date.now() - new Date(respondedAt).getTime()) / 60000
+    : 0;
+
+  // Delete assignment and reset job
   await db.from('job_assignments').delete().eq('id', assignmentId);
-  const { error } = await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
+  const { error } = await db.from('jobs').update({
+    status: 'unassigned',
+    assigned_cleaner_id: null
+  }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
+
+  // If held > 5 minutes, notify admin via maintenance_requests as a workaround
+  if (heldMinutes > 5) {
+    const job = myJobs.find(a => a.id === assignmentId)?.jobs;
+    const propName = job?.properties?.name || 'Unknown property';
+    const date = job?.scheduled_date ? formatDate(job.scheduled_date) : '—';
+    await db.from('maintenance_requests').insert({
+      property_id: job?.property_id || null,
+      submitted_by: currentUser.id,
+      category: 'job_released',
+      notes: `${currentProfile.full_name} released a job back to the pool after holding it for ${Math.round(heldMinutes)} minutes. Property: ${propName}, Date: ${date}. Job needs to be reassigned.`
+    });
+  }
+
   showToast('Job released back to pool ✓');
   await loadMyJobs();
   await loadOpenJobs();
