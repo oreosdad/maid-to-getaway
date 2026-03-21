@@ -1371,11 +1371,42 @@ async function submitMaintenance() {
   renderReportHistory();
 }
 
-function openEvidenceModal() {
+async function openEvidenceModal() {
   const sel = document.getElementById('evidence-job');
-  sel.innerHTML = myJobs.map(a => `<option value="${a.job_id || a.jobs?.id}">${a.jobs?.properties?.name || 'Job'} — ${formatDate(a.jobs?.scheduled_date)}</option>`).join('');
+
+  // Load both assigned jobs AND cleaner-submitted jobs
+  const { data: submittedJobs } = await db
+    .from('jobs')
+    .select('id, scheduled_date, properties(name)')
+    .eq('submitted_by', currentUser.id)
+    .is('deleted_at', null)
+    .order('scheduled_date', { ascending: false })
+    .limit(50);
+
+  // Combine assigned jobs from myJobs + submitted jobs
+  const assignedOptions = myJobs.map(a => ({
+    id: a.job_id || a.jobs?.id,
+    label: `${a.jobs?.properties?.name || 'Job'} — ${formatDate(a.jobs?.scheduled_date)}`
+  }));
+
+  const submittedOptions = (submittedJobs || [])
+    .filter(j => !assignedOptions.find(a => a.id === j.id))
+    .map(j => ({
+      id: j.id,
+      label: `${j.properties?.name || 'Job'} — ${formatDate(j.scheduled_date)} (submitted)`
+    }));
+
+  const allOptions = [...assignedOptions, ...submittedOptions];
+
+  if (!allOptions.length) {
+    sel.innerHTML = '<option value="">No jobs found</option>';
+  } else {
+    sel.innerHTML = allOptions.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
+  }
+
   document.getElementById('evidence-notes').value = '';
   document.getElementById('evidence-standalone-preview').innerHTML = '';
+  selectedFilesMap['evidence-photos-standalone'] = [];
   document.getElementById('modal-evidence').classList.add('open');
 }
 
