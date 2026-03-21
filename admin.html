@@ -285,7 +285,26 @@
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
     .empty-state p { font-size: 15px; margin-top: 8px; }
 
-    .modal-overlay {
+    .short-window-alert {
+      background: linear-gradient(135deg, #C0392B, #E74C3C);
+      color: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: pulse-alert 1.5s ease-in-out infinite;
+      box-shadow: 0 4px 20px rgba(192,57,43,0.4);
+    }
+    .short-window-alert .alert-icon { font-size: 32px; flex-shrink: 0; }
+    .short-window-alert .alert-body { flex: 1; }
+    .short-window-alert .alert-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; letter-spacing: 0.02em; }
+    .short-window-alert .alert-sub { font-size: 13px; opacity: 0.9; }
+    @keyframes pulse-alert {
+      0%, 100% { box-shadow: 0 4px 20px rgba(192,57,43,0.4); }
+      50% { box-shadow: 0 4px 32px rgba(192,57,43,0.8); transform: scale(1.005); }
+    }
       display: none;
       position: fixed;
       inset: 0;
@@ -686,6 +705,13 @@
       <span class="modal-title">New cleaning job</span>
       <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
     </div>
+    <div class="short-window-alert" id="new-job-short-alert" style="display:none">
+      <div class="alert-icon">⚑</div>
+      <div class="alert-body">
+        <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
+        <div class="alert-sub" id="new-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
+      </div>
+    </div>
     <div class="form-group">
       <label>Property</label>
       <select id="job-property"><option value="">Select a property…</option></select>
@@ -703,11 +729,11 @@
     <div class="form-row">
       <div class="form-group">
         <label>Guest checkout</label>
-        <input type="datetime-local" id="job-checkout"/>
+        <input type="datetime-local" id="job-checkout" oninput="checkNewJobShortWindow()"/>
       </div>
       <div class="form-group">
         <label>Guest check-in</label>
-        <input type="datetime-local" id="job-checkin"/>
+        <input type="datetime-local" id="job-checkin" oninput="checkNewJobShortWindow()"/>
       </div>
     </div>
     <div class="form-group">
@@ -904,6 +930,13 @@
     <div class="modal-header">
       <span class="modal-title">Edit job</span>
       <button class="modal-close" onclick="closeModal('modal-edit-job')">✕</button>
+    </div>
+    <div class="short-window-alert" id="edit-job-short-alert" style="display:none">
+      <div class="alert-icon">⚑</div>
+      <div class="alert-body">
+        <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
+        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
+      </div>
     </div>
     <input type="hidden" id="edit-job-id"/>
     <div class="form-group">
@@ -1168,7 +1201,25 @@ async function loadJobs() {
   renderJobsTable(activeJobs);
 }
 
-async function autoPurgeTrash() {
+async function checkNewJobShortWindow() {
+  const cout = document.getElementById('job-checkout').value;
+  const cin  = document.getElementById('job-checkin').value;
+  const alert = document.getElementById('new-job-short-alert');
+  if (cout && cin) {
+    const gap = (new Date(cin) - new Date(cout)) / 36e5;
+    if (gap < 8 && gap > 0) {
+      const coutStr = new Date(cout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const cinStr  = new Date(cin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      document.getElementById('new-job-short-alert-sub').textContent =
+        `Only ${Math.round(gap * 10)/10} hours between checkout (${coutStr}) and check-in (${cinStr}). Coordinate with your cleaner immediately.`;
+      alert.style.display = 'flex';
+      return;
+    }
+  }
+  alert.style.display = 'none';
+}
+
+function autoPurgeTrash() {
   const cutoff = new Date(Date.now() - 90 * 864e5).toISOString();
   const toPurge = allJobs.filter(j => j.deleted_at && j.deleted_at < cutoff);
   for (const job of toPurge) {
@@ -1399,7 +1450,7 @@ function renderJobsTable(jobs) {
           <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
           <td>
             <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
-              ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑</span>' : ''}
+              ${job.is_short_window ? '<span style="background:linear-gradient(135deg,#C0392B,#E74C3C);color:white;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(192,57,43,0.4)">⚑ SHORT</span>' : ''}
               ${job.pet_fee_required ? `<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:3px 8px;font-size:13px;font-weight:500;white-space:nowrap">🐶${job.pet_fee_cents ? ' $'+Math.round(job.pet_fee_cents/100) : ''}</span>` : ''}
               ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
               ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
@@ -1448,10 +1499,22 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-status').value      = job.status;
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
-  document.getElementById('edit-job-flagged').checked   = job.is_short_window;
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
   document.getElementById('edit-job-notes').value                     = job.notes || '';
+
+  // Short turnaround alert
+  const shortAlert = document.getElementById('edit-job-short-alert');
+  if (job.is_short_window) {
+    shortAlert.style.display = 'flex';
+    const cout = job.guest_checkout ? new Date(job.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+    const cin  = job.guest_checkin  ? new Date(job.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+    const timePart = cout && cin ? ` Checkout ${cout} → Check-in ${cin}.` : '';
+    document.getElementById('edit-job-short-alert-sub').textContent =
+      `Less than 8 hours between guest checkout and next check-in.${timePart} Coordinate with your cleaner immediately.`;
+  } else {
+    shortAlert.style.display = 'none';
+  }
   // Show calculated pay date
   const payDateEl = document.getElementById('edit-job-pay-date-display');
   if (payDateEl) {
@@ -1474,7 +1537,7 @@ async function saveEditJob() {
   const checkin   = document.getElementById('edit-job-checkin').value || null;
   const status    = document.getElementById('edit-job-status').value;
 
-  let isShortWindow = document.getElementById('edit-job-flagged').checked;
+  let isShortWindow = false;
   if (checkout && checkin) {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
@@ -1622,7 +1685,7 @@ function openNewJobModal() {
   document.getElementById('job-notes').value = '';
   document.getElementById('job-pet-fee').checked = false;
   document.getElementById('job-pet-fee-cents').value = '';
-  document.getElementById('job-flagged').checked = false;
+  
   document.getElementById('modal-job').classList.add('open');
 }
 
@@ -1636,7 +1699,7 @@ async function saveJob() {
   const checkout  = document.getElementById('job-checkout').value || null;
   const checkin   = document.getElementById('job-checkin').value || null;
 
-  let isShortWindow = document.getElementById('job-flagged').checked;
+  let isShortWindow = false;
   if (checkout && checkin) {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
