@@ -824,6 +824,12 @@
       </div>
     </div>
     <div class="form-group">
+      <label>Assign owner</label>
+      <select id="edit-prop-owner">
+        <option value="">No owner assigned</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label>Notes</label>
       <textarea id="edit-prop-notes" placeholder="Gate code, parking, special instructions…"></textarea>
     </div>
@@ -968,6 +974,13 @@
       <label>Phone (optional)</label>
       <input type="tel" id="edit-cleaner-phone"/>
     </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="edit-cleaner-is-owner-operator"/>
+        🏠 Owner/operator — no payout tracking
+      </label>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px;padding-left:28px">Check this for yourself or your spouse. This cleaner won't appear in payment totals or the Payments page.</p>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-cleaner')">Cancel</button>
       <button class="btn" onclick="saveEditCleaner()">Save changes</button>
@@ -1056,6 +1069,9 @@ async function init() {
 
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
+  // Load owner profiles for property assignment dropdown
+  const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
+  window._ownerProfiles = owners || [];
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1640,6 +1656,12 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-charge').value         = p.default_charge_cents ? Math.round(p.default_charge_cents / 100) : '';
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
+
+  // Populate owner dropdown
+  const ownerSel = document.getElementById('edit-prop-owner');
+  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
+    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
+
   document.getElementById('modal-edit-property').classList.add('open');
 }
 
@@ -1651,15 +1673,15 @@ async function saveEditProperty() {
   if (!address) { showToast('Please enter an address'); return; }
 
   const { error } = await db.from('properties').update({
-    name,
-    address,
+    name, address,
     airbnb_ical_url:        document.getElementById('edit-prop-airbnb').value.trim() || null,
     vrbo_ical_url:          document.getElementById('edit-prop-vrbo').value.trim() || null,
     default_checkout_time:  document.getElementById('edit-prop-checkout-time').value || null,
     default_checkin_time:   document.getElementById('edit-prop-checkin-time').value || null,
     default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
     default_payout_cents:   document.getElementById('edit-prop-payout').value ? Math.round(parseFloat(document.getElementById('edit-prop-payout').value) * 100) : null,
-    notes:                  document.getElementById('edit-prop-notes').value.trim() || null
+    notes:                  document.getElementById('edit-prop-notes').value.trim() || null,
+    owner_id:               document.getElementById('edit-prop-owner').value || null
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
@@ -1760,21 +1782,21 @@ function openEditCleanerModal(id) {
   document.getElementById('edit-cleaner-name').value  = c.full_name;
   document.getElementById('edit-cleaner-email').value = c.email;
   document.getElementById('edit-cleaner-phone').value = c.phone || '';
+  document.getElementById('edit-cleaner-is-owner-operator').checked = c.is_owner_operator || false;
   document.getElementById('modal-edit-cleaner').classList.add('open');
 }
 
 async function saveEditCleaner() {
-  const id    = document.getElementById('edit-cleaner-id').value;
-  const name  = document.getElementById('edit-cleaner-name').value.trim();
-  const email = document.getElementById('edit-cleaner-email').value.trim();
-  const phone = document.getElementById('edit-cleaner-phone').value.trim() || null;
+  const id              = document.getElementById('edit-cleaner-id').value;
+  const name            = document.getElementById('edit-cleaner-name').value.trim();
+  const email           = document.getElementById('edit-cleaner-email').value.trim();
+  const phone           = document.getElementById('edit-cleaner-phone').value.trim() || null;
+  const isOwnerOperator = document.getElementById('edit-cleaner-is-owner-operator').checked;
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
   const { error } = await db.from('profiles').update({
-    full_name: name,
-    email,
-    phone
+    full_name: name, email, phone, is_owner_operator: isOwnerOperator
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
@@ -1805,11 +1827,15 @@ let allPaymentJobs = [];
 async function loadPaymentData() {
   const { data } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id))')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id, is_owner_operator))')
     .eq('status', 'completed')
     .is('deleted_at', null)
     .order('scheduled_date', { ascending: false });
-  allPaymentJobs = data || [];
+  // Exclude jobs where the assigned cleaner is an owner/operator
+  allPaymentJobs = (data || []).filter(j => {
+    const cleaner = j.job_assignments?.[0]?.profiles;
+    return !cleaner?.is_owner_operator;
+  });
 }
 
 function clearPaymentFilters() {
