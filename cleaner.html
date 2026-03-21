@@ -159,11 +159,6 @@
     .property-notes-card { background: var(--gold-light); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--gold-dark); margin-bottom: 14px; line-height: 1.5; }
     .first-login-banner { background: var(--navy); color: white; padding: 16px; border-radius: var(--radius); margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
     .divider { height: 1px; background: var(--cream-dark); margin: 16px 0; }
-    .sub-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 500; color: var(--text-muted); background: transparent; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
-    .sub-tab.active { background: var(--navy); color: white; }
-    .prop-photos { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 10px; }
-    .prop-photo { aspect-ratio: 1; border-radius: 8px; overflow: hidden; cursor: pointer; }
-    .prop-photo img { width: 100%; height: 100%; object-fit: cover; }
 
     /* HIGH FIVE */
     #highfive-overlay { display: none; position: fixed; inset: 0; background: rgba(28,43,58,0.75); z-index: 9000; align-items: center; justify-content: center; flex-direction: column; }
@@ -212,11 +207,12 @@
   <!-- MY JOBS -->
   <div class="tab-content active" id="tab-my-jobs">
     <div id="inactive-banner" style="display:none" class="inactive-banner">Your account is currently inactive. Contact your admin if you think this is a mistake.</div>
-    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden">
-      <button class="sub-tab active" id="subtab-upcoming" onclick="switchSubTab('upcoming')">Upcoming</button>
-      <button class="sub-tab" id="subtab-completed" onclick="switchSubTab('completed')">Completed</button>
+    <div id="first-login-banner" style="display:none" class="first-login-banner">
+      👋 Welcome! Please <strong>set a new password</strong> before getting started.
+      <br><button class="btn btn-gold btn-full" style="margin-top:10px;font-size:14px" onclick="switchTab('settings', document.querySelectorAll('.tab')[5])">Set my password →</button>
     </div>
-    <div id="my-jobs-list"></div>
+    <div class="section-label">Your upcoming jobs (next 30 days)</div>
+    <div id="my-jobs-list"><div class="empty-state"><div class="empty-state-icon">🧹</div><p>Loading your jobs…</p></div></div>
   </div>
 
   <!-- OPEN JOBS -->
@@ -244,7 +240,7 @@
   <!-- REPORT -->
   <div class="tab-content" id="tab-report">
     <div class="section-label">What type of report?</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
       <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openMaintenanceModal()">
         🔧<br><strong style="display:block;margin-top:6px;font-size:14px">Property Issue</strong>
         <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs, maintenance</span>
@@ -252,10 +248,6 @@
       <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openEvidenceModal()">
         📸<br><strong style="display:block;margin-top:6px;font-size:14px">Excessive Clean</strong>
         <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess, pet issues</span>
-      </button>
-      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openGoodIdeasModal()">
-        💡<br><strong style="display:block;margin-top:6px;font-size:14px">Good Ideas</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Property-specific suggestions</span>
       </button>
     </div>
     <div class="section-label">Your recent submissions</div>
@@ -513,37 +505,6 @@
   </div>
 </div>
 
-<!-- PROPERTY DETAIL MODAL -->
-<div class="modal-overlay" id="modal-property-detail">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="prop-detail-name">Property Details</div>
-    <div id="prop-detail-body"></div>
-    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-property-detail')">Close</button>
-  </div>
-</div>
-
-<!-- GOOD IDEAS MODAL -->
-<div class="modal-overlay" id="modal-good-ideas">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">💡 Good Ideas</div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Share property-specific suggestions with your admin — things that could improve the guest experience or make cleanings smoother.</p>
-    <div class="form-group">
-      <label>Property</label>
-      <select id="ideas-property"></select>
-    </div>
-    <div class="form-group">
-      <label>Your suggestion</label>
-      <textarea id="ideas-notes" placeholder="e.g. Guests always ask about extra towels — maybe stock an extra set in the closet?" style="min-height:100px"></textarea>
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-outline btn-full" onclick="closeModal('modal-good-ideas')">Cancel</button>
-      <button class="btn btn-gold btn-full" onclick="submitGoodIdea()">Submit idea</button>
-    </div>
-  </div>
-</div>
-
 <!-- HIGH FIVE OVERLAY -->
 <div id="highfive-overlay">
   <div class="highfive-hand">🖐️</div>
@@ -571,10 +532,10 @@ let masterChecklist = [];
 // ── AUTH ──
 async function init() {
   const { data: { session } } = await db.auth.getSession();
-  if (!session) { window.location.replace('login.html?signout=1'); return; }
+  if (!session) { window.location.replace('login.html'); return; }
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || profile.role !== 'cleaner') { window.location.replace('login.html?signout=1'); return; }
+  if (!profile || profile.role !== 'cleaner') { window.location.replace('login.html'); return; }
 
   currentUser = session.user;
   currentProfile = profile;
@@ -589,7 +550,11 @@ async function init() {
     document.getElementById('inactive-banner').style.display = 'block';
   }
 
+  // Check if first login (using default password indicator in prefs)
   const prefs = profile.notification_prefs || {};
+  if (!prefs.password_changed) {
+    document.getElementById('first-login-banner').style.display = 'block';
+  }
 
   // Load notification preferences
   loadNotifPrefs(prefs);
@@ -608,7 +573,7 @@ async function init() {
 }
 
 db.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') window.location.replace('login.html?signout=1');
+  if (event === 'SIGNED_OUT') window.location.replace('login.html');
 });
 
 // ── TABS ──
@@ -638,74 +603,60 @@ async function loadMyJobs() {
   renderMyJobs();
 }
 
-let myJobsSubTab = 'upcoming';
-
-function switchSubTab(tab) {
-  myJobsSubTab = tab;
-  document.getElementById('subtab-upcoming').classList.toggle('active', tab === 'upcoming');
-  document.getElementById('subtab-completed').classList.toggle('active', tab === 'completed');
-  renderMyJobs();
-}
-
 function renderMyJobs() {
   const list = document.getElementById('my-jobs-list');
   const active         = myJobs.filter(a => !['pending_payment','completed'].includes(a.jobs.status));
   const pendingPayment = myJobs.filter(a => a.jobs.status === 'pending_payment');
   const completed      = myJobs.filter(a => a.jobs.status === 'completed');
 
-  if (myJobsSubTab === 'completed') {
-    if (!pendingPayment.length && !completed.length) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>No completed jobs yet.</p></div>';
-      return;
-    }
-    let html = '';
-    if (pendingPayment.length) {
-      html += `<div class="section-label">Pending payment</div>` +
-        pendingPayment.map(a => {
-          const job = a.jobs;
-          return `<div class="job-card" style="border-color:var(--gold)">
-            <div class="job-card-header">
-              <div>
-                <div class="job-property">${job.properties?.name || '—'}</div>
-                <div class="job-date">${formatDate(job.scheduled_date)}</div>
-              </div>
-              <span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">⏳ Pending payment</span>
-            </div>
-            <div class="job-card-body">
-              <div class="job-meta">
-                ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
-                ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay by ${formatDate(job.cleaner_pay_date)}</span>` : ''}
-              </div>
-              <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo</button>
-            </div>
-          </div>`;
-        }).join('');
-    }
-    if (completed.length) {
-      html += `<div class="section-label">Completed & paid</div>` +
-        completed.map(a => {
-          const job = a.jobs;
-          return `<div class="job-card" style="opacity:0.7">
-            <div class="job-card-header">
-              <div>
-                <div class="job-property">${job.properties?.name || '—'}</div>
-                <div class="job-date">${formatDate(job.scheduled_date)}</div>
-              </div>
-              <span class="status-accepted">✓ Paid</span>
-            </div>
-          </div>`;
-        }).join('');
-    }
-    list.innerHTML = html;
+  if (!active.length && !pendingPayment.length && !completed.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No upcoming jobs in the next 30 days.</p></div>';
     return;
   }
 
-  // Upcoming tab
-  if (!active.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No upcoming jobs right now.</p></div>';
-    return;
+  let html = active.length ? active.map(a => jobCard(a)).join('') :
+    '<div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:28px">🎉</div><p style="font-size:13px">No active jobs right now.</p></div>';
+
+  if (pendingPayment.length) {
+    html += `<div class="section-label" style="margin-top:20px">Pending payment</div>` +
+      pendingPayment.map(a => {
+        const job = a.jobs;
+        return `<div class="job-card" style="border-color:var(--gold)">
+          <div class="job-card-header">
+            <div>
+              <div class="job-property">${job.properties?.name || '—'}</div>
+              <div class="job-date">${formatDate(job.scheduled_date)}</div>
+            </div>
+            <span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">⏳ Pending payment</span>
+          </div>
+          <div class="job-card-body">
+            <div class="job-meta">
+              ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+              ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay by ${formatDate(job.cleaner_pay_date)}</span>` : ''}
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo</button>
+          </div>
+        </div>`;
+      }).join('');
   }
-  list.innerHTML = active.map(a => jobCard(a)).join('');
+
+  if (completed.length) {
+    html += `<div class="section-label" style="margin-top:20px">Completed & paid</div>` +
+      completed.map(a => {
+        const job = a.jobs;
+        return `<div class="job-card" style="opacity:0.7">
+          <div class="job-card-header">
+            <div>
+              <div class="job-property">${job.properties?.name || '—'}</div>
+              <div class="job-date">${formatDate(job.scheduled_date)}</div>
+            </div>
+            <span class="status-accepted">✓ Paid</span>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  list.innerHTML = html;
 }
 
 function jobCard(assignment) {
@@ -746,8 +697,8 @@ function jobCard(assignment) {
           <button class="btn btn-danger"  onclick="openResponseModal('${assignment.id}','${job.id}','decline')">Decline</button>
         ` : ''}
         ${isAccepted ? `
-          <button class="btn btn-outline btn-sm" style="margin-bottom:8px" onclick="openPropertyDetailFromJob('${job.property_id}')">📋 View task list</button>
           <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
+          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}')">↩ Release job back to pool</button>
         ` : ''}
         ${(isDeclined || isUnsure) ? `
           <button class="btn btn-outline" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Actually, I can do it</button>
@@ -757,9 +708,14 @@ function jobCard(assignment) {
   </div>`;
 }
 
-function openPropertyDetailFromJob(propertyId) {
-  if (!propertyId) { showToast('No property linked to this job'); return; }
-  openPropertyDetail(propertyId);
+async function releaseJob(assignmentId, jobId) {
+  if (!confirm('Release this job back to the open pool?')) return;
+  await db.from('job_assignments').delete().eq('id', assignmentId);
+  const { error } = await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Job released back to pool ✓');
+  await loadMyJobs();
+  await loadOpenJobs();
 }
 
 // ── JOB RESPONSES ──
@@ -940,15 +896,9 @@ function openClaimModal(jobId, propName, date, payoutCents) {
 
 async function confirmClaimJob() {
   const jobId = document.getElementById('claim-job-id').value;
-  // First update the job status so RLS policy is satisfied (cleaner is now assigned)
-  const { error: jobErr } = await db.from('jobs').update({ status: 'accepted', assigned_cleaner_id: currentUser.id }).eq('id', jobId);
-  if (jobErr) { showToast('Error: ' + jobErr.message); return; }
   const { error } = await db.from('job_assignments').insert({ job_id: jobId, cleaner_id: currentUser.id, response: 'accepted', responded_at: new Date().toISOString() });
-  if (error) {
-    // Rollback job status if insert fails
-    await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
-    showToast('Error: ' + error.message); return;
-  }
+  if (error) { showToast('Error: ' + error.message); return; }
+  await db.from('jobs').update({ status: 'accepted' }).eq('id', jobId);
   closeModal('modal-claim');
   showToast('Job claimed ✓');
   await loadMyJobs();
@@ -1104,6 +1054,7 @@ function earningsCard(assignment, isPaid) {
   </div>`;
 }
 
+// ── PROPERTIES ──
 async function loadAllProperties() {
   const { data } = await db.from('properties').select('*').eq('is_active', true).order('name');
   allProperties = data || [];
@@ -1115,109 +1066,17 @@ async function renderProperties() {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No properties found.</p></div>';
     return;
   }
-
-  // Fetch photos for all properties
-  const propIds = allProperties.map(p => p.id);
-  const { data: photos } = await db.from('photos').select('*').in('property_id', propIds).eq('photo_type', 'property').order('created_at', { ascending: false });
-  const photosByProp = {};
-  (photos || []).forEach(ph => {
-    if (!photosByProp[ph.property_id]) photosByProp[ph.property_id] = [];
-    if (photosByProp[ph.property_id].length < 6) photosByProp[ph.property_id].push(ph);
-  });
-
-  list.innerHTML = allProperties.map(p => {
-    const propPhotos = photosByProp[p.id] || [];
-    const photoHtml = propPhotos.length ? `
-      <div class="prop-photos">
-        ${propPhotos.map(ph => `<div class="prop-photo"><img src="${ph.storage_path}" alt="Property photo" loading="lazy" onerror="this.parentElement.style.display='none'"/></div>`).join('')}
-      </div>` : '';
-    return `
-    <div class="prop-card" style="cursor:pointer" onclick="openPropertyDetail('${p.id}')">
-      ${photoHtml}
+  list.innerHTML = allProperties.map(p => `
+    <div class="prop-card">
       <div class="prop-name">${p.name}</div>
-      <div class="prop-address">📍 ${p.address || '—'}</div>
+      <div class="prop-address">📍 ${p.address}</div>
       ${p.notes ? `<div class="prop-notes">📌 ${p.notes}</div>` : ''}
       ${p.default_checkout_time || p.default_checkin_time ? `
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           ${p.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(p.default_checkout_time)}</span>` : ''}
           ${p.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(p.default_checkin_time)}</span>`  : ''}
         </div>` : ''}
-      <div style="margin-top:10px">
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openPropertyDetail('${p.id}')">📋 View task list</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Property detail modal (photos + checklist)
-async function openPropertyDetail(propertyId) {
-  const prop = allProperties.find(p => p.id === propertyId);
-  if (!prop) return;
-
-  // Fetch photos
-  const { data: photos } = await db.from('photos').select('*').eq('property_id', propertyId).eq('photo_type', 'property').order('created_at', { ascending: false }).limit(12);
-
-  // Fetch checklist
-  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
-  let items = [...masterChecklist];
-  if (propChecklist?.items?.length) {
-    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
-  }
-  const sections = {};
-  items.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
-
-  const photoHtml = photos?.length ? `
-    <div class="prop-photos" style="margin-bottom:16px">
-      ${photos.map(ph => `<div class="prop-photo"><img src="${ph.storage_path}" alt="Property photo" loading="lazy" onerror="this.parentElement.style.display='none'"/></div>`).join('')}
-    </div>` : '';
-
-  const checklistHtml = Object.entries(sections).map(([section, sectionItems]) => `
-    <div class="checklist-section">
-      <div class="checklist-section-title">${section}</div>
-      ${sectionItems.map(item => `
-        <label class="checklist-item">
-          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
-          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
-        </label>`).join('')}
     </div>`).join('');
-
-  document.getElementById('prop-detail-name').textContent = prop.name;
-  document.getElementById('prop-detail-body').innerHTML = `
-    ${prop.address ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">📍 ${prop.address}</div>` : ''}
-    ${prop.notes ? `<div class="prop-notes" style="margin-bottom:14px">📌 ${prop.notes}</div>` : ''}
-    ${prop.default_checkout_time || prop.default_checkin_time ? `
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        ${prop.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(prop.default_checkout_time)}</span>` : ''}
-        ${prop.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(prop.default_checkin_time)}</span>`  : ''}
-      </div>` : ''}
-    ${photoHtml}
-    ${checklistHtml || '<p style="font-size:13px;color:var(--text-muted)">No task list for this property.</p>'}
-  `;
-  document.getElementById('modal-property-detail').classList.add('open');
-}
-
-// ── GOOD IDEAS ──
-function openGoodIdeasModal() {
-  const sel = document.getElementById('ideas-property');
-  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('ideas-notes').value = '';
-  document.getElementById('modal-good-ideas').classList.add('open');
-}
-
-async function submitGoodIdea() {
-  const propertyId = document.getElementById('ideas-property').value;
-  const notes      = document.getElementById('ideas-notes').value.trim();
-  if (!notes) { showToast('Please describe your idea'); return; }
-  const { error } = await db.from('maintenance_requests').insert({
-    property_id: propertyId,
-    submitted_by: currentUser.id,
-    category: 'good_idea',
-    notes
-  });
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeModal('modal-good-ideas');
-  showToast('Idea submitted ✓ Admin will review it');
-  renderReportHistory();
 }
 
 // ── REPORT ──
@@ -1430,7 +1289,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 });
 
 // ── SIGN OUT ──
-async function signOut() { await db.auth.signOut(); window.location.replace('login.html?signout=1'); }
+async function signOut() { await db.auth.signOut(); window.location.replace('login.html'); }
 
 // ── TOAST ──
 function showToast(msg) {
