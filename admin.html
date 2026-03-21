@@ -1888,15 +1888,22 @@ async function saveCleaner() {
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
-  const { data, error } = await db.rpc('create_cleaner', {
-    p_name: name,
-    p_email: email,
-    p_phone: phone
+  const { data, error } = await db.auth.signUp({
+    email,
+    password: 'ChangeMe123!',
+    options: { data: { full_name: name, role: 'cleaner' } }
   });
-
   if (error) { showToast('Error: ' + error.message); return; }
+
+  if (data?.user?.id) {
+    await db.from('profiles').upsert({
+      id: data.user.id, email, full_name: name, phone,
+      role: 'cleaner', is_active: true, is_owner_operator: false
+    }, { onConflict: 'id' });
+  }
+
   closeModal('modal-cleaner');
-  showToast('Cleaner added ✓ — temp password: ChangeMe123!');
+  showToast('Cleaner added ✓ — they\'ll need to confirm their email');
   await loadCleaners();
   renderCleaners();
 }
@@ -2400,18 +2407,32 @@ async function saveNewUser() {
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
-  const { data, error } = await db.rpc('create_cleaner', {
-    p_name: name, p_email: email, p_phone: phone
+  // Sign up the user with a temp password
+  const { data, error } = await db.auth.signUp({
+    email,
+    password: 'ChangeMe123!',
+    options: {
+      data: { full_name: name, role }
+    }
   });
+
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update role if not cleaner
-  if (role !== 'cleaner') {
-    await db.from('profiles').update({ role, is_owner_operator: false }).eq('email', email);
+  // Update profile with phone, role, name (trigger may have created it)
+  if (data?.user?.id) {
+    await db.from('profiles').upsert({
+      id: data.user.id,
+      email,
+      full_name: name,
+      phone,
+      role,
+      is_active: true,
+      is_owner_operator: false
+    }, { onConflict: 'id' });
   }
 
   closeModal('modal-new-user');
-  showToast(`User created ✓ — temp password: ChangeMe123!`);
+  showToast(`✓ User created — they'll need to confirm their email (${email})`);
   loadUsers();
 }
 
