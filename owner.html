@@ -308,6 +308,21 @@
   </div>
 </div>
 
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="modal-job-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="jd-title">Cleaning Details</span>
+      <button class="modal-close" onclick="closeModal('modal-job-detail')">✕</button>
+    </div>
+    <div id="jd-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-job-detail')">Close</button>
+      <button class="btn btn-success" id="jd-pay-btn" style="display:none" onclick="closeModal('modal-job-detail')">Mark as paid →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -403,6 +418,14 @@ function showPage(name, el) {
 }
 
 // ── SOURCE TAG ──
+function guestName(j) {
+  if (!j.ical_summary) return '—';
+  // Airbnb iCal summary is usually "FirstName LastInitial." or "Reserved"
+  const s = j.ical_summary.trim();
+  if (s.toLowerCase() === 'reserved' || s.toLowerCase() === 'not available' || s.toLowerCase() === 'blocked') return '—';
+  return s;
+}
+
 function sourceTag(source) {
   if (source === 'airbnb') return '<span class="source-airbnb">Airbnb</span>';
   if (source === 'vrbo')   return '<span class="source-vrbo">VRBO</span>';
@@ -525,8 +548,7 @@ function renderOverviewTable(jobs) {
         return `<tr>
           <td><strong>${formatDate(j.scheduled_date)}</strong></td>
           <td style="font-size:12px;color:var(--text-muted)">${timesStr}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-          <td>${sourceTag(j.source)}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${guestName(j)}</td>
           <td>${charge}</td>
           <td>
             ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>` : ''}
@@ -633,7 +655,7 @@ function renderScheduleList() {
         return `<tr>
           <td><strong>${formatDate(j.scheduled_date)}</strong>${isShort?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}</td>
           <td style="font-size:12px;color:var(--text-muted)">${times}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary||'—'}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${guestName(j)}</td>
           <td>${sourceTag(j.source)}</td>
           <td>${j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—'}</td>
           <td>
@@ -689,9 +711,10 @@ function renderCalendar() {
       <div class="cal-day-num">${isToday ? `<span>${d}</span>` : d}</div>
       ${dayJobs.map(j => {
         const cls = j.source === 'airbnb' ? 'cal-event-airbnb' : j.source === 'vrbo' ? 'cal-event-vrbo' : 'cal-event-manual';
-        const label = j.ical_summary ? j.ical_summary.split(' ')[0] : (j.source||'Manual');
-        return `<div class="cal-event ${cls}" title="${j.properties?.name||''} — ${j.ical_summary||''}">${label}</div>
-                <div class="cal-event cal-event-clean">🧹 Clean</div>`;
+        const guestLabel = guestName(j);
+        const charge = j.charge_cents ? ' $'+Math.round(j.charge_cents/100) : '';
+        return `<div class="cal-event ${cls}" style="cursor:pointer" onclick="openJobDetail('${j.id}')" title="${j.properties?.name||''} — ${j.ical_summary||''}">${guestLabel}${charge}</div>
+                <div class="cal-event cal-event-clean" style="cursor:pointer" onclick="openJobDetail('${j.id}')">🧹 Clean</div>`;
       }).join('')}
     </div>`;
   }
@@ -778,7 +801,7 @@ function renderFinancials() {
         return `<tr>
           <td><strong>${formatDate(j.scheduled_date)}</strong></td>
           <td>${sourceTag(j.source)}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary||'—'}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${guestName(j)}</td>
           <td>$${Math.round(base/100)}</td>
           <td>
             ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)} — ${j.additional_cleaning_notes||'excessive clean'}</span>` : ''}
@@ -906,6 +929,77 @@ async function addComment(reportId) {
   if (error) { showToast('Error: '+error.message); return; }
   input.value = '';
   await loadComments(reportId);
+}
+
+function openJobDetail(jobId) {
+  const j = ownerJobs.find(j => j.id === jobId);
+  if (!j) return;
+  const prop = ownerProps.find(p => p.id === j.property_id);
+  const isPaid = !!j.owner_paid_at;
+  const isAirbnb = j.source === 'airbnb';
+  const isCompleted = j.status === 'completed';
+
+  const checkoutTime = j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+  const checkinTime  = j.guest_checkin  ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+
+  document.getElementById('jd-title').textContent = `${prop?.name || 'Cleaning'} — ${formatDate(j.scheduled_date)}`;
+
+  const payBtn = document.getElementById('jd-pay-btn');
+  if (!isAirbnb && isCompleted && !isPaid) {
+    payBtn.style.display = 'inline-block';
+    payBtn.onclick = () => { closeModal('modal-job-detail'); openPaymentModal(j.id, prop?.name||'', j.scheduled_date); };
+  } else {
+    payBtn.style.display = 'none';
+  }
+
+  document.getElementById('jd-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div style="background:var(--cream);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Source</div>
+        <div>${sourceTag(j.source)}</div>
+      </div>
+      <div style="background:var(--cream);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Status</div>
+        <div><span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span></div>
+      </div>
+      ${j.ical_summary ? `<div style="background:var(--cream);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Guests</div>
+        <div style="font-size:14px">${guestName(j)}</div>
+      </div>` : ''}
+      ${checkoutTime||checkinTime ? `<div style="background:var(--cream);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px">Times</div>
+        <div style="font-size:13px">${[checkoutTime?'🚪 Out '+checkoutTime:null, checkinTime?'🏠 In '+checkinTime:null].filter(Boolean).join('<br>')}</div>
+      </div>` : ''}
+    </div>
+    <div style="border-top:1px solid var(--cream-dark);padding-top:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--text-muted)">Base charge</span>
+        <strong>${j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—'}</strong>
+      </div>
+      ${j.additional_cleaning_cents ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--error)">📸 Excessive clean fee${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span>
+        <strong style="color:var(--error)">+$${Math.round(j.additional_cleaning_cents/100)}</strong>
+      </div>` : ''}
+      ${j.pet_fee_required ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--gold-dark)">🐶 Pet fee</span>
+        <strong style="color:var(--gold-dark)">Collected</strong>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--cream-dark)">
+        <strong>Total</strong>
+        <strong style="font-size:18px;color:var(--navy)">$${Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100)}</strong>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--cream-dark);padding-top:16px">
+      <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Payment</div>
+      ${isAirbnb ? '<div style="color:var(--success);font-size:14px">✓ Airbnb handles payment directly</div>' :
+        isPaid ? `<div style="color:var(--success);font-size:14px">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}${j.owner_payment_notes?'<br><span style="font-size:12px;color:var(--text-muted)">'+j.owner_payment_notes+'</span>':''}</div>` :
+        isCompleted ? '<div style="color:var(--error);font-size:14px">⚠ Not yet paid</div>' :
+        '<div style="color:var(--text-muted);font-size:13px">Job not yet completed</div>'}
+    </div>`;
+
+  document.getElementById('modal-job-detail').classList.add('open');
 }
 
 // ── UTILS ──
