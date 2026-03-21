@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maid to Getaway — Owner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
+      --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
+      --text: #1C2B3A; --text-muted: #7A7060; --white: #FFFFFF;
+      --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
+      --radius: 10px; --sidebar: 240px;
+    }
+
+    #auth-loading {
+      position: fixed; inset: 0; background: var(--cream);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; font-family: 'DM Sans', sans-serif;
+      color: var(--text-muted); font-size: 15px;
+    }
+
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+    #app { display: none; }
+    #app.ready { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: var(--sidebar); background: var(--navy); min-height: 100vh;
+      display: flex; flex-direction: column; padding: 28px 0;
+      position: fixed; top: 0; left: 0; z-index: 100;
+    }
+    .sidebar-brand { padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand h1 { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--white); line-height: 1.3; }
+    .sidebar-brand h1 em { font-style: italic; color: var(--gold); }
+    .sidebar-brand p { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+    .sidebar nav { padding: 20px 0; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer;
+      transition: all 0.15s; border-left: 3px solid transparent; text-decoration: none;
+    }
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
+    .nav-item.active { color: var(--white); border-left-color: var(--gold); background: rgba(255,255,255,0.07); font-weight: 500; }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .signout-btn {
+      width: 100%; padding: 9px; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius);
+      color: rgba(255,255,255,0.6); font-family: 'DM Sans', sans-serif;
+      font-size: 13px; cursor: pointer; transition: all 0.15s;
+    }
+    .signout-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+
+    .main { margin-left: var(--sidebar); flex: 1; padding: 32px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+    .page-header h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--navy); }
+
+    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--cream-dark); overflow: hidden; margin-bottom: 24px; }
+    .card-header { padding: 18px 24px; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 15px; font-weight: 500; color: var(--navy); }
+
+    .prop-section { margin-bottom: 40px; }
+    .prop-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .prop-address { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); background: var(--cream); border-bottom: 1px solid var(--cream-dark); }
+    td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--cream-dark); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #FDFBF7; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .badge-upcoming { background: #E8F0FB; color: #1A56A4; }
+    .badge-completed { background: var(--success-bg); color: var(--success); }
+    .badge-unassigned { background: #F0EFED; color: #7A7060; }
+
+    .fee-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-left: 4px; }
+    .fee-pet { background: #FBF3D5; color: var(--gold-dark); }
+    .fee-excessive { background: #FDEEEE; color: var(--error); }
+
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; border: 1px solid var(--cream-dark); }
+    .stat-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
+
+    .report-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 16px 20px; margin-bottom: 10px; }
+    .report-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .report-open { background: #FDEEEE; color: var(--error); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+    .report-closed { background: var(--success-bg); color: var(--success); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+
+    .comment-thread { margin-top: 12px; border-top: 1px solid var(--cream-dark); padding-top: 12px; }
+    .comment { padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+    .comment-admin { background: var(--navy); color: white; margin-left: 20px; }
+    .comment-owner { background: var(--cream); color: var(--text); margin-right: 20px; }
+    .comment-meta { font-size: 11px; opacity: 0.6; margin-bottom: 3px; }
+    .comment-input { display: flex; gap: 8px; margin-top: 8px; }
+    .comment-input input { flex: 1; padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; border: 1.5px solid var(--cream-dark); border-radius: 8px; background: var(--cream); outline: none; }
+    .comment-input input:focus { border-color: var(--gold); background: var(--white); }
+    .comment-input button { padding: 8px 14px; background: var(--gold); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+    .comment-input button:hover { background: var(--gold-dark); }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white; padding: 12px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .loading-inline { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div id="auth-loading">Checking your session…</div>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Maid to <em>Getaway</em></h1>
+      <p>Owner Portal</p>
+    </div>
+    <nav>
+      <a class="nav-item active" id="nav-schedule" onclick="showPage('schedule', this)">
+        <span class="nav-icon">📅</span> Schedule
+      </a>
+      <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
+        <span class="nav-icon">💰</span> Financials
+      </a>
+      <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance', this)">
+        <span class="nav-icon">🔧</span> Maintenance
+        <span id="maintenance-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto"></span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:10px" id="owner-name-display"></div>
+      <button class="signout-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- SCHEDULE -->
+    <div class="page active" id="page-schedule">
+      <div class="page-header"><h2>Cleaning Schedule</h2></div>
+      <div id="schedule-content"><div class="loading-inline">Loading…</div></div>
+    </div>
+
+    <!-- FINANCIALS -->
+    <div class="page" id="page-financials">
+      <div class="page-header"><h2>Financials</h2></div>
+      <div id="financials-content"><div class="loading-inline">Loading…</div></div>
+    </div>
+
+    <!-- MAINTENANCE -->
+    <div class="page" id="page-maintenance">
+      <div class="page-header"><h2>Maintenance & Reports</h2></div>
+      <div id="maintenance-content"><div class="loading-inline">Loading…</div></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let ownerProperties = [];
+let ownerJobs = [];
+let ownerReports = [];
+
+// ── AUTH ──
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { window.location.replace('login.html'); return; }
+
+  const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+  if (!profile || profile.role !== 'owner') { window.location.replace('login.html'); return; }
+
+  currentUser = session.user;
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('app').classList.add('ready');
+  document.getElementById('owner-name-display').textContent = profile.full_name;
+
+  await loadOwnerData();
+}
+
+db.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') window.location.replace('login.html?signout=1');
+});
+
+async function loadOwnerData() {
+  // Load properties owned by this user
+  const { data: props } = await db
+    .from('properties')
+    .select('*')
+    .eq('owner_id', currentUser.id)
+    .order('name');
+  ownerProperties = props || [];
+
+  if (!ownerProperties.length) {
+    document.getElementById('schedule-content').innerHTML = '<div class="empty-state">🏠<p>No properties assigned to your account yet. Contact your admin.</p></div>';
+    return;
+  }
+
+  const propIds = ownerProperties.map(p => p.id);
+
+  // Load jobs for those properties
+  const { data: jobs } = await db
+    .from('jobs')
+    .select('*, properties(name), job_assignments(profiles(full_name))')
+    .in('property_id', propIds)
+    .is('deleted_at', null)
+    .gte('scheduled_date', new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0])
+    .order('scheduled_date', { ascending: true });
+  ownerJobs = jobs || [];
+
+  // Load maintenance reports
+  const { data: reports } = await db
+    .from('maintenance_requests')
+    .select('*, properties(name), profiles!submitted_by(full_name)')
+    .in('property_id', propIds)
+    .order('created_at', { ascending: false });
+  ownerReports = reports || [];
+
+  // Update maintenance badge
+  const openCount = ownerReports.filter(r => r.status === 'open').length;
+  const badge = document.getElementById('maintenance-badge');
+  if (openCount > 0) { badge.style.display = 'inline'; badge.textContent = openCount; }
+
+  renderSchedule();
+}
+
+// ── NAVIGATION ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'schedule')    renderSchedule();
+  if (name === 'financials')  renderFinancials();
+  if (name === 'maintenance') renderMaintenance();
+}
+
+// ── SCHEDULE ──
+function renderSchedule() {
+  const wrap = document.getElementById('schedule-content');
+  if (!ownerJobs.length) {
+    wrap.innerHTML = '<div class="empty-state">📅<p>No upcoming cleanings scheduled.</p></div>';
+    return;
+  }
+
+  const now = new Date();
+  const upcoming = ownerJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00') >= now);
+  const past     = ownerJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00') < now);
+
+  let html = '';
+
+  ownerProperties.forEach(prop => {
+    const propUpcoming = upcoming.filter(j => j.property_id === prop.id);
+    const propPast     = past.filter(j => j.property_id === prop.id).slice(0, 10);
+
+    html += `<div class="prop-section">
+      <div class="prop-title">${prop.name}</div>
+      <div class="prop-address">📍 ${prop.address || '—'}</div>`;
+
+    if (propUpcoming.length) {
+      html += `<div class="card">
+        <div class="card-header"><span class="card-title">Upcoming cleanings</span></div>
+        <table>
+          <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
+          <tbody>${propUpcoming.map(j => {
+            const cleaner = j.job_assignments?.[0]?.profiles?.full_name || '—';
+            const isAssigned = ['assigned','accepted'].includes(j.status);
+            return `<tr>
+              <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+              <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
+              <td>${isAssigned ? cleaner : '<span style="color:var(--text-muted);font-size:13px">Unassigned</span>'}</td>
+              <td><span class="badge ${isAssigned ? 'badge-upcoming' : 'badge-unassigned'}">${isAssigned ? '✓ Scheduled' : 'Needs cleaner'}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+    } else {
+      html += `<div class="card"><div class="empty-state" style="padding:24px">📅 No upcoming cleanings scheduled for this property.</div></div>`;
+    }
+
+    if (propPast.length) {
+      html += `<div class="card">
+        <div class="card-header"><span class="card-title">Recent cleanings (last 90 days)</span></div>
+        <table>
+          <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
+          <tbody>${propPast.map(j => `<tr>
+            <td>${formatDate(j.scheduled_date)}</td>
+            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
+            <td style="font-size:13px">${j.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
+            <td><span class="badge badge-completed">✓ Completed</span></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  wrap.innerHTML = html;
+}
+
+// ── FINANCIALS ──
+function renderFinancials() {
+  const wrap = document.getElementById('financials-content');
+  const now = new Date();
+
+  let html = '';
+
+  ownerProperties.forEach(prop => {
+    const propJobs = ownerJobs.filter(j => j.property_id === prop.id && j.status === 'completed');
+
+    const mtd = propJobs.filter(j => {
+      const d = new Date(j.scheduled_date + 'T12:00:00');
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const ytd = propJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00').getFullYear() === now.getFullYear());
+
+    const mtdTotal = mtd.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+    const ytdTotal = ytd.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+
+    html += `<div class="prop-section">
+      <div class="prop-title">${prop.name}</div>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">This month</div>
+          <div class="stat-value">$${Math.round(mtdTotal / 100)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${now.getFullYear()} total</div>
+          <div class="stat-value">$${Math.round(ytdTotal / 100)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cleanings this year</div>
+          <div class="stat-value">${ytd.length}</div>
+        </div>
+      </div>`;
+
+    if (propJobs.length) {
+      html += `<div class="card">
+        <div class="card-header"><span class="card-title">Cleaning history & charges</span></div>
+        <table>
+          <thead><tr><th>Date</th><th>Base charge</th><th>Additional fees</th><th>Total</th></tr></thead>
+          <tbody>${propJobs.slice(0, 20).map(j => {
+            const base = j.charge_cents || 0;
+            const extra = j.additional_cleaning_cents || 0;
+            const petFee = j.pet_fee_required;
+            return `<tr>
+              <td>${formatDate(j.scheduled_date)}</td>
+              <td>$${Math.round(base / 100)}</td>
+              <td>
+                ${extra ? `<span>$${Math.round(extra / 100)}</span>` : ''}
+                ${petFee ? '<span class="fee-pill fee-pet">🐶 Pet fee</span>' : ''}
+                ${extra && j.additional_cleaning_notes ? `<span class="fee-pill fee-excessive">📸 ${j.additional_cleaning_notes}</span>` : ''}
+                ${!extra && !petFee ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
+              </td>
+              <td><strong>$${Math.round((base + extra) / 100)}</strong></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+    }
+    html += `</div>`;
+  });
+
+  wrap.innerHTML = html || '<div class="empty-state">💰<p>No completed cleanings yet.</p></div>';
+}
+
+// ── MAINTENANCE ──
+function renderMaintenance() {
+  const wrap = document.getElementById('maintenance-content');
+
+  const categoryLabel = {
+    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
+    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
+    good_idea:'💡 Good Idea', evidence:'📸 Excessive Clean'
+  };
+
+  let html = '';
+
+  ownerProperties.forEach(prop => {
+    const propReports = ownerReports.filter(r => r.property_id === prop.id);
+    if (!propReports.length) return;
+
+    html += `<div class="prop-section">
+      <div class="prop-title">${prop.name}</div>`;
+
+    propReports.forEach(r => {
+      html += `<div class="report-card" id="report-${r.id}">
+        <div class="report-card-header">
+          <div>
+            <strong style="font-size:14px">${categoryLabel[r.category] || r.category}</strong>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:8px">by ${r.profiles?.full_name || '—'} · ${timeAgo(r.created_at)}</span>
+          </div>
+          <span class="${r.status === 'resolved' ? 'report-closed' : 'report-open'}">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
+        </div>
+        <p style="font-size:14px;color:var(--text);margin-bottom:8px">${r.notes}</p>
+        ${r.photo_urls?.length ? `
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+            ${r.photo_urls.map(url => `
+              <div style="width:60px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')">
+                <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+              </div>`).join('')}
+          </div>` : ''}
+        <div class="comment-thread" id="comments-${r.id}">
+          <div class="loading-inline" style="padding:8px">Loading comments…</div>
+        </div>
+        <div class="comment-input">
+          <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') addComment('${r.id}')"/>
+          <button onclick="addComment('${r.id}')">Send</button>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  if (!html) {
+    wrap.innerHTML = '<div class="empty-state">✅<p>No maintenance reports for your properties.</p></div>';
+    return;
+  }
+
+  wrap.innerHTML = html;
+
+  // Load comments for all reports
+  ownerReports.forEach(r => loadComments(r.id));
+}
+
+// ── COMMENTS ──
+async function loadComments(reportId) {
+  const wrap = document.getElementById(`comments-${reportId}`);
+  if (!wrap) return;
+
+  const { data: comments } = await db
+    .from('report_comments')
+    .select('*, profiles(full_name, role)')
+    .eq('report_id', reportId)
+    .order('created_at', { ascending: true });
+
+  if (!comments?.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:4px 0">No comments yet.</p>';
+    return;
+  }
+
+  wrap.innerHTML = comments.map(c => {
+    const isAdmin = c.profiles?.role === 'admin';
+    return `<div class="comment ${isAdmin ? 'comment-admin' : 'comment-owner'}">
+      <div class="comment-meta">${c.profiles?.full_name || '—'} · ${timeAgo(c.created_at)}</div>
+      <div>${c.content}</div>
+    </div>`;
+  }).join('');
+}
+
+async function addComment(reportId) {
+  const input = document.getElementById(`comment-input-${reportId}`);
+  const content = input.value.trim();
+  if (!content) return;
+
+  const { error } = await db.from('report_comments').insert({
+    report_id: reportId,
+    author_id: currentUser.id,
+    content
+  });
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  input.value = '';
+  await loadComments(reportId);
+}
+
+// ── SIGN OUT ──
+async function signOut() {
+  await db.auth.signOut();
+  window.location.replace('login.html?signout=1');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── HELPERS ──
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+}
+function timeAgo(dt) {
+  const diff = Date.now() - new Date(dt).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+init();
+</script>
+</body>
+</html>
