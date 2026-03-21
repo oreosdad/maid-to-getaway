@@ -450,6 +450,7 @@
     <div class="form-group">
       <label>Category</label>
       <select id="maint-category">
+        <option value="supply">Supply needed</option>
         <option value="plumbing">Plumbing</option>
         <option value="appliance">Appliance</option>
         <option value="cosmetic">Cosmetic damage (paint, trim, etc.)</option>
@@ -546,6 +547,18 @@
     <div class="modal-handle"></div>
     <div class="modal-title">Edit report</div>
     <input type="hidden" id="edit-report-id"/>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="edit-report-category">
+        <option value="supply">Supply needed</option>
+        <option value="plumbing">Plumbing</option>
+        <option value="appliance">Appliance</option>
+        <option value="cosmetic">Cosmetic damage</option>
+        <option value="electrical">Electrical</option>
+        <option value="good_idea">Good Idea</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
     <div class="form-group">
       <label>Notes</label>
       <textarea id="edit-report-notes" style="min-height:100px"></textarea>
@@ -1273,9 +1286,9 @@ async function renderReportHistory() {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No recent submissions</p></div>';
     return;
   }
-  const categoryLabel = { plumbing:'Plumbing', appliance:'Appliance', cosmetic:'Cosmetic', electrical:'Electrical', other:'Other', good_idea:'💡 Good Idea', job_released:'Job Released', evidence:'Excessive Clean' };
+  const categoryLabel = { supply:'🛍️ Supply needed', plumbing:'Plumbing', appliance:'Appliance', cosmetic:'Cosmetic', electrical:'Electrical', other:'Other', good_idea:'💡 Good Idea', job_released:'Job Released', evidence:'Excessive Clean' };
   list.innerHTML = data.map(r => `
-    <div class="job-card" style="margin-bottom:10px">
+    <div class="job-card" style="margin-bottom:10px" data-report-id="${r.id}" data-report-notes="${encodeURIComponent(r.notes)}" data-report-category="${r.category || ''}">
       <div class="job-card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
@@ -1285,11 +1298,32 @@ async function renderReportHistory() {
         <div style="font-size:13px;margin-bottom:10px">${r.notes}</div>
         ${r.status !== 'resolved' ? `
         <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" onclick="openEditReport('${r.id}', ${JSON.stringify(r.notes).replace(/'/g,"&#39;")})">✏️ Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">🗑️ Delete</button>
+          <button class="btn btn-outline btn-sm" onclick="openEditReportFromCard(this)">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteReportFromCard(this)">🗑️ Delete</button>
         </div>` : ''}
       </div>
     </div>`).join('');
+}
+
+function openEditReportFromCard(btn) {
+  const card = btn.closest('[data-report-id]');
+  const id       = card.getAttribute('data-report-id');
+  const notes    = decodeURIComponent(card.getAttribute('data-report-notes'));
+  const category = card.getAttribute('data-report-category');
+  document.getElementById('edit-report-id').value = id;
+  document.getElementById('edit-report-notes').value = notes;
+  const catSel = document.getElementById('edit-report-category');
+  if (catSel) catSel.value = category || 'other';
+  document.getElementById('modal-edit-report').classList.add('open');
+}
+
+async function deleteReportFromCard(btn) {
+  if (!confirm('Delete this report?')) return;
+  const id = btn.closest('[data-report-id]').getAttribute('data-report-id');
+  const { error } = await db.from('maintenance_requests').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Report deleted ✓');
+  renderReportHistory();
 }
 
 function openEditReport(id, notes) {
@@ -1299,10 +1333,11 @@ function openEditReport(id, notes) {
 }
 
 async function saveEditReport() {
-  const id    = document.getElementById('edit-report-id').value;
-  const notes = document.getElementById('edit-report-notes').value.trim();
+  const id       = document.getElementById('edit-report-id').value;
+  const notes    = document.getElementById('edit-report-notes').value.trim();
+  const category = document.getElementById('edit-report-category')?.value || 'other';
   if (!notes) { showToast('Please enter notes'); return; }
-  const { error } = await db.from('maintenance_requests').update({ notes }).eq('id', id);
+  const { error } = await db.from('maintenance_requests').update({ notes, category }).eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-report');
   showToast('Report updated ✓');
