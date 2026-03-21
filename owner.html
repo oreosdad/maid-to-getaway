@@ -7,12 +7,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
       --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
       --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
       --text: #1C2B3A; --text-muted: #7A7060; --white: #FFFFFF;
       --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
-      --radius: 10px; --sidebar: 240px;
+      --radius: 10px; --sidebar: 220px;
     }
 
     #auth-loading {
@@ -22,9 +23,10 @@
       color: var(--text-muted); font-size: 15px;
     }
 
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
     #app { display: none; }
-    #app.ready { display: flex; min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+    #app { display: none; min-height: 100vh; }
+    #app.ready { display: flex; }
 
     .sidebar {
       width: var(--sidebar); background: var(--navy); min-height: 100vh;
@@ -56,16 +58,26 @@
     .main { margin-left: var(--sidebar); flex: 1; padding: 32px; }
     .page { display: none; }
     .page.active { display: block; }
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    }
     .page-header h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--navy); }
 
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; border: 1px solid var(--cream-dark); }
+    .stat-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
+    .stat-card.gold .stat-value { color: var(--gold-dark); }
+    .stat-card.alert .stat-value { color: var(--error); }
+
     .card { background: var(--white); border-radius: 14px; border: 1px solid var(--cream-dark); overflow: hidden; margin-bottom: 24px; }
-    .card-header { padding: 18px 24px; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; justify-content: space-between; }
+    .card-header { padding: 18px 24px; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .card-title { font-size: 15px; font-weight: 500; color: var(--navy); }
 
-    .prop-section { margin-bottom: 40px; }
-    .prop-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .prop-address { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .prop-header { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); margin: 32px 0 16px; display: flex; align-items: center; gap: 10px; }
+    .prop-header:first-child { margin-top: 0; }
 
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); background: var(--cream); border-bottom: 1px solid var(--cream-dark); }
@@ -74,39 +86,48 @@
     tr:hover td { background: #FDFBF7; }
 
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .badge-upcoming { background: #E8F0FB; color: #1A56A4; }
-    .badge-completed { background: var(--success-bg); color: var(--success); }
-    .badge-unassigned { background: #F0EFED; color: #7A7060; }
+    .badge-scheduled { background: var(--success-bg); color: var(--success); }
+    .badge-unassigned { background: #FBF3D5; color: var(--gold-dark); }
+    .badge-completed { background: #E8F0FB; color: #1A56A4; }
+    .badge-upcoming { background: var(--cream); color: var(--text-muted); }
 
-    .fee-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-left: 4px; }
+    .fee-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-left: 4px; }
     .fee-pet { background: #FBF3D5; color: var(--gold-dark); }
     .fee-excessive { background: #FDEEEE; color: var(--error); }
 
-    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; border: 1px solid var(--cream-dark); }
-    .stat-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
-    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
+    .report-row { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 18px 20px; margin-bottom: 12px; }
+    .report-open { background: #FDEEEE; color: var(--error); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .report-closed { background: var(--success-bg); color: var(--success); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 
-    .report-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 16px 20px; margin-bottom: 10px; }
-    .report-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .report-open { background: #FDEEEE; color: var(--error); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-    .report-closed { background: var(--success-bg); color: var(--success); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+    .comment { padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+    .comment-admin { background: var(--navy); color: white; margin-left: 24px; }
+    .comment-owner { background: var(--cream); color: var(--text); margin-right: 24px; border: 1px solid var(--cream-dark); }
+    .comment-meta { font-size: 11px; opacity: 0.65; margin-bottom: 3px; font-weight: 500; }
+    .comment-box { display: flex; gap: 10px; margin-top: 12px; }
+    .comment-box input {
+      flex: 1; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+      border: 1.5px solid var(--cream-dark); border-radius: var(--radius);
+      background: var(--cream); outline: none; color: var(--text);
+    }
+    .comment-box input:focus { border-color: var(--gold); background: var(--white); }
+    .btn { padding: 10px 20px; background: var(--gold); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+    .btn:hover { background: var(--gold-dark); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--cream-dark); color: var(--text-muted); }
+    .btn-outline:hover { background: var(--cream-dark); color: var(--text); }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
 
-    .comment-thread { margin-top: 12px; border-top: 1px solid var(--cream-dark); padding-top: 12px; }
-    .comment { padding: 8px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
-    .comment-admin { background: var(--navy); color: white; margin-left: 20px; }
-    .comment-owner { background: var(--cream); color: var(--text); margin-right: 20px; }
-    .comment-meta { font-size: 11px; opacity: 0.6; margin-bottom: 3px; }
-    .comment-input { display: flex; gap: 8px; margin-top: 8px; }
-    .comment-input input { flex: 1; padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 13px; border: 1.5px solid var(--cream-dark); border-radius: 8px; background: var(--cream); outline: none; }
-    .comment-input input:focus { border-color: var(--gold); background: var(--white); }
-    .comment-input button { padding: 8px 14px; background: var(--gold); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
-    .comment-input button:hover { background: var(--gold-dark); }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--cream-dark); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+    .filter-btn.active, .filter-btn:hover { background: var(--navy); color: var(--white); border-color: var(--navy); }
 
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white; padding: 12px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
-    .toast.show { opacity: 1; transform: translateY(0); }
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+    .empty-state p { font-size: 15px; margin-top: 8px; }
     .loading-inline { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: var(--white); padding: 12px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .alert-banner { background: #FDF0EE; border: 1px solid #F0C4BE; color: var(--error); padding: 14px 20px; border-radius: var(--radius); font-size: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
   </style>
 </head>
 <body>
@@ -117,10 +138,13 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <h1>Maid to <em>Getaway</em></h1>
-      <p>Owner Portal</p>
+      <p id="owner-portal-label">Owner Portal</p>
     </div>
     <nav>
-      <a class="nav-item active" id="nav-schedule" onclick="showPage('schedule', this)">
+      <a class="nav-item active" id="nav-overview" onclick="showPage('overview', this)">
+        <span class="nav-icon">🏠</span> Overview
+      </a>
+      <a class="nav-item" id="nav-schedule" onclick="showPage('schedule', this)">
         <span class="nav-icon">📅</span> Schedule
       </a>
       <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
@@ -128,32 +152,72 @@
       </a>
       <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance', this)">
         <span class="nav-icon">🔧</span> Maintenance
-        <span id="maintenance-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto"></span>
+        <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
     </nav>
     <div class="sidebar-footer">
-      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:10px" id="owner-name-display"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px" id="owner-greeting"></div>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
     </div>
   </aside>
 
   <main class="main">
 
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <h2>Overview</h2>
+        <span style="font-size:13px;color:var(--text-muted)" id="overview-date"></span>
+      </div>
+      <div id="overview-alerts"></div>
+      <div class="stats-row" id="overview-stats"></div>
+      <div id="overview-upcoming"></div>
+    </div>
+
     <!-- SCHEDULE -->
-    <div class="page active" id="page-schedule">
-      <div class="page-header"><h2>Cleaning Schedule</h2></div>
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <h2>Cleaning Schedule</h2>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterSchedule('upcoming', this)">Upcoming</button>
+          <button class="filter-btn" onclick="filterSchedule('past', this)">Past</button>
+          <button class="filter-btn" onclick="filterSchedule('all', this)">All</button>
+        </div>
+      </div>
       <div id="schedule-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
     <!-- FINANCIALS -->
     <div class="page" id="page-financials">
-      <div class="page-header"><h2>Financials</h2></div>
+      <div class="page-header">
+        <h2>Financials</h2>
+        <div style="display:flex;gap:8px">
+          <select id="fin-year" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          </select>
+          <select id="fin-month" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All months</option>
+            <option value="0">January</option><option value="1">February</option>
+            <option value="2">March</option><option value="3">April</option>
+            <option value="4">May</option><option value="5">June</option>
+            <option value="6">July</option><option value="7">August</option>
+            <option value="8">September</option><option value="9">October</option>
+            <option value="10">November</option><option value="11">December</option>
+          </select>
+        </div>
+      </div>
       <div id="financials-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
     <!-- MAINTENANCE -->
     <div class="page" id="page-maintenance">
-      <div class="page-header"><h2>Maintenance & Reports</h2></div>
+      <div class="page-header">
+        <h2>Maintenance & Reports</h2>
+        <div class="filter-row">
+          <button class="filter-btn active" id="maint-filter-open" onclick="filterMaintenance('open', this)">Open</button>
+          <button class="filter-btn" onclick="filterMaintenance('resolved', this)">Closed</button>
+          <button class="filter-btn" onclick="filterMaintenance('all', this)">All</button>
+        </div>
+      </div>
       <div id="maintenance-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
@@ -173,6 +237,8 @@ let currentUser = null;
 let ownerProperties = [];
 let ownerJobs = [];
 let ownerReports = [];
+let scheduleFilter = 'upcoming';
+let maintenanceFilter = 'open';
 
 // ── AUTH ──
 async function init() {
@@ -185,7 +251,18 @@ async function init() {
   currentUser = session.user;
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
-  document.getElementById('owner-name-display').textContent = profile.full_name;
+  document.getElementById('owner-greeting').textContent = profile.full_name;
+  document.getElementById('overview-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+  // Populate year filter
+  const yearSel = document.getElementById('fin-year');
+  const thisYear = new Date().getFullYear();
+  for (let y = thisYear; y >= thisYear - 3; y--) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    if (y === thisYear) opt.selected = true;
+    yearSel.appendChild(opt);
+  }
 
   await loadOwnerData();
 }
@@ -195,45 +272,36 @@ db.auth.onAuthStateChange((event) => {
 });
 
 async function loadOwnerData() {
-  // Load properties owned by this user
-  const { data: props } = await db
-    .from('properties')
-    .select('*')
-    .eq('owner_id', currentUser.id)
-    .order('name');
+  const { data: props } = await db.from('properties').select('*').eq('owner_id', currentUser.id).order('name');
   ownerProperties = props || [];
 
   if (!ownerProperties.length) {
-    document.getElementById('schedule-content').innerHTML = '<div class="empty-state">🏠<p>No properties assigned to your account yet. Contact your admin.</p></div>';
+    ['overview-stats', 'overview-upcoming', 'schedule-content', 'financials-content', 'maintenance-content'].forEach(id => {
+      document.getElementById(id).innerHTML = '<div class="empty-state">🏠<p>No properties assigned yet. Contact your admin.</p></div>';
+    });
     return;
   }
 
   const propIds = ownerProperties.map(p => p.id);
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0];
 
-  // Load jobs for those properties
-  const { data: jobs } = await db
-    .from('jobs')
-    .select('*, properties(name), job_assignments(profiles(full_name))')
-    .in('property_id', propIds)
-    .is('deleted_at', null)
-    .gte('scheduled_date', new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0])
-    .order('scheduled_date', { ascending: true });
-  ownerJobs = jobs || [];
+  const [jobsRes, reportsRes] = await Promise.all([
+    db.from('jobs')
+      .select('*, properties(name), job_assignments(profiles(full_name))')
+      .in('property_id', propIds)
+      .is('deleted_at', null)
+      .gte('scheduled_date', ninetyDaysAgo)
+      .order('scheduled_date', { ascending: true }),
+    db.from('maintenance_requests')
+      .select('*, properties(name), profiles!submitted_by(full_name, role)')
+      .in('property_id', propIds)
+      .order('created_at', { ascending: false })
+  ]);
 
-  // Load maintenance reports
-  const { data: reports } = await db
-    .from('maintenance_requests')
-    .select('*, properties(name), profiles!submitted_by(full_name)')
-    .in('property_id', propIds)
-    .order('created_at', { ascending: false });
-  ownerReports = reports || [];
+  ownerJobs    = jobsRes.data    || [];
+  ownerReports = reportsRes.data || [];
 
-  // Update maintenance badge
-  const openCount = ownerReports.filter(r => r.status === 'open').length;
-  const badge = document.getElementById('maintenance-badge');
-  if (openCount > 0) { badge.style.display = 'inline'; badge.textContent = openCount; }
-
-  renderSchedule();
+  renderOverview();
 }
 
 // ── NAVIGATION ──
@@ -247,194 +315,288 @@ function showPage(name, el) {
   if (name === 'maintenance') renderMaintenance();
 }
 
+// ── OVERVIEW ──
+function renderOverview() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const in14 = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
+
+  const upcoming     = ownerJobs.filter(j => j.scheduled_date >= todayStr);
+  const unassigned   = upcoming.filter(j => j.status === 'unassigned');
+  const next14       = upcoming.filter(j => j.scheduled_date <= in14);
+  const openReports  = ownerReports.filter(r => r.status === 'open');
+  const mtdJobs      = ownerJobs.filter(j => {
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && j.status === 'completed';
+  });
+  const mtdTotal = mtdJobs.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+
+  // Update maintenance badge
+  const badge = document.getElementById('maint-badge');
+  if (openReports.length) {
+    badge.style.display = 'inline-flex';
+    badge.textContent = openReports.length;
+  }
+
+  // Alerts
+  let alerts = '';
+  if (unassigned.length) {
+    alerts += `<div class="alert-banner">⚠️ <strong>${unassigned.length} upcoming job${unassigned.length > 1 ? 's' : ''}</strong> still need${unassigned.length === 1 ? 's' : ''} a cleaner assigned.</div>`;
+  }
+  if (openReports.length) {
+    alerts += `<div class="alert-banner" style="background:#FBF3D5;border-color:#F0D98A;color:var(--gold-dark)">🔧 <strong>${openReports.length} open maintenance report${openReports.length > 1 ? 's' : ''}</strong> need${openReports.length === 1 ? 's' : ''} attention.</div>`;
+  }
+  document.getElementById('overview-alerts').innerHTML = alerts;
+
+  // Stats
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Upcoming cleanings</div>
+      <div class="stat-value">${upcoming.length}</div>
+    </div>
+    <div class="stat-card ${unassigned.length ? 'alert' : ''}">
+      <div class="stat-label">Unassigned jobs</div>
+      <div class="stat-value">${unassigned.length}</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">${now.toLocaleDateString('en-US',{month:'long'})} charges</div>
+      <div class="stat-value">$${Math.round(mtdTotal / 100)}</div>
+    </div>
+    <div class="stat-card ${openReports.length ? 'alert' : ''}">
+      <div class="stat-label">Open reports</div>
+      <div class="stat-value">${openReports.length}</div>
+    </div>`;
+
+  // Next 14 days
+  let upcomingHtml = '';
+  if (next14.length) {
+    upcomingHtml = `<div class="card">
+      <div class="card-header"><span class="card-title">Next 14 days</span></div>
+      <table>
+        <thead><tr><th>Date</th><th>Property</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
+        <tbody>${next14.map(j => {
+          const cleaner = j.job_assignments?.[0]?.profiles?.full_name;
+          const isAssigned = ['assigned','accepted'].includes(j.status);
+          return `<tr>
+            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+            <td>${j.properties?.name || '—'}</td>
+            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
+            <td style="font-size:13px">${cleaner || '<span style="color:var(--text-muted)">Unassigned</span>'}</td>
+            <td><span class="badge ${isAssigned ? 'badge-scheduled' : 'badge-unassigned'}">${isAssigned ? '✓ Scheduled' : 'Needs cleaner'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  } else {
+    upcomingHtml = `<div class="card"><div class="empty-state">✅<p>No cleanings in the next 14 days.</p></div></div>`;
+  }
+  document.getElementById('overview-upcoming').innerHTML = upcomingHtml;
+}
+
 // ── SCHEDULE ──
+function filterSchedule(filter, btn) {
+  scheduleFilter = filter;
+  document.querySelectorAll('#page-schedule .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSchedule();
+}
+
 function renderSchedule() {
   const wrap = document.getElementById('schedule-content');
-  if (!ownerJobs.length) {
-    wrap.innerHTML = '<div class="empty-state">📅<p>No upcoming cleanings scheduled.</p></div>';
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  let jobs = [...ownerJobs];
+  if (scheduleFilter === 'upcoming') jobs = jobs.filter(j => j.scheduled_date >= todayStr);
+  else if (scheduleFilter === 'past') jobs = jobs.filter(j => j.scheduled_date < todayStr).reverse();
+
+  if (!jobs.length) {
+    wrap.innerHTML = '<div class="empty-state">📅<p>No cleanings found.</p></div>';
     return;
   }
 
-  const now = new Date();
-  const upcoming = ownerJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00') >= now);
-  const past     = ownerJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00') < now);
-
+  // Group by property
   let html = '';
-
   ownerProperties.forEach(prop => {
-    const propUpcoming = upcoming.filter(j => j.property_id === prop.id);
-    const propPast     = past.filter(j => j.property_id === prop.id).slice(0, 10);
-
-    html += `<div class="prop-section">
-      <div class="prop-title">${prop.name}</div>
-      <div class="prop-address">📍 ${prop.address || '—'}</div>`;
-
-    if (propUpcoming.length) {
-      html += `<div class="card">
-        <div class="card-header"><span class="card-title">Upcoming cleanings</span></div>
-        <table>
-          <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
-          <tbody>${propUpcoming.map(j => {
-            const cleaner = j.job_assignments?.[0]?.profiles?.full_name || '—';
-            const isAssigned = ['assigned','accepted'].includes(j.status);
-            return `<tr>
-              <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-              <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-              <td>${isAssigned ? cleaner : '<span style="color:var(--text-muted);font-size:13px">Unassigned</span>'}</td>
-              <td><span class="badge ${isAssigned ? 'badge-upcoming' : 'badge-unassigned'}">${isAssigned ? '✓ Scheduled' : 'Needs cleaner'}</span></td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>
-      </div>`;
-    } else {
-      html += `<div class="card"><div class="empty-state" style="padding:24px">📅 No upcoming cleanings scheduled for this property.</div></div>`;
-    }
-
-    if (propPast.length) {
-      html += `<div class="card">
-        <div class="card-header"><span class="card-title">Recent cleanings (last 90 days)</span></div>
-        <table>
-          <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
-          <tbody>${propPast.map(j => `<tr>
-            <td>${formatDate(j.scheduled_date)}</td>
+    const propJobs = jobs.filter(j => j.property_id === prop.id);
+    if (!propJobs.length) return;
+    html += `<div class="prop-header">🏠 ${prop.name}</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th><th>Charge</th></tr></thead>
+        <tbody>${propJobs.map(j => {
+          const cleaner = j.job_assignments?.[0]?.profiles?.full_name;
+          const isAssigned = ['assigned','accepted'].includes(j.status);
+          const isCompleted = j.status === 'completed';
+          const charge = j.charge_cents ? '$' + Math.round(j.charge_cents / 100) : '—';
+          const extra = j.additional_cleaning_cents ? ` <span class="fee-tag fee-excessive">+$${Math.round(j.additional_cleaning_cents/100)}</span>` : '';
+          const pet = j.pet_fee_required ? ' <span class="fee-tag fee-pet">🐶</span>' : '';
+          return `<tr>
+            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
             <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-            <td style="font-size:13px">${j.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
-            <td><span class="badge badge-completed">✓ Completed</span></td>
-          </tr>`).join('')}</tbody>
-        </table>
-      </div>`;
-    }
-
-    html += `</div>`;
+            <td style="font-size:13px">${cleaner || '<span style="color:var(--text-muted)">—</span>'}</td>
+            <td><span class="badge ${isCompleted ? 'badge-completed' : isAssigned ? 'badge-scheduled' : 'badge-unassigned'}">${isCompleted ? '✓ Completed' : isAssigned ? 'Scheduled' : 'Needs cleaner'}</span></td>
+            <td>${charge}${extra}${pet}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
   });
 
-  wrap.innerHTML = html;
+  wrap.innerHTML = html || '<div class="empty-state">📅<p>No cleanings found.</p></div>';
 }
 
 // ── FINANCIALS ──
 function renderFinancials() {
   const wrap = document.getElementById('financials-content');
+  const selectedYear  = parseInt(document.getElementById('fin-year')?.value || new Date().getFullYear());
+  const selectedMonth = document.getElementById('fin-month')?.value;
   const now = new Date();
 
-  let html = '';
+  let completedJobs = ownerJobs.filter(j => j.status === 'completed');
 
-  ownerProperties.forEach(prop => {
-    const propJobs = ownerJobs.filter(j => j.property_id === prop.id && j.status === 'completed');
-
-    const mtd = propJobs.filter(j => {
-      const d = new Date(j.scheduled_date + 'T12:00:00');
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    const ytd = propJobs.filter(j => new Date(j.scheduled_date + 'T12:00:00').getFullYear() === now.getFullYear());
-
-    const mtdTotal = mtd.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
-    const ytdTotal = ytd.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
-
-    html += `<div class="prop-section">
-      <div class="prop-title">${prop.name}</div>
-      <div class="stat-row">
-        <div class="stat-card">
-          <div class="stat-label">This month</div>
-          <div class="stat-value">$${Math.round(mtdTotal / 100)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">${now.getFullYear()} total</div>
-          <div class="stat-value">$${Math.round(ytdTotal / 100)}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Cleanings this year</div>
-          <div class="stat-value">${ytd.length}</div>
-        </div>
-      </div>`;
-
-    if (propJobs.length) {
-      html += `<div class="card">
-        <div class="card-header"><span class="card-title">Cleaning history & charges</span></div>
-        <table>
-          <thead><tr><th>Date</th><th>Base charge</th><th>Additional fees</th><th>Total</th></tr></thead>
-          <tbody>${propJobs.slice(0, 20).map(j => {
-            const base = j.charge_cents || 0;
-            const extra = j.additional_cleaning_cents || 0;
-            const petFee = j.pet_fee_required;
-            return `<tr>
-              <td>${formatDate(j.scheduled_date)}</td>
-              <td>$${Math.round(base / 100)}</td>
-              <td>
-                ${extra ? `<span>$${Math.round(extra / 100)}</span>` : ''}
-                ${petFee ? '<span class="fee-pill fee-pet">🐶 Pet fee</span>' : ''}
-                ${extra && j.additional_cleaning_notes ? `<span class="fee-pill fee-excessive">📸 ${j.additional_cleaning_notes}</span>` : ''}
-                ${!extra && !petFee ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
-              </td>
-              <td><strong>$${Math.round((base + extra) / 100)}</strong></td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>
-      </div>`;
-    }
-    html += `</div>`;
+  // Apply filters
+  completedJobs = completedJobs.filter(j => {
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return d.getFullYear() === selectedYear;
   });
-
-  wrap.innerHTML = html || '<div class="empty-state">💰<p>No completed cleanings yet.</p></div>';
-}
-
-// ── MAINTENANCE ──
-function renderMaintenance() {
-  const wrap = document.getElementById('maintenance-content');
-
-  const categoryLabel = {
-    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
-    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
-    good_idea:'💡 Good Idea', evidence:'📸 Excessive Clean'
-  };
-
-  let html = '';
-
-  ownerProperties.forEach(prop => {
-    const propReports = ownerReports.filter(r => r.property_id === prop.id);
-    if (!propReports.length) return;
-
-    html += `<div class="prop-section">
-      <div class="prop-title">${prop.name}</div>`;
-
-    propReports.forEach(r => {
-      html += `<div class="report-card" id="report-${r.id}">
-        <div class="report-card-header">
-          <div>
-            <strong style="font-size:14px">${categoryLabel[r.category] || r.category}</strong>
-            <span style="font-size:12px;color:var(--text-muted);margin-left:8px">by ${r.profiles?.full_name || '—'} · ${timeAgo(r.created_at)}</span>
-          </div>
-          <span class="${r.status === 'resolved' ? 'report-closed' : 'report-open'}">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
-        </div>
-        <p style="font-size:14px;color:var(--text);margin-bottom:8px">${r.notes}</p>
-        ${r.photo_urls?.length ? `
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-            ${r.photo_urls.map(url => `
-              <div style="width:60px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')">
-                <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
-              </div>`).join('')}
-          </div>` : ''}
-        <div class="comment-thread" id="comments-${r.id}">
-          <div class="loading-inline" style="padding:8px">Loading comments…</div>
-        </div>
-        <div class="comment-input">
-          <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') addComment('${r.id}')"/>
-          <button onclick="addComment('${r.id}')">Send</button>
-        </div>
-      </div>`;
+  if (selectedMonth !== '' && selectedMonth !== undefined) {
+    completedJobs = completedJobs.filter(j => {
+      return new Date(j.scheduled_date + 'T12:00:00').getMonth() === parseInt(selectedMonth);
     });
+  }
 
-    html += `</div>`;
-  });
+  const totalCharge = completedJobs.reduce((s, j) => s + (j.charge_cents || 0), 0);
+  const totalExtra  = completedJobs.reduce((s, j) => s + (j.additional_cleaning_cents || 0), 0);
+  const totalPet    = completedJobs.filter(j => j.pet_fee_required).length;
 
-  if (!html) {
-    wrap.innerHTML = '<div class="empty-state">✅<p>No maintenance reports for your properties.</p></div>';
+  let html = `
+    <div class="stats-row">
+      <div class="stat-card gold">
+        <div class="stat-label">Base cleaning fees</div>
+        <div class="stat-value">$${Math.round(totalCharge / 100)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Additional fees</div>
+        <div class="stat-value">$${Math.round(totalExtra / 100)}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Total billed</div>
+        <div class="stat-value">$${Math.round((totalCharge + totalExtra) / 100)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cleanings completed</div>
+        <div class="stat-value">${completedJobs.length}</div>
+      </div>
+    </div>`;
+
+  if (!completedJobs.length) {
+    html += '<div class="card"><div class="empty-state">💰<p>No completed cleanings in this period.</p></div></div>';
+    wrap.innerHTML = html;
     return;
   }
 
-  wrap.innerHTML = html;
+  ownerProperties.forEach(prop => {
+    const propJobs = completedJobs.filter(j => j.property_id === prop.id);
+    if (!propJobs.length) return;
 
-  // Load comments for all reports
-  ownerReports.forEach(r => loadComments(r.id));
+    html += `<div class="prop-header">🏠 ${prop.name}</div>
+    <div class="card">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Guests</th><th>Base fee</th><th>Additional fees</th><th>Total</th>
+        </tr></thead>
+        <tbody>${propJobs.map(j => {
+          const base  = j.charge_cents || 0;
+          const extra = j.additional_cleaning_cents || 0;
+          const total = base + extra;
+          const extraLabel = j.additional_cleaning_notes ? j.additional_cleaning_notes : 'extra';
+          return `<tr>
+            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
+            <td>$${Math.round(base / 100)}</td>
+            <td>
+              ${extra ? `<span class="fee-tag fee-excessive">📸 $${Math.round(extra/100)} — ${extraLabel}</span>` : ''}
+              ${j.pet_fee_required ? '<span class="fee-tag fee-pet">🐶 Pet fee</span>' : ''}
+              ${!extra && !j.pet_fee_required ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
+            </td>
+            <td><strong>$${Math.round(total / 100)}</strong></td>
+          </tr>`;
+        }).join('')}
+        <tr style="background:var(--gold-light)">
+          <td colspan="2" style="font-weight:500">Property total</td>
+          <td style="font-weight:500">$${Math.round(propJobs.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
+          <td style="font-weight:500">$${Math.round(propJobs.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
+          <td style="font-weight:700;color:var(--gold-dark)">$${Math.round(propJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0)/100)}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>`;
+  });
+
+  wrap.innerHTML = html;
+}
+
+// ── MAINTENANCE ──
+function filterMaintenance(filter, btn) {
+  maintenanceFilter = filter;
+  document.querySelectorAll('#page-maintenance .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMaintenance();
+}
+
+function renderMaintenance() {
+  const wrap = document.getElementById('maintenance-content');
+  const categoryLabel = {
+    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
+    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
+    good_idea:'💡 Good Idea', evidence:'📸 Excessive Clean', job_released:'↩ Job Released'
+  };
+
+  let reports = [...ownerReports];
+  if (maintenanceFilter === 'open')     reports = reports.filter(r => r.status === 'open');
+  if (maintenanceFilter === 'resolved') reports = reports.filter(r => r.status === 'resolved');
+
+  if (!reports.length) {
+    wrap.innerHTML = `<div class="empty-state">✅<p>${maintenanceFilter === 'open' ? 'No open reports.' : 'No reports found.'}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  ownerProperties.forEach(prop => {
+    const propReports = reports.filter(r => r.property_id === prop.id);
+    if (!propReports.length) return;
+
+    html += `<div class="prop-header">🏠 ${prop.name}</div>`;
+    propReports.forEach(r => {
+      html += `<div class="report-row" id="report-${r.id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <strong style="font-size:15px">${categoryLabel[r.category] || r.category}</strong>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:10px">by ${r.profiles?.full_name || '—'} · ${timeAgo(r.created_at)}</span>
+          </div>
+          <span class="${r.status === 'resolved' ? 'report-closed' : 'report-open'}">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
+        </div>
+        <p style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:10px">${r.notes}</p>
+        ${r.photo_urls?.length ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            ${r.photo_urls.map(url => `
+              <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--cream-dark)" onclick="window.open('${url}','_blank')">
+                <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
+              </div>`).join('')}
+          </div>` : ''}
+        <div id="comments-${r.id}"><div style="font-size:12px;color:var(--text-muted)">Loading comments…</div></div>
+        <div class="comment-box">
+          <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') addComment('${r.id}')"/>
+          <button class="btn btn-sm" onclick="addComment('${r.id}')">Send</button>
+        </div>
+      </div>`;
+    });
+  });
+
+  wrap.innerHTML = html || '<div class="empty-state">✅<p>No reports found.</p></div>';
+
+  // Load comments for all visible reports
+  reports.forEach(r => loadComments(r.id));
 }
 
 // ── COMMENTS ──
@@ -449,15 +611,15 @@ async function loadComments(reportId) {
     .order('created_at', { ascending: true });
 
   if (!comments?.length) {
-    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);padding:4px 0">No comments yet.</p>';
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet — start the conversation.</p>';
     return;
   }
 
   wrap.innerHTML = comments.map(c => {
-    const isAdmin = c.profiles?.role === 'admin';
+    const isAdmin = ['admin'].includes(c.profiles?.role);
     return `<div class="comment ${isAdmin ? 'comment-admin' : 'comment-owner'}">
-      <div class="comment-meta">${c.profiles?.full_name || '—'} · ${timeAgo(c.created_at)}</div>
-      <div>${c.content}</div>
+      <div class="comment-meta">${c.profiles?.full_name || '—'}${isAdmin ? ' · Admin' : ''} · ${timeAgo(c.created_at)}</div>
+      ${c.content}
     </div>`;
   }).join('');
 }
@@ -503,7 +665,9 @@ function timeAgo(dt) {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dt).toLocaleDateString('en-US', {month:'short', day:'numeric'});
 }
 
 init();
