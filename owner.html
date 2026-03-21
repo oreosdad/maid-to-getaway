@@ -161,7 +161,16 @@
     .loading-inline { text-align:center;padding:40px;color:var(--text-muted);font-size:14px; }
     .toast { position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:14px;z-index:999;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none; }
     .toast.show { opacity:1;transform:translateY(0); }
-    .photo-upload-area { border:2px dashed var(--cream-dark);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--cream);display:block;margin-top:8px; }
+    .fin-tabs { display:flex;gap:6px;flex-wrap:wrap; }
+    .fin-tab { padding:6px 16px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all 0.15s;white-space:nowrap; }
+    .fin-tab:hover { background:var(--cream-dark);color:var(--text); }
+    .fin-tab.active { background:var(--navy);color:var(--white);border-color:var(--navy);font-weight:500; }
+
+    .paid-bucket { border:1.5px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden;margin-bottom:16px; }
+    .paid-bucket-header { padding:12px 20px;background:var(--cream);cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:500;color:var(--text-muted);transition:background 0.15s; }
+    .paid-bucket-header:hover { background:var(--cream-dark); }
+    .paid-bucket-body { display:none; }
+    .paid-bucket-body.open { display:block; }
     .photo-upload-area:hover { border-color:var(--gold);background:var(--gold-light); }
     .photo-upload-area input { display:none; }
   </style>
@@ -197,16 +206,21 @@
     <div class="page active" id="page-financials">
       <div class="page-header">
         <h2>Financials</h2>
+      </div>
+      <!-- Stat cards -->
+      <div class="stats-row" id="fin-stats"></div>
+      <div id="fin-alerts"></div>
+      <!-- Admin-style tab row + dropdowns -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+        <div class="fin-tabs" id="fin-tabs">
+          <button class="fin-tab active" data-filter="upcoming" onclick="setFinTab('upcoming',this)">Upcoming</button>
+          <button class="fin-tab" data-filter="all" onclick="setFinTab('all',this)">All</button>
+          <button class="fin-tab" data-filter="unpaid" onclick="setFinTab('unpaid',this)">🔥 Needs paid</button>
+          <button class="fin-tab" data-filter="completed" onclick="setFinTab('completed',this)">Completed</button>
+          <button class="fin-tab" data-filter="airbnb" onclick="setFinTab('airbnb',this)">Airbnb</button>
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <select class="inline-sel" id="fin-prop" onchange="renderFinancials()"><option value="">All properties</option></select>
-          <select class="inline-sel" id="fin-filter" onchange="renderFinancials()">
-            <option value="all">All jobs</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="unpaid">Unpaid only</option>
-            <option value="airbnb">Airbnb only</option>
-          </select>
-          <select class="inline-sel" id="fin-year" onchange="renderFinancials()"></select>
           <select class="inline-sel" id="fin-month" onchange="renderFinancials()">
             <option value="">All months</option>
             <option value="0">January</option><option value="1">February</option>
@@ -216,10 +230,15 @@
             <option value="8">September</option><option value="9">October</option>
             <option value="10">November</option><option value="11">December</option>
           </select>
+          <select class="inline-sel" id="fin-year" onchange="renderFinancials()"></select>
+          <select class="inline-sel" id="fin-sort" onchange="renderFinancials()">
+            <option value="date-asc">Date ↑</option>
+            <option value="date-desc">Date ↓</option>
+            <option value="charge-desc">Charge ↓</option>
+            <option value="charge-asc">Charge ↑</option>
+          </select>
         </div>
       </div>
-      <div class="stats-row" id="fin-stats"></div>
-      <div id="fin-alerts"></div>
       <div id="fin-table"></div>
     </div>
 
@@ -275,64 +294,68 @@
   </main>
 </div>
 
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="modal-payment">
+<!-- UNIFIED JOB DETAIL / PAYMENT EDIT MODAL -->
+<div class="modal-overlay" id="modal-job">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="payment-modal-title">Record Payment</span>
-      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
+      <span class="modal-title" id="job-modal-title">Job Details</span>
+      <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
     </div>
-    <input type="hidden" id="payment-job-id"/>
-    <div id="payment-summary" style="background:var(--cream);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px"></div>
-    <div class="form-group">
-      <label>Date paid</label>
-      <input type="date" id="payment-date"/>
-    </div>
-    <div class="form-group">
-      <label>Payment method <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-      <select id="payment-method">
-        <option value="">Select method…</option>
-        <option value="PayPal">PayPal</option>
-        <option value="Venmo">Venmo</option>
-        <option value="Zelle">Zelle</option>
-        <option value="Check">Check</option>
-        <option value="Bank Transfer">Bank Transfer</option>
-        <option value="Cash">Cash</option>
-        <option value="Credit Card">Credit Card</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Pet fee collected ($) <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-      <input type="number" id="payment-pet-fee" placeholder="0" min="0" step="1" oninput="recalcPaymentTotal()"/>
-    </div>
-    <div class="form-group">
-      <label>Amount paid ($)</label>
-      <input type="number" id="payment-amount" placeholder="e.g. 120" min="0" step="0.01" oninput="recalcPaymentTotal()"/>
-      <p style="font-size:11px;margin-top:4px" id="payment-total-note"></p>
-    </div>
-    <div class="form-group">
-      <label>Notes <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-      <textarea id="payment-notes" placeholder="e.g. Short-paid by $20, split payment…"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
-      <button class="btn btn-success" onclick="confirmPayment()">Mark as Paid</button>
-    </div>
-  </div>
-</div>
+    <input type="hidden" id="job-modal-id"/>
 
-<!-- JOB DETAIL MODAL -->
-<div class="modal-overlay" id="modal-job-detail">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="jd-title">Cleaning Details</span>
-      <button class="modal-close" onclick="closeModal('modal-job-detail')">✕</button>
+    <!-- Job info (read-only top section) -->
+    <div id="job-modal-info" style="background:var(--cream);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+
+    <!-- Charge summary -->
+    <div id="job-modal-charges" style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--cream-dark)"></div>
+
+    <!-- Payment form — always shown, always editable -->
+    <div id="job-modal-payment-section">
+      <div style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:12px">Payment</div>
+      <div id="job-modal-airbnb-notice" style="display:none;color:var(--success);font-size:14px;margin-bottom:12px">✓ Airbnb handles this payment directly — no action needed.</div>
+      <div id="job-modal-payment-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date paid</label>
+            <input type="date" id="job-date-paid"/>
+          </div>
+          <div class="form-group">
+            <label>Payment method</label>
+            <select id="job-payment-method">
+              <option value="">Select…</option>
+              <option value="PayPal">PayPal</option>
+              <option value="Venmo">Venmo</option>
+              <option value="Zelle">Zelle</option>
+              <option value="Check">Check</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pet fee collected ($)</label>
+            <input type="number" id="job-pet-fee" placeholder="0" min="0" step="1" oninput="recalcJobTotal()"/>
+          </div>
+          <div class="form-group">
+            <label>Amount paid ($)</label>
+            <input type="number" id="job-amount-paid" placeholder="e.g. 240" min="0" step="0.01" oninput="recalcJobTotal()"/>
+          </div>
+        </div>
+        <div id="job-total-note" style="font-size:12px;margin:-8px 0 12px;height:16px"></div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="job-payment-notes" placeholder="Short-paid, split payment, etc…"></textarea>
+        </div>
+      </div>
     </div>
-    <div id="jd-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-job-detail')">Close</button>
-      <button class="btn btn-success" id="jd-pay-btn" style="display:none">Mark as paid</button>
+
+    <div class="modal-footer" id="job-modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="job-undo-btn" style="display:none" onclick="unmarkPaidFromModal()">Remove payment</button>
+      <button class="btn btn-success" id="job-save-btn">Save payment</button>
     </div>
   </div>
 </div>
@@ -569,32 +592,51 @@ function timeAgo(dt) {
 }
 
 // ── FINANCIALS ──
+let finTabFilter = 'upcoming';
+
+function setFinTab(filter, btn) {
+  finTabFilter = filter;
+  document.querySelectorAll('.fin-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFinancials();
+}
+
+function setFinFilter(f) {
+  finTabFilter = f;
+  document.querySelectorAll('.fin-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderFinancials();
+}
+
 function renderFinancials() {
   const propId  = document.getElementById('fin-prop').value;
-  const filter  = document.getElementById('fin-filter').value;
-  const year    = parseInt(document.getElementById('fin-year').value);
   const month   = document.getElementById('fin-month').value;
+  const year    = parseInt(document.getElementById('fin-year').value);
+  const sort    = document.getElementById('fin-sort').value;
   const now     = new Date();
   const todayStr = now.toISOString().split('T')[0];
   const monthName = now.toLocaleDateString('en-US',{month:'long'});
   const nextMonthName = new Date(now.getFullYear(),now.getMonth()+1,1).toLocaleDateString('en-US',{month:'long'});
 
-  let jobs = ownerJobs.filter(j => !propId || j.property_id===propId);
+  let allJobs = ownerJobs.filter(j => !propId || j.property_id===propId);
+  if (month!=='') allJobs = allJobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth()===parseInt(month));
+  if (year) allJobs = allJobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getFullYear()===year);
 
-  // Stats (always use all jobs for dashboard)
-  const mtdCompleted = jobs.filter(j => {
+  // Stats always use current month
+  const mtdAll = ownerJobs.filter(j => {
     const d = new Date(j.scheduled_date+'T12:00:00');
-    return j.status==='completed' && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    return (!propId||j.property_id===propId) && d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
   });
-  const mtdAirbnb   = mtdCompleted.filter(j => j.source==='airbnb');
-  const mtdOwes     = mtdCompleted.filter(j => j.source!=='airbnb');
-  const mtdUnpaid   = mtdOwes.filter(j => !j.owner_paid_at);
-  const nextMonthJs = jobs.filter(j => {
+  const mtdCompleted = mtdAll.filter(j => j.status==='completed');
+  const mtdAirbnb    = mtdCompleted.filter(j => j.source==='airbnb');
+  const mtdOwes      = mtdCompleted.filter(j => j.source!=='airbnb');
+  const mtdUnpaid    = mtdOwes.filter(j => !j.owner_paid_at);
+  const nextMonthJs  = ownerJobs.filter(j => {
     const d = new Date(j.scheduled_date+'T12:00:00');
-    return d.getMonth()===now.getMonth()+1 && d.getFullYear()===now.getFullYear();
+    return (!propId||j.property_id===propId) && d.getMonth()===now.getMonth()+1 && d.getFullYear()===now.getFullYear();
   });
   const openReports = ownerReports.filter(r => r.status==='open' && (!propId||r.property_id===propId));
-
   const mtdAirbnbTotal  = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
   const mtdOwesTotal    = mtdOwes.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
   const mtdUnpaidTotal  = mtdUnpaid.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
@@ -622,30 +664,28 @@ function renderFinancials() {
       <div class="stat-sub">Click to view →</div>
     </div>`;
 
-  // Alerts
   let alerts = '';
-  if (mtdUnpaidTotal>0) alerts += `<div class="alert-banner alert-danger">
-    <span>💰 <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> in unpaid cleaning fees this month</span>
-    <button class="btn btn-sm" style="background:var(--error);color:white" onclick="setFinFilter('unpaid')">View unpaid →</button>
-  </div>`;
-  if (openReports.length) alerts += `<div class="alert-banner alert-warning">
-    <span>🔧 <strong>${openReports.length}</strong> open maintenance report${openReports.length!==1?'s':''}</span>
-    <button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance',document.getElementById('nav-maintenance'))">View →</button>
-  </div>`;
+  if (mtdUnpaidTotal>0) alerts += `<div class="alert-banner alert-danger"><span>💰 <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> unpaid this month</span><button class="btn btn-sm" style="background:var(--error);color:white" onclick="setFinFilter('unpaid')">View →</button></div>`;
+  if (openReports.length) alerts += `<div class="alert-banner alert-warning"><span>🔧 <strong>${openReports.length}</strong> open report${openReports.length!==1?'s':''}</span><button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance',document.getElementById('nav-maintenance'))">View →</button></div>`;
   document.getElementById('fin-alerts').innerHTML = alerts;
 
-  // Apply table filters
-  if (filter==='upcoming')  jobs = jobs.filter(j => j.scheduled_date>=todayStr);
-  else if (filter==='completed') jobs = jobs.filter(j => j.status==='completed');
-  else if (filter==='unpaid')    jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
-  else if (filter==='airbnb')    jobs = jobs.filter(j => j.source==='airbnb');
+  // Apply tab filter
+  let jobs = [...allJobs];
+  if (finTabFilter==='upcoming')       jobs = jobs.filter(j => j.scheduled_date>=todayStr && j.status!=='completed');
+  else if (finTabFilter==='unpaid')    jobs = jobs.filter(j => j.source!=='airbnb' && j.status==='completed' && !j.owner_paid_at);
+  else if (finTabFilter==='completed') jobs = jobs.filter(j => j.status==='completed');
+  else if (finTabFilter==='airbnb')    jobs = jobs.filter(j => j.source==='airbnb');
 
-  // Year/month filter
-  if (year) jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getFullYear()===year);
-  if (month!=='') jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth()===parseInt(month));
+  // Sort
+  jobs.sort((a,b) => {
+    if (sort==='date-desc')   return b.scheduled_date.localeCompare(a.scheduled_date);
+    if (sort==='charge-desc') return ((b.charge_cents||0)+(b.additional_cleaning_cents||0))-((a.charge_cents||0)+(a.additional_cleaning_cents||0));
+    if (sort==='charge-asc')  return ((a.charge_cents||0)+(a.additional_cleaning_cents||0))-((b.charge_cents||0)+(b.additional_cleaning_cents||0));
+    return a.scheduled_date.localeCompare(b.scheduled_date);
+  });
 
   if (!jobs.length) {
-    document.getElementById('fin-table').innerHTML = '<div class="card"><div class="empty-state">💰<p>No cleanings match your filters.</p></div></div>';
+    document.getElementById('fin-table').innerHTML = '<div class="card"><div class="empty-state">📋<p>No jobs match your filters.</p></div></div>';
     return;
   }
 
@@ -653,61 +693,54 @@ function renderFinancials() {
   ownerProps.forEach(prop => {
     const pj = jobs.filter(j => j.property_id===prop.id);
     if (!pj.length) return;
-    const propTotal = pj.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
-    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
-    <div class="card"><table>
-      <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Additional</th><th>Payment</th><th></th></tr></thead>
-      <tbody>${pj.map(j => {
-        const { str: times } = getJobTimes(j);
-        const isPaid = !!j.owner_paid_at;
-        const isCompleted = j.status==='completed';
-        const isAirbnb = j.source==='airbnb';
-        const extra = j.additional_cleaning_cents;
-        return `<tr style="cursor:pointer" onclick="openJobDetail('${j.id}')">
-          <td><strong>${formatDate(j.scheduled_date)}</strong>
-            ${j.is_short_window?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}
-          </td>
-          <td style="font-size:12px;color:var(--text-muted)">${times}</td>
-          <td>${sourceTag(j.source)}</td>
-          <td>$${Math.round((j.charge_cents||0)/100)}</td>
-          <td>
-            ${extra?`<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>`:''}
-            ${j.pet_fee_required?'<span class="fee-pet">🐶</span>':''}
-            ${!extra&&!j.pet_fee_required?'<span style="color:var(--text-muted);font-size:12px">—</span>':''}
-          </td>
-          <td onclick="event.stopPropagation()">
-            ${isAirbnb ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>' :
-              isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>
-                ${j.owner_payment_notes?`<div style="font-size:11px;color:var(--text-muted)">${j.owner_payment_notes}</div>`:''}
-                <button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="unmarkPaid('${j.id}')">Undo</button>` :
-              isCompleted ? '<span class="unpaid-tag">Unpaid</span>' :
-              '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
-          </td>
-          <td onclick="event.stopPropagation()">
-            ${!isAirbnb&&isCompleted&&!isPaid?`<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop.name}','${j.scheduled_date}')">Mark paid</button>`:''}
-          </td>
-        </tr>`;
-      }).join('')}
-      ${pj.filter(j=>j.status==='completed').length>1?`
-      <tr style="background:var(--gold-light)">
-        <td colspan="3" style="font-weight:600">Property total</td>
-        <td style="font-weight:600">$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
-        <td style="font-weight:600">$${Math.round(pj.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
-        <td colspan="2" style="font-weight:700;color:var(--gold-dark)">$${Math.round(propTotal/100)}</td>
-      </tr>`:''}
-      </tbody>
-    </table></div>`;
+    const unpaidJobs = pj.filter(j => j.source==='airbnb' || !j.owner_paid_at);
+    const paidJobs   = pj.filter(j => j.source!=='airbnb' && !!j.owner_paid_at);
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>`;
+    if (unpaidJobs.length) html += `<div class="card">${buildJobTable(unpaidJobs)}</div>`;
+    if (paidJobs.length) {
+      const paidTotal = paidJobs.reduce((s,j)=>s+(j.owner_payment_amount||(j.charge_cents||0)+(j.additional_cleaning_cents||0)),0);
+      html += `<div class="paid-bucket">
+        <div class="paid-bucket-header" onclick="togglePaidBucket(this)">
+          <span>✓ Paid (${paidJobs.length} job${paidJobs.length!==1?'s':''} — $${Math.round(paidTotal/100)} total)</span>
+          <span>▼</span>
+        </div>
+        <div class="paid-bucket-body">${buildJobTable(paidJobs)}</div>
+      </div>`;
+    }
   });
-  document.getElementById('fin-table').innerHTML = html;
+  document.getElementById('fin-table').innerHTML = html || '<div class="card"><div class="empty-state">📋<p>No jobs match your filters.</p></div></div>';
 }
 
-function setFinFilter(f) {
-  document.getElementById('fin-filter').value = f;
-  renderFinancials();
+function togglePaidBucket(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+  const arrow = header.querySelector('span:last-child');
+  if (arrow) arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
 }
 
-// ── JOB DETAIL POPUP ──
-function openJobDetail(jobId) {
+function buildJobTable(jobs) {
+  return `<table>
+    <thead><tr><th>Date</th><th>Times</th><th>Source</th><th>Charge</th><th>Additional</th><th>Payment</th></tr></thead>
+    <tbody>${jobs.map(j => {
+      const { str: times } = getJobTimes(j);
+      const isPaid     = !!j.owner_paid_at;
+      const isCompleted = j.status==='completed';
+      const isAirbnb   = j.source==='airbnb';
+      const extra      = j.additional_cleaning_cents;
+      return `<tr style="cursor:pointer" onclick="openJobModal('${j.id}')">
+        <td><strong>${formatDate(j.scheduled_date)}</strong>${j.is_short_window?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${times}</td>
+        <td>${sourceTag(j.source)}</td>
+        <td>$${Math.round((j.charge_cents||0)/100)}</td>
+        <td>${extra?`<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>`:''}${j.pet_fee_required?'<span class="fee-pet">🐶</span>':''}${!extra&&!j.pet_fee_required?'<span style="color:var(--text-muted);font-size:12px">—</span>':''}</td>
+        <td>${isAirbnb?'<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>':isPaid?`<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>`:isCompleted?'<span class="unpaid-tag">Unpaid</span>':'<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ── UNIFIED JOB MODAL ──
+function openJobModal(jobId) {
   const j = ownerJobs.find(j => j.id===jobId);
   if (!j) return;
   const prop = ownerProps.find(p => p.id===j.property_id);
@@ -717,130 +750,85 @@ function openJobDetail(jobId) {
   const { cout, cin } = getJobTimes(j);
   const guest = guestName(j);
 
-  document.getElementById('jd-title').textContent = `${prop?.name||'Cleaning'} — ${formatDate(j.scheduled_date)}`;
+  document.getElementById('job-modal-id').value = jobId;
+  document.getElementById('job-modal-title').textContent = `${prop?.name||'Cleaning'} — ${formatDate(j.scheduled_date)}`;
 
-  const payBtn = document.getElementById('jd-pay-btn');
-  if (!isAirbnb && isCompleted && !isPaid) {
-    payBtn.style.display = 'inline-block';
-    payBtn.onclick = () => { closeModal('modal-job-detail'); openPaymentModal(j.id, prop?.name||'', j.scheduled_date); };
-  } else { payBtn.style.display = 'none'; }
-
-  document.getElementById('jd-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <div style="background:var(--cream);border-radius:8px;padding:10px">
-        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Source</div>
-        ${sourceTag(j.source)}
-      </div>
-      <div style="background:var(--cream);border-radius:8px;padding:10px">
-        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Status</div>
-        <span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span>
-      </div>
-      ${guest?`<div style="background:var(--cream);border-radius:8px;padding:10px">
-        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Guests</div>
-        <div style="font-size:14px">${guest}</div>
-      </div>`:''}
-      ${cout||cin?`<div style="background:var(--cream);border-radius:8px;padding:10px">
-        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Times</div>
-        <div style="font-size:13px">${[cout?'🚪 Out '+cout:null,cin?'🏠 In '+cin:null].filter(Boolean).join('<br>')}</div>
-      </div>`:''}
+  document.getElementById('job-modal-info').innerHTML = `
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px">
+      <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Source</div>
+      ${sourceTag(j.source)}
     </div>
-    <div style="border-top:1px solid var(--cream-dark);padding-top:14px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;color:var(--text-muted)">Base charge</span>
-        <strong>$${Math.round((j.charge_cents||0)/100)}</strong>
-      </div>
-      ${j.additional_cleaning_cents?`<div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;color:var(--error)">📸 Extra clean${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span>
-        <strong style="color:var(--error)">+$${Math.round(j.additional_cleaning_cents/100)}</strong>
-      </div>`:''}
-      ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:13px;color:var(--gold-dark)">🐶 Pet fee</span><strong>Collected</strong>
-      </div>`:''}
-      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--cream-dark)">
-        <strong>Total</strong>
-        <strong style="font-size:18px;color:var(--navy)">$${Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100)}</strong>
-      </div>
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px">
+      <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Status</div>
+      <span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span>
     </div>
-    <div style="border-top:1px solid var(--cream-dark);padding-top:14px">
-      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Payment</div>
-      ${isAirbnb ? '<span style="color:var(--success)">✓ Airbnb handles this payment</span>' :
-        isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method?' via '+j.owner_payment_method:''}</span>
-          ${j.owner_payment_notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${j.owner_payment_notes}</div>`:''}` :
-        isCompleted ? '<span style="color:var(--error)">⚠ Not yet paid</span>' :
-        '<span style="color:var(--text-muted);font-size:13px">Job not yet completed</span>'}
-    </div>`;
+    ${guest?`<div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Guests</div><div style="font-size:14px">${guest}</div></div>`:''}
+    ${cout||cin?`<div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px">Times</div><div style="font-size:13px">${[cout?'🚪 Out '+cout:null,cin?'🏠 In '+cin:null].filter(Boolean).join('<br>')}</div></div>`:''}`;
 
-  document.getElementById('modal-job-detail').classList.add('open');
+  const base = j.charge_cents||0, extra = j.additional_cleaning_cents||0;
+  document.getElementById('job-modal-charges').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--text-muted);font-size:13px">Base charge</span><strong>$${Math.round(base/100)}</strong></div>
+    ${extra?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--error);font-size:13px">📸 Extra clean${j.additional_cleaning_notes?' — '+j.additional_cleaning_notes:''}</span><strong style="color:var(--error)">+$${Math.round(extra/100)}</strong></div>`:''}
+    ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--gold-dark);font-size:13px">🐶 Pet fee</span><strong>see below</strong></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--cream-dark)"><strong>Expected total</strong><strong style="font-size:17px;color:var(--navy)">$${Math.round((base+extra)/100)}</strong></div>`;
+
+  document.getElementById('job-modal-airbnb-notice').style.display = isAirbnb?'block':'none';
+  document.getElementById('job-modal-payment-form').style.display  = isAirbnb?'none':'block';
+  document.getElementById('job-save-btn').style.display  = isAirbnb?'none':'inline-block';
+  document.getElementById('job-undo-btn').style.display  = !isAirbnb&&isPaid?'inline-block':'none';
+
+  document.getElementById('job-date-paid').value       = isPaid ? j.owner_paid_at.split('T')[0] : new Date().toISOString().split('T')[0];
+  document.getElementById('job-payment-method').value  = j.owner_payment_method || localStorage.getItem('owner_last_payment_method') || '';
+  document.getElementById('job-pet-fee').value         = j.owner_pet_fee_cents ? Math.round(j.owner_pet_fee_cents/100) : '';
+  document.getElementById('job-amount-paid').value     = j.owner_payment_amount ? Math.round(j.owner_payment_amount/100) : Math.round((base+extra)/100);
+  document.getElementById('job-payment-notes').value   = j.owner_payment_notes || '';
+  document.getElementById('job-total-note').textContent = '';
+  document.getElementById('job-save-btn').onclick = () => saveJobPayment(jobId);
+  document.getElementById('modal-job').classList.add('open');
 }
 
-// ── PAYMENT MODAL ──
-function openPaymentModal(jobId, propName, date) {
-  const j = ownerJobs.find(j => j.id===jobId);
-  document.getElementById('payment-job-id').value = jobId;
-  document.getElementById('payment-modal-title').textContent = `Record Payment — ${propName} ${formatDate(date)}`;
-  document.getElementById('payment-notes').value = '';
-  document.getElementById('payment-pet-fee').value = '';
-  document.getElementById('payment-total-note').textContent = '';
-  document.getElementById('payment-date').value = new Date().toISOString().split('T')[0];
-
-  const lastMethod = localStorage.getItem('owner_last_payment_method') || '';
-  document.getElementById('payment-method').value = lastMethod;
-
-  const defaultAmount = j ? Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100) : '';
-  document.getElementById('payment-amount').value = defaultAmount;
-
-  document.getElementById('payment-summary').innerHTML = j ? `
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Base charge</span><strong>$${Math.round((j.charge_cents||0)/100)}</strong></div>
-    ${j.additional_cleaning_cents?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Additional fee</span><strong>$${Math.round(j.additional_cleaning_cents/100)}</strong></div>`:''}
-    ${j.pet_fee_required?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>🐶 Pet fee (enter below if applicable)</span><strong>—</strong></div>`:''}
-    <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--cream-dark);font-weight:600"><span>Expected total</span><span>$${defaultAmount}</span></div>` : '';
-
-  document.getElementById('modal-payment').classList.add('open');
-}
-
-function recalcPaymentTotal() {
-  const amount  = parseFloat(document.getElementById('payment-amount').value) || 0;
-  const petFee  = parseFloat(document.getElementById('payment-pet-fee').value) || 0;
-  const jobId   = document.getElementById('payment-job-id').value;
-  const j       = ownerJobs.find(j => j.id===jobId);
+function recalcJobTotal() {
+  const amount = parseFloat(document.getElementById('job-amount-paid').value)||0;
+  const petFee = parseFloat(document.getElementById('job-pet-fee').value)||0;
+  const jobId  = document.getElementById('job-modal-id').value;
+  const j      = ownerJobs.find(j => j.id===jobId);
   const expected = j ? Math.round(((j.charge_cents||0)+(j.additional_cleaning_cents||0))/100) : 0;
-  const note    = document.getElementById('payment-total-note');
-  if (petFee>0) {
-    note.textContent = `Total with pet fee: $${(amount+petFee).toFixed(2)}`;
-    note.style.color = 'var(--gold-dark)';
-  } else {
-    const diff = amount - expected;
+  const note   = document.getElementById('job-total-note');
+  if (petFee>0) { note.textContent=`Total with pet fee: $${(amount+petFee).toFixed(2)}`; note.style.color='var(--gold-dark)'; }
+  else {
+    const diff = amount-expected;
     if (diff<0)      { note.textContent=`Short by $${Math.abs(diff).toFixed(2)}`; note.style.color='var(--error)'; }
     else if (diff>0) { note.textContent=`Over by $${diff.toFixed(2)}`; note.style.color='var(--success)'; }
     else             { note.textContent=''; }
   }
 }
 
-async function confirmPayment() {
-  const jobId  = document.getElementById('payment-job-id').value;
-  const method = document.getElementById('payment-method').value || null;
-  const amount = document.getElementById('payment-amount').value;
-  const petFee = document.getElementById('payment-pet-fee').value;
-  const notes  = document.getElementById('payment-notes').value.trim() || null;
-  const paidDate = document.getElementById('payment-date').value;
+async function saveJobPayment(jobId) {
+  const method   = document.getElementById('job-payment-method').value||null;
+  const amount   = document.getElementById('job-amount-paid').value;
+  const petFee   = document.getElementById('job-pet-fee').value;
+  const notes    = document.getElementById('job-payment-notes').value.trim()||null;
+  const datePaid = document.getElementById('job-date-paid').value;
   if (method) localStorage.setItem('owner_last_payment_method', method);
-  const total  = (parseFloat(amount)||0)+(parseFloat(petFee)||0);
+  const total = (parseFloat(amount)||0)+(parseFloat(petFee)||0);
   const { error } = await db.from('jobs').update({
-    owner_paid_at:        paidDate ? new Date(paidDate+'T12:00:00').toISOString() : new Date().toISOString(),
+    owner_paid_at:        datePaid ? new Date(datePaid+'T12:00:00').toISOString() : new Date().toISOString(),
     owner_payment_method: method,
     owner_payment_notes:  notes,
     owner_payment_amount: total ? Math.round(total*100) : null,
     owner_pet_fee_cents:  petFee ? Math.round(parseFloat(petFee)*100) : null
   }).eq('id', jobId);
   if (error) { showToast('Error: '+error.message); return; }
-  closeModal('modal-payment');
-  showToast('Payment recorded ✓');
+  closeModal('modal-job');
+  showToast('Payment saved ✓');
   await loadData();
 }
 
-async function unmarkPaid(jobId) {
+async function unmarkPaidFromModal() {
+  const jobId = document.getElementById('job-modal-id').value;
   if (!confirm('Remove this payment record?')) return;
-  await db.from('jobs').update({ owner_paid_at:null, owner_payment_method:null, owner_payment_notes:null, owner_payment_amount:null, owner_pet_fee_cents:null }).eq('id', jobId);
+  await db.from('jobs').update({owner_paid_at:null,owner_payment_method:null,owner_payment_notes:null,owner_payment_amount:null,owner_pet_fee_cents:null}).eq('id',jobId);
+  closeModal('modal-job');
   showToast('Payment removed');
   await loadData();
 }
@@ -879,8 +867,8 @@ function renderCalendar() {
         const cls = j.source==='airbnb'?'cal-event-airbnb':j.source==='vrbo'?'cal-event-vrbo':'cal-event-manual';
         const guest = guestName(j) || j.source||'Manual';
         const charge = j.charge_cents ? ' $'+Math.round(j.charge_cents/100) : '';
-        return `<div class="cal-event ${cls}" onclick="openJobDetail('${j.id}')" title="${j.properties?.name||''}">${guest}${charge}</div>
-                <div class="cal-event cal-event-clean" onclick="openJobDetail('${j.id}')">🧹 Clean</div>`;
+        return `<div class="cal-event ${cls}" onclick="openJobModal('${j.id}')" title="${j.properties?.name||''}">${guest}${charge}</div>
+                <div class="cal-event cal-event-clean" onclick="openJobModal('${j.id}')">🧹 Clean</div>`;
       }).join('')}
     </div>`;
   }
