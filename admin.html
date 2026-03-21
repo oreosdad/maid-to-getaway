@@ -585,7 +585,10 @@
 
     <!-- REPORTS PAGE -->
     <div class="page" id="page-reports">
-      <div class="page-header"><h2>Reports</h2></div>
+      <div class="page-header">
+        <h2>Reports</h2>
+        <div id="closed-count-bar" style="font-size:13px;color:var(--text-muted)"></div>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
         <select id="report-filter-type" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
           <option value="">All types</option>
@@ -601,9 +604,9 @@
         </select>
         <select id="report-filter-status" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
           <option value="">All statuses</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In progress</option>
-          <option value="resolved">Resolved</option>
+          <option value="open" selected>Open</option>
+          <option 
+          <option value="resolved">Closed</option>
         </select>
         <select id="report-filter-property" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
           <option value="">All properties</option>
@@ -2060,6 +2063,13 @@ async function renderAdminReports() {
       .limit(200);
     allAdminReports = data || [];
 
+    // Show resolved archive count
+    const resolvedCount = allAdminReports.filter(r => r.status === 'resolved').length;
+    const countBar = document.getElementById('closed-count-bar');
+    if (countBar && resolvedCount > 0) {
+      countBar.innerHTML = `<span style="cursor:pointer;color:var(--gold-dark);text-decoration:underline" onclick="showResolvedReports()">📦 ${resolvedCount} closed report${resolvedCount !== 1 ? 's' : ''} in archive</span>`;
+    }
+
     // Populate property filter
     const propSel = document.getElementById('report-filter-property');
     if (propSel && propSel.options.length <= 1) {
@@ -2077,7 +2087,7 @@ async function renderAdminReports() {
   }
 
   const typeFilter     = document.getElementById('report-filter-type')?.value     || '';
-  const statusFilter   = document.getElementById('report-filter-status')?.value   || '';
+  const statusFilter   = document.getElementById('report-filter-status')?.value   || 'open';
   const propertyFilter = document.getElementById('report-filter-property')?.value || '';
 
   let filtered = [...allAdminReports];
@@ -2096,8 +2106,8 @@ async function renderAdminReports() {
     cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
     good_idea:'💡 Good Idea', job_released:'↩ Job Released', evidence:'📸 Excessive Clean'
   };
-  const statusColor = { open:'#C0392B', in_progress:'#A07D1C', resolved:'#1E7B4B' };
-  const statusBg    = { open:'#FDEEEE', in_progress:'#FBF3D5', resolved:'#EAF7F0' };
+  const statusColor = { open:'#C0392B', resolved:'#1E7B4B' };
+  const statusBg    = { open:'#FDEEEE', resolved:'#EAF7F0' };
 
   wrap.innerHTML = `<table>
     <thead><tr>
@@ -2123,8 +2133,7 @@ async function renderAdminReports() {
         <td>
           <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
             <option value="open" ${r.status==='open'?'selected':''}>Open</option>
-            <option value="in_progress" ${r.status==='in_progress'?'selected':''}>In progress</option>
-            <option value="resolved" ${r.status==='resolved'?'selected':''}>Resolved</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>Closed</option>
           </select>
         </td>
         <td>
@@ -2149,6 +2158,11 @@ async function deleteAdminReport(reportId) {
   if (error) { showToast('Error: ' + error.message); return; }
   showToast('Report deleted ✓');
   allAdminReports = allAdminReports.filter(r => r.id !== reportId);
+  renderAdminReports();
+}
+
+function showResolvedReports() {
+  document.getElementById('report-filter-status').value = 'resolved';
   renderAdminReports();
 }
 
