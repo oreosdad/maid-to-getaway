@@ -207,12 +207,14 @@
   <!-- MY JOBS -->
   <div class="tab-content active" id="tab-my-jobs">
     <div id="inactive-banner" style="display:none" class="inactive-banner">Your account is currently inactive. Contact your admin if you think this is a mistake.</div>
-    <div id="first-login-banner" style="display:none" class="first-login-banner">
-      👋 Welcome! Please <strong>set a new password</strong> before getting started.
-      <br><button class="btn btn-gold btn-full" style="margin-top:10px;font-size:14px" onclick="switchTab('settings', document.querySelectorAll('.tab')[5])">Set my password →</button>
+    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden">
+      <button class="sub-tab active" id="subtab-upcoming" onclick="switchSubTab('upcoming')">Upcoming</button>
+      <button class="sub-tab" id="subtab-completed" onclick="switchSubTab('completed')">Completed</button>
     </div>
-    <div class="section-label">Your upcoming jobs (next 30 days)</div>
-    <div id="my-jobs-list"><div class="empty-state"><div class="empty-state-icon">🧹</div><p>Loading your jobs…</p></div></div>
+    <div id="my-jobs-list"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-outline btn-sm" onclick="openSubmitJobModal()">+ Submit unscheduled job</button>
+    </div>
   </div>
 
   <!-- OPEN JOBS -->
@@ -407,15 +409,27 @@
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Submit a cleaning job that wasn't in the system. Your admin will review and approve it.</p>
     <div class="form-group">
       <label>Property</label>
-      <select id="submit-job-property"></select>
+      <select id="submit-job-property" onchange="prefillSubmitPayout()"></select>
     </div>
     <div class="form-group">
       <label>Date of cleaning</label>
       <input type="date" id="submit-job-date"/>
     </div>
     <div class="form-group">
-      <label>Payout amount ($)</label>
+      <label>Base payout ($) <span style="font-size:11px;color:var(--text-muted);font-weight:400">— auto-filled from property default</span></label>
       <input type="number" id="submit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
+    </div>
+    <div class="form-group">
+      <label>Extra pay request ($) <span style="font-size:11px;color:var(--text-muted);font-weight:400">— optional, for excessive clean or pet fee</span></label>
+      <input type="number" id="submit-job-extra-pay" placeholder="e.g. 25" min="0" step="1"/>
+    </div>
+    <div class="form-group">
+      <label id="submit-extra-reason-label" style="display:none">Reason for extra pay</label>
+      <select id="submit-extra-reason" style="display:none">
+        <option value="excessive_clean">Excessive clean</option>
+        <option value="pet_fee">Pet fee</option>
+        <option value="other">Other</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Notes</label>
@@ -507,6 +521,16 @@
       <button class="btn btn-outline btn-full" onclick="closeModal('modal-evidence')">Cancel</button>
       <button class="btn btn-gold btn-full" onclick="submitEvidence()">Submit evidence</button>
     </div>
+  </div>
+</div>
+
+<!-- PHOTO VIEWER MODAL -->
+<div class="modal-overlay" id="modal-photo-viewer">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="photo-viewer-title">My Photos</div>
+    <div id="photo-viewer-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px"></div>
+    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-photo-viewer')">Close</button>
   </div>
 </div>
 
@@ -763,6 +787,7 @@ function jobCard(assignment) {
         ` : ''}
         ${isAccepted ? `
           <button class="btn btn-outline btn-sm" style="margin-bottom:8px;width:100%" onclick="openPropertyDetail('${job.property_id}')">📋 View checklist</button>
+          <button class="btn btn-outline btn-sm" style="margin-bottom:8px;width:100%" onclick="viewJobPhotos('${job.id}','${job.properties?.name || ''}','${job.scheduled_date}')">📸 View my photos</button>
           <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
           <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;padding:10px;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at||''}')">↩ Release job back to pool</button>
         ` : ''}
@@ -964,30 +989,65 @@ async function confirmClaimJob() {
 // ── SUBMIT UNSCHEDULED JOB ──
 function openSubmitJobModal() {
   const sel = document.getElementById('submit-job-property');
-  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}" data-payout="${p.default_payout_cents || ''}">${p.name}</option>`).join('');
   document.getElementById('submit-job-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('submit-job-payout').value = '';
   document.getElementById('submit-job-notes').value = '';
+  document.getElementById('submit-job-extra-pay').value = '';
+  document.getElementById('submit-extra-reason').style.display = 'none';
+  document.getElementById('submit-extra-reason-label').style.display = 'none';
   document.getElementById('submit-job-preview').innerHTML = '';
+  selectedFilesMap['submit-job-photos'] = [];
+  prefillSubmitPayout();
   document.getElementById('modal-submit-job').classList.add('open');
 }
+
+function prefillSubmitPayout() {
+  const sel = document.getElementById('submit-job-property');
+  const opt = sel.options[sel.selectedIndex];
+  const payout = opt?.getAttribute('data-payout');
+  document.getElementById('submit-job-payout').value = payout ? Math.round(parseInt(payout) / 100) : '';
+}
+
+// Show extra reason when extra pay is entered
+document.addEventListener('DOMContentLoaded', () => {
+  const extraPay = document.getElementById('submit-job-extra-pay');
+  if (extraPay) {
+    extraPay.addEventListener('input', function() {
+      const show = this.value && parseFloat(this.value) > 0;
+      document.getElementById('submit-extra-reason').style.display = show ? 'block' : 'none';
+      document.getElementById('submit-extra-reason-label').style.display = show ? 'block' : 'none';
+    });
+  }
+});
 
 async function confirmSubmitJob() {
   const propertyId = document.getElementById('submit-job-property').value;
   const date       = document.getElementById('submit-job-date').value;
   const payout     = document.getElementById('submit-job-payout').value;
+  const extraPay   = document.getElementById('submit-job-extra-pay').value;
+  const extraReason = document.getElementById('submit-extra-reason').value;
   const notes      = document.getElementById('submit-job-notes').value.trim();
   if (!date)  { showToast('Please select a date'); return; }
   if (!notes) { showToast('Please add notes describing the cleaning'); return; }
 
+  let fullNotes = `Submitted by cleaner: ${notes}`;
+  if (extraPay && parseFloat(extraPay) > 0) {
+    fullNotes += `\nExtra pay requested: $${extraPay} (${extraReason})`;
+  }
+
+  const totalPayout = payout ? Math.round(parseFloat(payout) * 100) : null;
+  const additionalCents = extraPay ? Math.round(parseFloat(extraPay) * 100) : null;
+
   const { data: job, error } = await db.from('jobs').insert({
-    property_id:   propertyId,
-    scheduled_date: date,
-    status:        'pending_review',
-    source:        'manual',
-    submitted_by:  currentUser.id,
-    payout_cents:  payout ? Math.round(parseFloat(payout) * 100) : null,
-    notes:         `Submitted by cleaner: ${notes}`
+    property_id:               propertyId,
+    scheduled_date:            date,
+    status:                    'pending_review',
+    source:                    'manual',
+    submitted_by:              currentUser.id,
+    payout_cents:              totalPayout,
+    additional_cleaning_cents: additionalCents,
+    additional_cleaning_notes: extraPay && parseFloat(extraPay) > 0 ? extraReason : null,
+    notes:                     fullNotes
   }).select().single();
 
   if (error) { showToast('Error: ' + error.message); return; }
@@ -1215,6 +1275,40 @@ async function submitGoodIdea() {
   closeModal('modal-good-ideas');
   showToast('Idea submitted ✓ Admin will review it');
   renderReportHistory();
+}
+
+// ── VIEW JOB PHOTOS ──
+async function viewJobPhotos(jobId, propName, date) {
+  document.getElementById('photo-viewer-title').textContent = `${propName} — ${formatDate(date)}`;
+  const grid = document.getElementById('photo-viewer-grid');
+  grid.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">Loading…</p>';
+  document.getElementById('modal-photo-viewer').classList.add('open');
+
+  const { data: photos } = await db.from('photos')
+    .select('*')
+    .eq('job_id', jobId)
+    .eq('uploaded_by', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (!photos?.length) {
+    grid.innerHTML = '<p style="font-size:13px;color:var(--text-muted);grid-column:span 2;text-align:center;padding:20px">No photos uploaded for this job yet.</p>';
+    return;
+  }
+  grid.innerHTML = photos.map(ph => `
+    <div style="aspect-ratio:1;border-radius:10px;overflow:hidden">
+      <img src="${ph.storage_path}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
+        onerror="this.parentElement.innerHTML='<div style=\'background:var(--cream-dark);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px\'>📷</div>'"
+        onclick="window.open('${ph.storage_path}','_blank')"/>
+    </div>`).join('');
+}
+
+// ── SUB TABS (My Jobs Upcoming/Completed) ──
+let myJobsSubTab = 'upcoming';
+function switchSubTab(tab) {
+  myJobsSubTab = tab;
+  document.getElementById('subtab-upcoming').classList.toggle('active', tab === 'upcoming');
+  document.getElementById('subtab-completed').classList.toggle('active', tab === 'completed');
+  renderMyJobs();
 }
 
 // ── RELEASE JOB ──
