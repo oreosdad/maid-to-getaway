@@ -724,11 +724,17 @@
         <input type="number" id="job-payout" placeholder="e.g. 85" min="0" step="1"/>
       </div>
     </div>
-    <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="job-pet-fee"/>
-        🐶 Pet fee needs to be collected
-      </label>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top:8px">
+          <input type="checkbox" id="job-pet-fee"/>
+          🐶 Pet fee
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Pet fee amount ($)</label>
+        <input type="number" id="job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1"/>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -955,11 +961,17 @@
         <input type="number" id="edit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
       </div>
     </div>
-    <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="edit-job-pet-fee"/>
-        🐶 Pet fee needs to be collected
-      </label>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top:8px">
+          <input type="checkbox" id="edit-job-pet-fee"/>
+          🐶 Pet fee
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Pet fee amount ($)</label>
+        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1"/>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1389,7 +1401,7 @@ function renderJobsTable(jobs) {
         <th>Source</th><th>Actions</th>
       </tr></thead>
       <tbody>${jobs.map(job => `
-        <tr>
+        <tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
           <td>${formatDate(job.scheduled_date)}</td>
           <td>${job.properties?.name || '—'}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
@@ -1407,11 +1419,11 @@ function renderJobsTable(jobs) {
           </td>
           <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
           <td>${job.source === 'airbnb' ? '<span style="background:#FF5A5F;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">Airbnb</span>' : job.source === 'vrbo' ? '<span style="background:#1A5276;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">VRBO</span>' : '<span style="color:#B0A896;font-size:12px">Manual</span>'}</td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-              ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
-              ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
+              ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
+              ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="event.stopPropagation();markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
               ${job.cleaner_paid_at ? '<span style="font-size:12px;color:var(--success)">✓ Paid</span>' : ''}
             </div>
           </td>
@@ -1447,6 +1459,7 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
+  document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-flagged').checked   = job.is_short_window;
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1488,6 +1501,7 @@ async function saveEditJob() {
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
+    pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
     charge_cents:              document.getElementById('edit-job-charge').value ? Math.round(parseFloat(document.getElementById('edit-job-charge').value) * 100) : null,
@@ -1619,6 +1633,7 @@ function openNewJobModal() {
   };
   document.getElementById('job-notes').value = '';
   document.getElementById('job-pet-fee').checked = false;
+  document.getElementById('job-pet-fee-cents').value = '';
   document.getElementById('job-flagged').checked = false;
   document.getElementById('modal-job').classList.add('open');
 }
@@ -1648,6 +1663,7 @@ async function saveJob() {
     status:           cleanerId ? 'assigned' : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('job-pet-fee').checked,
+    pet_fee_cents:    document.getElementById('job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('job-notes').value || null,
     source:           'manual',
     cleaner_pay_date: calcPayDate(date),
@@ -1684,7 +1700,7 @@ function renderProperties() {
     <table>
       <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Notes</th><th>Actions</th></tr></thead>
       <tbody>${properties.map(p => `
-        <tr>
+        <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
           <td>${p.address}</td>
           <td>${p.airbnb_ical_url ? '✓ Set' : '—'}</td>
@@ -1693,7 +1709,7 @@ function renderProperties() {
           <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
           <td style="color:var(--text-muted);font-size:13px">${p.notes || '—'}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" onclick="openPropertyChecklist('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📋 Checklist</button>
           </td>
@@ -1795,12 +1811,12 @@ function renderCleaners() {
     <table>
       <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>${cleaners.map(c => `
-        <tr>
+        <tr style="cursor:pointer" onclick="openEditCleanerModal('${c.id}')">
           <td><strong>${c.full_name}</strong></td>
           <td>${c.email}</td>
           <td>${c.phone || '—'}</td>
           <td><span class="badge ${c.is_active ? 'badge-accepted' : 'badge-declined'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <button class="btn btn-outline btn-sm" onclick="openEditCleanerModal('${c.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="resetCleanerPassword('${c.id}', '${c.email}')">Reset password</button>
           </td>
