@@ -992,8 +992,10 @@ async function confirmSubmitJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  const files = document.getElementById('submit-job-photos').files;
-  if (files.length > 0 && job) await uploadPhotos(files, job.id, 'evidence');
+  if ((selectedFilesMap['submit-job-photos'] || []).length > 0 && job) {
+    await uploadPhotos('submit-job-photos', job.id, 'evidence');
+    selectedFilesMap['submit-job-photos'] = [];
+  }
 
   closeModal('modal-submit-job');
   showToast('Submitted for admin review ✓');
@@ -1242,6 +1244,7 @@ function openMaintenanceModal() {
   sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('maint-notes').value = '';
   document.getElementById('maint-preview').innerHTML = '';
+  selectedFilesMap['maint-photos'] = [];
   document.getElementById('modal-maintenance').classList.add('open');
 }
 
@@ -1250,8 +1253,12 @@ async function submitMaintenance() {
   const category   = document.getElementById('maint-category').value;
   const notes      = document.getElementById('maint-notes').value.trim();
   if (!notes) { showToast('Please describe the issue'); return; }
-  const { error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes });
+  const { data: req, error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes }).select().single();
   if (error) { showToast('Error: ' + error.message); return; }
+  if ((selectedFilesMap['maint-photos'] || []).length > 0 && req) {
+    await uploadPhotos('maint-photos', req.id, 'maintenance');
+    selectedFilesMap['maint-photos'] = [];
+  }
   closeModal('modal-maintenance');
   showToast('Issue reported ✓ Admin has been notified');
   renderReportHistory();
@@ -1269,8 +1276,10 @@ async function submitEvidence() {
   const jobId = document.getElementById('evidence-job').value;
   const notes = document.getElementById('evidence-notes').value.trim();
   if (!notes) { showToast('Please describe the situation'); return; }
-  const files = document.getElementById('evidence-photos-standalone').files;
-  if (files.length > 0) await uploadPhotos(files, jobId, 'evidence');
+  if ((selectedFilesMap['evidence-photos-standalone'] || []).length > 0) {
+    await uploadPhotos('evidence-photos-standalone', jobId, 'evidence');
+    selectedFilesMap['evidence-photos-standalone'] = [];
+  }
   const { data: existing } = await db.from('jobs').select('notes').eq('id', jobId).single();
   const newNote = (existing?.notes ? existing.notes + '\n' : '') + 'Excessive cleaning reported: ' + notes;
   await db.from('jobs').update({ notes: newNote }).eq('id', jobId);
@@ -1449,12 +1458,26 @@ document.addEventListener('click', e => {
 });
 
 // ── PHOTO UPLOAD ──
-async function uploadPhotos(files, jobId, type) {
+// ── PHOTO UPLOAD ──
+const MAX_FILE_SIZE_MB = 10;
+// Store selected files per input since we can't modify FileList directly
+const selectedFilesMap = {};
+
+async function uploadPhotos(inputIdOrFiles, jobId, type) {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  for (const file of Array.from(files)) {
+  // Accept either a file list or an input ID
+  const files = typeof inputIdOrFiles === 'string'
+    ? (selectedFilesMap[inputIdOrFiles] || [])
+    : Array.from(inputIdOrFiles);
+
+  for (const file of files) {
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      showToast(`"${file.name}" is too large — try a screenshot instead`);
+      continue;
+    }
     const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
     const { error } = await db.storage.from('job photos').upload(path, file);
-    if (error) { console.error('Upload error:', error); continue; }
+    if (error) { showToast('Upload failed: ' + error.message); continue; }
     const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
     await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
   }
@@ -1462,12 +1485,48 @@ async function uploadPhotos(files, jobId, type) {
 
 function previewPhotos(input, previewId) {
   const preview = document.getElementById(previewId);
+  if (!selectedFilesMap[input.id]) selectedFilesMap[input.id] = [];
+
+  // Add new files to our tracked list
+  Array.from(input.files).forEach(file => {
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      showToast(`"${file.name}" is too large (max ${MAX_FILE_SIZE_MB}MB). Try taking a screenshot instead.`);
+      return;
+    }
+    // Avoid duplicates
+    if (!selectedFilesMap[input.id].find(f => f.name === file.name && f.size === file.size)) {
+      selectedFilesMap[input.id].push(file);
+    }
+  });
+
+  renderPhotoPreview(input.id, previewId);
+}
+
+function renderPhotoPreview(inputId, previewId) {
+  const preview = document.getElementById(previewId);
+  const files = selectedFilesMap[inputId] || [];
   preview.innerHTML = '';
-  Array.from(input.files).forEach((file, i) => {
+  files.forEach((file, i) => {
     const reader = new FileReader();
-    reader.onload = e => { preview.innerHTML += `<div class="photo-thumb"><img src="${e.target.result}" alt="Photo ${i+1}"/></div>`; };
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'photo-thumb';
+      div.style.position = 'relative';
+      div.innerHTML = `
+        <img src="${e.target.result}" alt="Photo ${i+1}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>
+        <button onclick="removePhoto('${inputId}','${previewId}',${i})" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:white;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+      `;
+      preview.appendChild(div);
+    };
     reader.readAsDataURL(file);
   });
+}
+
+function removePhoto(inputId, previewId, index) {
+  if (selectedFilesMap[inputId]) {
+    selectedFilesMap[inputId].splice(index, 1);
+    renderPhotoPreview(inputId, previewId);
+  }
 }
 
 // ── MASTER CHECKLIST ──
