@@ -571,10 +571,10 @@ let masterChecklist = [];
 // ── AUTH ──
 async function init() {
   const { data: { session } } = await db.auth.getSession();
-  if (!session) { window.location.replace('login.html'); return; }
+  if (!session) { window.location.replace('login.html?signout=1'); return; }
 
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || profile.role !== 'cleaner') { window.location.replace('login.html'); return; }
+  if (!profile || profile.role !== 'cleaner') { window.location.replace('login.html?signout=1'); return; }
 
   currentUser = session.user;
   currentProfile = profile;
@@ -608,7 +608,7 @@ async function init() {
 }
 
 db.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') window.location.replace('login.html');
+  if (event === 'SIGNED_OUT') window.location.replace('login.html?signout=1');
 });
 
 // ── TABS ──
@@ -1430,7 +1430,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 });
 
 // ── SIGN OUT ──
-async function signOut() { await db.auth.signOut(); window.location.replace('login.html'); }
+async function signOut() { await db.auth.signOut(); window.location.replace('login.html?signout=1'); }
 
 // ── TOAST ──
 function showToast(msg) {
