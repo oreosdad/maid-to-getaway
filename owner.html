@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
       --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
@@ -15,119 +14,137 @@
       --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
       --radius: 10px; --sidebar: 220px;
     }
+    #auth-loading { position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'DM Sans',sans-serif;color:var(--text-muted);font-size:15px; }
+    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh; }
+    #app { display:none; }
+    #app.ready { display:flex;min-height:100vh; }
 
-    #auth-loading {
-      position: fixed; inset: 0; background: var(--cream);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999; font-family: 'DM Sans', sans-serif;
-      color: var(--text-muted); font-size: 15px;
-    }
+    /* ── SIDEBAR ── */
+    .sidebar { width:var(--sidebar);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;z-index:100; }
+    .sidebar-brand { padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand h1 { font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.3; }
+    .sidebar-brand h1 em { font-style:italic;color:var(--gold); }
+    .sidebar-brand p { font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.07em;margin-top:2px; }
+    .sidebar nav { padding:20px 0;flex:1; }
+    .nav-item { display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:14px;color:rgba(255,255,255,0.6);cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;text-decoration:none; }
+    .nav-item:hover { color:var(--white);background:rgba(255,255,255,0.05); }
+    .nav-item.active { color:var(--white);border-left-color:var(--gold);background:rgba(255,255,255,0.07);font-weight:500; }
+    .nav-icon { font-size:16px;width:20px;text-align:center; }
+    .sidebar-footer { padding:20px;border-top:1px solid rgba(255,255,255,0.08); }
+    .signout-btn { width:100%;padding:9px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius);color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s; }
+    .signout-btn:hover { background:rgba(255,255,255,0.12);color:var(--white); }
 
-    #app { display: none; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
-    #app { display: none; min-height: 100vh; }
-    #app.ready { display: flex; }
+    /* ── MAIN ── */
+    .main { margin-left:var(--sidebar);flex:1;padding:32px; }
+    .page { display:none; }
+    .page.active { display:block; }
+    .page-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px; }
+    .page-header h2 { font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--navy); }
 
-    .sidebar {
-      width: var(--sidebar); background: var(--navy); min-height: 100vh;
-      display: flex; flex-direction: column; padding: 28px 0;
-      position: fixed; top: 0; left: 0; z-index: 100;
-    }
-    .sidebar-brand { padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .sidebar-brand h1 { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--white); line-height: 1.3; }
-    .sidebar-brand h1 em { font-style: italic; color: var(--gold); }
-    .sidebar-brand p { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
-    .sidebar nav { padding: 20px 0; flex: 1; }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
-      font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer;
-      transition: all 0.15s; border-left: 3px solid transparent; text-decoration: none;
-    }
-    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.05); }
-    .nav-item.active { color: var(--white); border-left-color: var(--gold); background: rgba(255,255,255,0.07); font-weight: 500; }
-    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-    .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
-    .signout-btn {
-      width: 100%; padding: 9px; background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius);
-      color: rgba(255,255,255,0.6); font-family: 'DM Sans', sans-serif;
-      font-size: 13px; cursor: pointer; transition: all 0.15s;
-    }
-    .signout-btn:hover { background: rgba(255,255,255,0.12); color: var(--white); }
+    /* ── STATS ── */
+    .stats-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:28px; }
+    .stat-card { background:var(--white);border-radius:var(--radius);padding:18px 20px;border:1px solid var(--cream-dark);transition:all 0.15s; }
+    .stat-card.clickable { cursor:pointer; }
+    .stat-card.clickable:hover { border-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    .stat-label { font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px; }
+    .stat-value { font-size:26px;font-weight:500;color:var(--navy);line-height:1; }
+    .stat-card.gold .stat-value { color:var(--gold-dark); }
+    .stat-card.success .stat-value { color:var(--success); }
+    .stat-sub { font-size:11px;color:var(--text-muted);margin-top:4px; }
 
-    .main { margin-left: var(--sidebar); flex: 1; padding: 32px; }
-    .page { display: none; }
-    .page.active { display: block; }
+    /* ── CARDS / TABLES ── */
+    .card { background:var(--white);border-radius:14px;border:1px solid var(--cream-dark);overflow:hidden;margin-bottom:24px; }
+    .card-header { padding:16px 24px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
+    .card-title { font-size:15px;font-weight:500;color:var(--navy); }
+    table { width:100%;border-collapse:collapse; }
+    th { text-align:left;padding:11px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark); }
+    td { padding:13px 20px;font-size:14px;border-bottom:1px solid var(--cream-dark);vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#FDFBF7; }
 
-    .page-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
-    }
-    .page-header h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--navy); }
+    /* ── BADGES / TAGS ── */
+    .badge { display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500; }
+    .badge-completed { background:var(--success-bg);color:var(--success); }
+    .badge-scheduled { background:#E8F0FB;color:#1A56A4; }
+    .badge-pending { background:var(--gold-light);color:var(--gold-dark); }
+    .source-airbnb { background:#FF5A5F;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
+    .source-vrbo { background:#1A5276;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
+    .source-manual { background:#7A7060;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500; }
+    .fee-pet { background:var(--gold-light);color:var(--gold-dark);padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500; }
+    .fee-excessive { background:#FDEEEE;color:var(--error);padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500; }
+    .paid-tag { background:var(--success-bg);color:var(--success);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500; }
+    .unpaid-tag { background:#FDEEEE;color:var(--error);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500; }
 
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 32px; }
-    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; border: 1px solid var(--cream-dark); }
-    .stat-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
-    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
-    .stat-card.gold .stat-value { color: var(--gold-dark); }
-    .stat-card.alert .stat-value { color: var(--error); }
+    /* ── BUTTONS ── */
+    .btn { padding:9px 18px;background:var(--gold);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:var(--radius);cursor:pointer;transition:background 0.15s; }
+    .btn:hover { background:var(--gold-dark); }
+    .btn-outline { background:transparent;border:1.5px solid var(--cream-dark);color:var(--text-muted); }
+    .btn-outline:hover { background:var(--cream-dark);color:var(--text); }
+    .btn-sm { padding:5px 12px;font-size:12px; }
+    .btn-success { background:var(--success);color:white; }
+    .btn-success:hover { background:#176b40; }
 
-    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--cream-dark); overflow: hidden; margin-bottom: 24px; }
-    .card-header { padding: 18px 24px; border-bottom: 1px solid var(--cream-dark); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .card-title { font-size: 15px; font-weight: 500; color: var(--navy); }
+    /* ── FILTERS ── */
+    .filter-row { display:flex;gap:8px;flex-wrap:wrap; }
+    .filter-btn { padding:5px 14px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all 0.15s; }
+    .filter-btn.active,.filter-btn:hover { background:var(--navy);color:var(--white);border-color:var(--navy); }
 
-    .prop-header { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); margin: 32px 0 16px; display: flex; align-items: center; gap: 10px; }
-    .prop-header:first-child { margin-top: 0; }
+    /* ── CALENDAR ── */
+    .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--cream-dark);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden; }
+    .cal-day-header { background:var(--cream);padding:8px 4px;text-align:center;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted); }
+    .cal-day { background:var(--white);min-height:90px;padding:6px;position:relative;vertical-align:top; }
+    .cal-day.other-month { background:#FAFAF8;opacity:0.6; }
+    .cal-day.today { background:#FFFBF0; }
+    .cal-day-num { font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:4px; }
+    .cal-day.today .cal-day-num { background:var(--gold);color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px; }
+    .cal-event { padding:2px 5px;border-radius:3px;font-size:10px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer; }
+    .cal-event-airbnb { background:#FF5A5F;color:white; }
+    .cal-event-vrbo { background:#1A5276;color:white; }
+    .cal-event-manual { background:#7A7060;color:white; }
+    .cal-event-clean { background:var(--success-bg);color:var(--success);border:1px solid #C3E6D5; }
+    .cal-nav { display:flex;align-items:center;gap:12px; }
+    .cal-nav button { background:none;border:1.5px solid var(--cream-dark);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);transition:all 0.15s; }
+    .cal-nav button:hover { background:var(--cream-dark); }
+    .cal-month-label { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);min-width:160px; }
 
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); background: var(--cream); border-bottom: 1px solid var(--cream-dark); }
-    td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--cream-dark); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #FDFBF7; }
+    /* ── PROP SECTION HEADER ── */
+    .prop-section-title { font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--navy);margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--cream-dark);display:flex;align-items:center;gap:8px; }
+    .prop-section-title:first-child { margin-top:0; }
 
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .badge-scheduled { background: var(--success-bg); color: var(--success); }
-    .badge-unassigned { background: #FBF3D5; color: var(--gold-dark); }
-    .badge-completed { background: #E8F0FB; color: #1A56A4; }
-    .badge-upcoming { background: var(--cream); color: var(--text-muted); }
+    /* ── MODALS ── */
+    .modal-overlay { display:none;position:fixed;inset:0;background:rgba(28,43,58,0.5);z-index:200;align-items:center;justify-content:center;padding:24px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:var(--white);border-radius:16px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:fadeUp 0.2s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px; }
+    .modal-title { font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--navy); }
+    .modal-close { background:none;border:none;font-size:22px;color:var(--text-muted);cursor:pointer;padding:4px; }
+    .modal-close:hover { color:var(--text); }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px; }
+    .form-group input,.form-group select,.form-group textarea { width:100%;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--cream);border:1.5px solid var(--cream-dark);border-radius:var(--radius);outline:none;transition:border-color 0.2s; }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus { border-color:var(--gold);background:var(--white); }
+    .form-group textarea { resize:vertical;min-height:70px; }
+    .modal-footer { display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-dark); }
 
-    .fee-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; margin-left: 4px; }
-    .fee-pet { background: #FBF3D5; color: var(--gold-dark); }
-    .fee-excessive { background: #FDEEEE; color: var(--error); }
+    /* ── MAINTENANCE / COMMENTS ── */
+    .report-card { background:var(--white);border-radius:var(--radius);border:1px solid var(--cream-dark);padding:18px 20px;margin-bottom:12px; }
+    .comment { padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.5; }
+    .comment-admin { background:var(--navy);color:white;margin-left:24px; }
+    .comment-owner { background:var(--cream);color:var(--text);border:1px solid var(--cream-dark);margin-right:24px; }
+    .comment-meta { font-size:11px;opacity:0.65;margin-bottom:3px;font-weight:500; }
+    .comment-box { display:flex;gap:10px;margin-top:12px; }
+    .comment-box input { flex:1;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--cream-dark);border-radius:var(--radius);background:var(--cream);outline:none;color:var(--text); }
+    .comment-box input:focus { border-color:var(--gold);background:var(--white); }
 
-    .report-row { background: var(--white); border-radius: var(--radius); border: 1px solid var(--cream-dark); padding: 18px 20px; margin-bottom: 12px; }
-    .report-open { background: #FDEEEE; color: var(--error); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-    .report-closed { background: var(--success-bg); color: var(--success); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-
-    .comment { padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
-    .comment-admin { background: var(--navy); color: white; margin-left: 24px; }
-    .comment-owner { background: var(--cream); color: var(--text); margin-right: 24px; border: 1px solid var(--cream-dark); }
-    .comment-meta { font-size: 11px; opacity: 0.65; margin-bottom: 3px; font-weight: 500; }
-    .comment-box { display: flex; gap: 10px; margin-top: 12px; }
-    .comment-box input {
-      flex: 1; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px;
-      border: 1.5px solid var(--cream-dark); border-radius: var(--radius);
-      background: var(--cream); outline: none; color: var(--text);
-    }
-    .comment-box input:focus { border-color: var(--gold); background: var(--white); }
-    .btn { padding: 10px 20px; background: var(--gold); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
-    .btn:hover { background: var(--gold-dark); }
-    .btn-outline { background: transparent; border: 1.5px solid var(--cream-dark); color: var(--text-muted); }
-    .btn-outline:hover { background: var(--cream-dark); color: var(--text); }
-    .btn-sm { padding: 6px 14px; font-size: 13px; }
-
-    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .filter-btn { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--cream-dark); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
-    .filter-btn.active, .filter-btn:hover { background: var(--navy); color: var(--white); border-color: var(--navy); }
-
-    .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-    .empty-state p { font-size: 15px; margin-top: 8px; }
-    .loading-inline { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
-
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: var(--white); padding: 12px 20px; border-radius: var(--radius); font-size: 14px; z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; }
-    .toast.show { opacity: 1; transform: translateY(0); }
-
-    .alert-banner { background: #FDF0EE; border: 1px solid #F0C4BE; color: var(--error); padding: 14px 20px; border-radius: var(--radius); font-size: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    /* ── MISC ── */
+    .empty-state { text-align:center;padding:48px 20px;color:var(--text-muted); }
+    .empty-state p { font-size:15px;margin-top:8px; }
+    .loading-inline { text-align:center;padding:40px;color:var(--text-muted);font-size:14px; }
+    .toast { position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--white);padding:12px 20px;border-radius:var(--radius);font-size:14px;z-index:999;opacity:0;transform:translateY(8px);transition:all 0.3s;pointer-events:none; }
+    .toast.show { opacity:1;transform:translateY(0); }
+    .divider { height:1px;background:var(--cream-dark);margin:20px 0; }
+    select.inline-sel { font-size:13px;padding:5px 9px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit;cursor:pointer; }
   </style>
 </head>
 <body>
@@ -138,25 +155,19 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <h1>Maid to <em>Getaway</em></h1>
-      <p id="owner-portal-label">Owner Portal</p>
+      <p>Owner Portal</p>
     </div>
     <nav>
-      <a class="nav-item active" id="nav-overview" onclick="showPage('overview', this)">
-        <span class="nav-icon">🏠</span> Overview
-      </a>
-      <a class="nav-item" id="nav-schedule" onclick="showPage('schedule', this)">
-        <span class="nav-icon">📅</span> Schedule
-      </a>
-      <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
-        <span class="nav-icon">💰</span> Financials
-      </a>
-      <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance', this)">
+      <a class="nav-item active" id="nav-overview" onclick="showPage('overview',this)"><span class="nav-icon">🏠</span> Overview</a>
+      <a class="nav-item" id="nav-schedule" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span> Schedule</a>
+      <a class="nav-item" id="nav-financials" onclick="showPage('financials',this)"><span class="nav-icon">💰</span> Financials</a>
+      <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance',this)">
         <span class="nav-icon">🔧</span> Maintenance
-        <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
+        <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
     </nav>
     <div class="sidebar-footer">
-      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px" id="owner-greeting"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px" id="owner-name"></div>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
     </div>
   </aside>
@@ -167,24 +178,60 @@
     <div class="page active" id="page-overview">
       <div class="page-header">
         <h2>Overview</h2>
-        <span style="font-size:13px;color:var(--text-muted)" id="overview-date"></span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="inline-sel" id="overview-range" onchange="renderOverview()">
+            <option value="7">Next 7 days</option>
+            <option value="14" selected>Next 14 days</option>
+            <option value="30">Next 30 days</option>
+            <option value="60">Next 60 days</option>
+          </select>
+          <select class="inline-sel" id="overview-prop" onchange="renderOverview()">
+            <option value="">All properties</option>
+          </select>
+        </div>
       </div>
-      <div id="overview-alerts"></div>
       <div class="stats-row" id="overview-stats"></div>
-      <div id="overview-upcoming"></div>
+      <div id="overview-table"></div>
     </div>
 
     <!-- SCHEDULE -->
     <div class="page" id="page-schedule">
       <div class="page-header">
-        <h2>Cleaning Schedule</h2>
-        <div class="filter-row">
-          <button class="filter-btn active" onclick="filterSchedule('upcoming', this)">Upcoming</button>
-          <button class="filter-btn" onclick="filterSchedule('past', this)">Past</button>
-          <button class="filter-btn" onclick="filterSchedule('all', this)">All</button>
+        <h2>Schedule</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="filter-row">
+            <button class="filter-btn active" id="view-btn-list" onclick="switchScheduleView('list',this)">☰ List</button>
+            <button class="filter-btn" id="view-btn-cal" onclick="switchScheduleView('cal',this)">📅 Calendar</button>
+          </div>
+          <select class="inline-sel" id="sched-prop" onchange="renderScheduleView()"><option value="">All properties</option></select>
+          <select class="inline-sel" id="sched-filter" onchange="renderScheduleView()">
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past 90 days</option>
+            <option value="all">All</option>
+            <option value="pet">🐶 Pet fee jobs</option>
+            <option value="short">⚑ Short turnarounds</option>
+          </select>
+          <select class="inline-sel" id="sched-range" onchange="renderScheduleView()">
+            <option value="30" selected>30 days</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
         </div>
       </div>
-      <div id="schedule-content"><div class="loading-inline">Loading…</div></div>
+      <div id="schedule-list-view"></div>
+      <div id="schedule-cal-view" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="cal-nav">
+            <button onclick="calPrev()">← Prev</button>
+            <span class="cal-month-label" id="cal-month-label"></span>
+            <button onclick="calNext()">Next →</button>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="calToday()">Today</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
     </div>
 
     <!-- FINANCIALS -->
@@ -192,9 +239,8 @@
       <div class="page-header">
         <h2>Financials</h2>
         <div style="display:flex;gap:8px">
-          <select id="fin-year" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-          </select>
-          <select id="fin-month" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <select class="inline-sel" id="fin-year" onchange="renderFinancials()"></select>
+          <select class="inline-sel" id="fin-month" onchange="renderFinancials()">
             <option value="">All months</option>
             <option value="0">January</option><option value="1">February</option>
             <option value="2">March</option><option value="3">April</option>
@@ -203,9 +249,10 @@
             <option value="8">September</option><option value="9">October</option>
             <option value="10">November</option><option value="11">December</option>
           </select>
+          <select class="inline-sel" id="fin-prop" onchange="renderFinancials()"><option value="">All properties</option></select>
         </div>
       </div>
-      <div id="financials-content"><div class="loading-inline">Loading…</div></div>
+      <div id="financials-content"></div>
     </div>
 
     <!-- MAINTENANCE -->
@@ -213,15 +260,52 @@
       <div class="page-header">
         <h2>Maintenance & Reports</h2>
         <div class="filter-row">
-          <button class="filter-btn active" id="maint-filter-open" onclick="filterMaintenance('open', this)">Open</button>
-          <button class="filter-btn" onclick="filterMaintenance('resolved', this)">Closed</button>
-          <button class="filter-btn" onclick="filterMaintenance('all', this)">All</button>
+          <button class="filter-btn active" onclick="filterMaint('open',this)">Open</button>
+          <button class="filter-btn" onclick="filterMaint('resolved',this)">Closed</button>
+          <button class="filter-btn" onclick="filterMaint('all',this)">All</button>
         </div>
       </div>
-      <div id="maintenance-content"><div class="loading-inline">Loading…</div></div>
+      <div id="maintenance-content"></div>
     </div>
 
   </main>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="payment-modal-title">Record Payment</span>
+      <button class="modal-close" onclick="closeModal('modal-payment')">✕</button>
+    </div>
+    <input type="hidden" id="payment-job-id"/>
+    <div class="form-group">
+      <label>Payment method <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <select id="payment-method">
+        <option value="">Select method…</option>
+        <option value="paypal">PayPal</option>
+        <option value="venmo">Venmo</option>
+        <option value="zelle">Zelle</option>
+        <option value="check">Check</option>
+        <option value="bank_transfer">Bank Transfer</option>
+        <option value="cash">Cash</option>
+        <option value="credit_card">Credit Card</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount paid ($) <span style="color:var(--text-muted);font-weight:400">(optional — leave blank if full amount)</span></label>
+      <input type="number" id="payment-amount" placeholder="e.g. 120" min="0" step="0.01"/>
+    </div>
+    <div class="form-group">
+      <label>Notes <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <textarea id="payment-notes" placeholder="e.g. Short-paid by $20, overpaid, split payment…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmPayment()">Mark as Paid</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -234,63 +318,62 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
-let ownerProperties = [];
+let ownerProps = [];
 let ownerJobs = [];
 let ownerReports = [];
-let scheduleFilter = 'upcoming';
-let maintenanceFilter = 'open';
+let schedView = 'list';
+let maintFilter = 'open';
+let calDate = new Date();
 
 // ── AUTH ──
 async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { window.location.replace('login.html'); return; }
-
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
   if (!profile || profile.role !== 'owner') { window.location.replace('login.html'); return; }
-
   currentUser = session.user;
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
-  document.getElementById('owner-greeting').textContent = profile.full_name;
-  document.getElementById('overview-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+  document.getElementById('owner-name').textContent = profile.full_name;
 
-  // Populate year filter
-  const yearSel = document.getElementById('fin-year');
-  const thisYear = new Date().getFullYear();
-  for (let y = thisYear; y >= thisYear - 3; y--) {
-    const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
-    if (y === thisYear) opt.selected = true;
-    yearSel.appendChild(opt);
+  // Year filter
+  const yr = document.getElementById('fin-year');
+  const now = new Date();
+  for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === now.getFullYear()) o.selected = true;
+    yr.appendChild(o);
   }
 
-  await loadOwnerData();
+  await loadData();
 }
+db.auth.onAuthStateChange(e => { if (e === 'SIGNED_OUT') window.location.replace('login.html?signout=1'); });
 
-db.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') window.location.replace('login.html?signout=1');
-});
-
-async function loadOwnerData() {
+async function loadData() {
   const { data: props } = await db.from('properties').select('*').eq('owner_id', currentUser.id).order('name');
-  ownerProperties = props || [];
+  ownerProps = props || [];
 
-  if (!ownerProperties.length) {
-    ['overview-stats', 'overview-upcoming', 'schedule-content', 'financials-content', 'maintenance-content'].forEach(id => {
-      document.getElementById(id).innerHTML = '<div class="empty-state">🏠<p>No properties assigned yet. Contact your admin.</p></div>';
+  if (!ownerProps.length) return;
+  const propIds = ownerProps.map(p => p.id);
+
+  // Populate property dropdowns
+  ['overview-prop','sched-prop','fin-prop'].forEach(id => {
+    const sel = document.getElementById(id);
+    ownerProps.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      sel.appendChild(o);
     });
-    return;
-  }
+  });
 
-  const propIds = ownerProperties.map(p => p.id);
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0];
-
+  const ninetyAgo = new Date(Date.now() - 90*864e5).toISOString().split('T')[0];
   const [jobsRes, reportsRes] = await Promise.all([
     db.from('jobs')
       .select('*, properties(name), job_assignments(profiles(full_name))')
       .in('property_id', propIds)
       .is('deleted_at', null)
-      .gte('scheduled_date', ninetyDaysAgo)
+      .gte('scheduled_date', ninetyAgo)
       .order('scheduled_date', { ascending: true }),
     db.from('maintenance_requests')
       .select('*, properties(name), profiles!submitted_by(full_name, role)')
@@ -301,6 +384,10 @@ async function loadOwnerData() {
   ownerJobs    = jobsRes.data    || [];
   ownerReports = reportsRes.data || [];
 
+  const openCount = ownerReports.filter(r => r.status === 'open').length;
+  const badge = document.getElementById('maint-badge');
+  if (openCount) { badge.style.display = 'inline-flex'; badge.textContent = openCount; }
+
   renderOverview();
 }
 
@@ -310,235 +397,419 @@ function showPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   el.classList.add('active');
-  if (name === 'schedule')    renderSchedule();
+  if (name === 'schedule')    renderScheduleView();
   if (name === 'financials')  renderFinancials();
   if (name === 'maintenance') renderMaintenance();
 }
 
+// ── SOURCE TAG ──
+function sourceTag(source) {
+  if (source === 'airbnb') return '<span class="source-airbnb">Airbnb</span>';
+  if (source === 'vrbo')   return '<span class="source-vrbo">VRBO</span>';
+  return '<span class="source-manual">Manual</span>';
+}
+
 // ── OVERVIEW ──
 function renderOverview() {
+  const days    = parseInt(document.getElementById('overview-range').value);
+  const propId  = document.getElementById('overview-prop').value;
+  const now     = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const endStr   = new Date(Date.now() + days*864e5).toISOString().split('T')[0];
+  const monthStr = now.toLocaleDateString('en-US', {month:'long'});
+  const nextMonthStr = new Date(now.getFullYear(), now.getMonth()+1, 1).toLocaleDateString('en-US', {month:'long'});
+
+  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
+
+  // Stat calculations
+  const windowJobs   = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
+  const mtdCompleted = jobs.filter(j => {
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return j.status === 'completed' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const mtdAirbnb   = mtdCompleted.filter(j => j.source === 'airbnb');
+  const mtdOwesJobs = mtdCompleted.filter(j => j.source !== 'airbnb');
+  const nextMonthJobs = jobs.filter(j => {
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return d.getMonth() === now.getMonth()+1 && d.getFullYear() === now.getFullYear();
+  });
+  const upcomingThisMonth = jobs.filter(j => {
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return j.scheduled_date >= todayStr && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const mtdAirbnbTotal   = mtdAirbnb.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const mtdOwesTotal     = mtdOwesJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const upcomingMtdTotal = upcomingThisMonth.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const nextMonthTotal   = nextMonthJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const openReports      = ownerReports.filter(r => r.status === 'open' && (!propId || r.property_id === propId)).length;
+
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card clickable success" onclick="filterOverviewTo('airbnb-paid')">
+      <div class="stat-label">${monthStr} — Airbnb paid</div>
+      <div class="stat-value">$${Math.round(mtdAirbnbTotal/100)}</div>
+      <div class="stat-sub">Platform handles payment</div>
+    </div>
+    <div class="stat-card clickable gold" onclick="filterOverviewTo('owner-owes')">
+      <div class="stat-label">${monthStr} — You owe</div>
+      <div class="stat-value">$${Math.round(mtdOwesTotal/100)}</div>
+      <div class="stat-sub">VRBO + manual jobs</div>
+    </div>
+    <div class="stat-card clickable" onclick="filterOverviewTo('upcoming-mtd')">
+      <div class="stat-label">${monthStr} upcoming</div>
+      <div class="stat-value">$${Math.round(upcomingMtdTotal/100)}</div>
+      <div class="stat-sub">${upcomingThisMonth.length} job${upcomingThisMonth.length!==1?'s':''}</div>
+    </div>
+    <div class="stat-card clickable" onclick="filterOverviewTo('next-month')">
+      <div class="stat-label">${nextMonthStr} upcoming</div>
+      <div class="stat-value">$${Math.round(nextMonthTotal/100)}</div>
+      <div class="stat-sub">${nextMonthJobs.length} job${nextMonthJobs.length!==1?'s':''}</div>
+    </div>
+    <div class="stat-card clickable ${openReports?'':'success'}" onclick="showPage('maintenance', document.getElementById('nav-maintenance'))">
+      <div class="stat-label">Open reports</div>
+      <div class="stat-value" style="${openReports?'color:var(--error)':''}">${openReports}</div>
+      <div class="stat-sub">Click to view</div>
+    </div>`;
+
+  renderOverviewTable(windowJobs);
+}
+
+let overviewFilter = null;
+function filterOverviewTo(type) {
+  overviewFilter = type;
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
-  const in14 = new Date(Date.now() + 14 * 864e5).toISOString().split('T')[0];
+  const propId = document.getElementById('overview-prop').value;
+  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
 
-  const upcoming     = ownerJobs.filter(j => j.scheduled_date >= todayStr);
-  const unassigned   = upcoming.filter(j => j.status === 'unassigned');
-  const next14       = upcoming.filter(j => j.scheduled_date <= in14);
-  const openReports  = ownerReports.filter(r => r.status === 'open');
-  const mtdJobs      = ownerJobs.filter(j => {
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && j.status === 'completed';
-  });
-  const mtdTotal = mtdJobs.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
-
-  // Update maintenance badge
-  const badge = document.getElementById('maint-badge');
-  if (openReports.length) {
-    badge.style.display = 'inline-flex';
-    badge.textContent = openReports.length;
+  if (type === 'airbnb-paid') {
+    jobs = jobs.filter(j => j.source === 'airbnb' && j.status === 'completed' && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
+  } else if (type === 'owner-owes') {
+    jobs = jobs.filter(j => j.source !== 'airbnb' && j.status === 'completed' && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
+  } else if (type === 'upcoming-mtd') {
+    jobs = jobs.filter(j => j.scheduled_date >= todayStr && new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth());
+  } else if (type === 'next-month') {
+    jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth() === now.getMonth()+1);
   }
-
-  // Alerts
-  let alerts = '';
-  if (unassigned.length) {
-    alerts += `<div class="alert-banner">⚠️ <strong>${unassigned.length} upcoming job${unassigned.length > 1 ? 's' : ''}</strong> still need${unassigned.length === 1 ? 's' : ''} a cleaner assigned.</div>`;
-  }
-  if (openReports.length) {
-    alerts += `<div class="alert-banner" style="background:#FBF3D5;border-color:#F0D98A;color:var(--gold-dark)">🔧 <strong>${openReports.length} open maintenance report${openReports.length > 1 ? 's' : ''}</strong> need${openReports.length === 1 ? 's' : ''} attention.</div>`;
-  }
-  document.getElementById('overview-alerts').innerHTML = alerts;
-
-  // Stats
-  document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Upcoming cleanings</div>
-      <div class="stat-value">${upcoming.length}</div>
-    </div>
-    <div class="stat-card ${unassigned.length ? 'alert' : ''}">
-      <div class="stat-label">Unassigned jobs</div>
-      <div class="stat-value">${unassigned.length}</div>
-    </div>
-    <div class="stat-card gold">
-      <div class="stat-label">${now.toLocaleDateString('en-US',{month:'long'})} charges</div>
-      <div class="stat-value">$${Math.round(mtdTotal / 100)}</div>
-    </div>
-    <div class="stat-card ${openReports.length ? 'alert' : ''}">
-      <div class="stat-label">Open reports</div>
-      <div class="stat-value">${openReports.length}</div>
-    </div>`;
-
-  // Next 14 days
-  let upcomingHtml = '';
-  if (next14.length) {
-    upcomingHtml = `<div class="card">
-      <div class="card-header"><span class="card-title">Next 14 days</span></div>
-      <table>
-        <thead><tr><th>Date</th><th>Property</th><th>Guests</th><th>Cleaner</th><th>Status</th></tr></thead>
-        <tbody>${next14.map(j => {
-          const cleaner = j.job_assignments?.[0]?.profiles?.full_name;
-          const isAssigned = ['assigned','accepted'].includes(j.status);
-          return `<tr>
-            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-            <td>${j.properties?.name || '—'}</td>
-            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-            <td style="font-size:13px">${cleaner || '<span style="color:var(--text-muted)">Unassigned</span>'}</td>
-            <td><span class="badge ${isAssigned ? 'badge-scheduled' : 'badge-unassigned'}">${isAssigned ? '✓ Scheduled' : 'Needs cleaner'}</span></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
-    </div>`;
-  } else {
-    upcomingHtml = `<div class="card"><div class="empty-state">✅<p>No cleanings in the next 14 days.</p></div></div>`;
-  }
-  document.getElementById('overview-upcoming').innerHTML = upcomingHtml;
+  renderOverviewTable(jobs);
 }
 
-// ── SCHEDULE ──
-function filterSchedule(filter, btn) {
-  scheduleFilter = filter;
-  document.querySelectorAll('#page-schedule .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderSchedule();
-}
-
-function renderSchedule() {
-  const wrap = document.getElementById('schedule-content');
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  let jobs = [...ownerJobs];
-  if (scheduleFilter === 'upcoming') jobs = jobs.filter(j => j.scheduled_date >= todayStr);
-  else if (scheduleFilter === 'past') jobs = jobs.filter(j => j.scheduled_date < todayStr).reverse();
-
+function renderOverviewTable(jobs) {
+  const wrap = document.getElementById('overview-table');
   if (!jobs.length) {
-    wrap.innerHTML = '<div class="empty-state">📅<p>No cleanings found.</p></div>';
+    wrap.innerHTML = '<div class="card"><div class="empty-state">📅<p>No cleanings in this window.</p></div></div>';
     return;
   }
 
   // Group by property
   let html = '';
-  ownerProperties.forEach(prop => {
-    const propJobs = jobs.filter(j => j.property_id === prop.id);
-    if (!propJobs.length) return;
-    html += `<div class="prop-header">🏠 ${prop.name}</div>
-    <div class="card">
-      <table>
-        <thead><tr><th>Date</th><th>Guests</th><th>Cleaner</th><th>Status</th><th>Charge</th></tr></thead>
-        <tbody>${propJobs.map(j => {
-          const cleaner = j.job_assignments?.[0]?.profiles?.full_name;
-          const isAssigned = ['assigned','accepted'].includes(j.status);
-          const isCompleted = j.status === 'completed';
-          const charge = j.charge_cents ? '$' + Math.round(j.charge_cents / 100) : '—';
-          const extra = j.additional_cleaning_cents ? ` <span class="fee-tag fee-excessive">+$${Math.round(j.additional_cleaning_cents/100)}</span>` : '';
-          const pet = j.pet_fee_required ? ' <span class="fee-tag fee-pet">🐶</span>' : '';
-          return `<tr>
-            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-            <td style="font-size:13px">${cleaner || '<span style="color:var(--text-muted)">—</span>'}</td>
-            <td><span class="badge ${isCompleted ? 'badge-completed' : isAssigned ? 'badge-scheduled' : 'badge-unassigned'}">${isCompleted ? '✓ Completed' : isAssigned ? 'Scheduled' : 'Needs cleaner'}</span></td>
-            <td>${charge}${extra}${pet}</td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
-    </div>`;
+  ownerProps.forEach(prop => {
+    const pj = jobs.filter(j => j.property_id === prop.id);
+    if (!pj.length) return;
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
+    <div class="card"><table>
+      <thead><tr>
+        <th>Date</th><th>Checkout / Check-in</th><th>Guests</th><th>Source</th>
+        <th>Charge</th><th>Additional fees</th><th>Payment</th><th></th>
+      </tr></thead>
+      <tbody>${pj.map(j => {
+        const charge = j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—';
+        const extra  = j.additional_cleaning_cents;
+        const isPaid = !!j.owner_paid_at;
+        const isCompleted = j.status === 'completed';
+        const checkoutTime = j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+        const checkinTime  = j.guest_checkin  ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+        const timesStr = checkoutTime && checkinTime ? `🚪 ${checkoutTime} → 🏠 ${checkinTime}` : checkoutTime ? `🚪 out ${checkoutTime}` : checkinTime ? `🏠 in ${checkinTime}` : '—';
+        const paymentInfo = j.owner_payment_method ? `<span style="font-size:11px;color:var(--text-muted)">${j.owner_payment_method}</span>` : '';
+        const paymentNotes = j.owner_payment_notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${j.owner_payment_notes}</div>` : '';
+        return `<tr>
+          <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+          <td style="font-size:12px;color:var(--text-muted)">${timesStr}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
+          <td>${sourceTag(j.source)}</td>
+          <td>${charge}</td>
+          <td>
+            ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)}</span>` : ''}
+            ${j.pet_fee_required ? '<span class="fee-pet">🐶 Pet</span>' : ''}
+            ${!extra && !j.pet_fee_required ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
+          </td>
+          <td>
+            ${j.source === 'airbnb' ? '<span style="font-size:12px;color:var(--success)">✓ Airbnb pays</span>' :
+              isPaid ? `<span class="paid-tag">✓ Paid</span>${paymentInfo}${paymentNotes}` :
+              isCompleted ? `<span class="unpaid-tag">Unpaid</span>` :
+              '<span style="font-size:12px;color:var(--text-muted)">Upcoming</span>'}
+          </td>
+          <td>
+            ${j.source !== 'airbnb' && isCompleted && !isPaid ?
+              `<button class="btn btn-sm btn-success" onclick="openPaymentModal('${j.id}','${prop.name}','${j.scheduled_date}')">Mark paid</button>` :
+              isPaid ? `<button class="btn btn-sm btn-outline" onclick="unmarkOwnerPaid('${j.id}')">Undo</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+// ── PAYMENT MODAL ──
+function openPaymentModal(jobId, propName, date) {
+  document.getElementById('payment-job-id').value = jobId;
+  document.getElementById('payment-modal-title').textContent = `Mark paid — ${propName} ${formatDate(date)}`;
+  document.getElementById('payment-method').value = '';
+  document.getElementById('payment-amount').value = '';
+  document.getElementById('payment-notes').value = '';
+  document.getElementById('modal-payment').classList.add('open');
+}
+
+async function confirmPayment() {
+  const jobId  = document.getElementById('payment-job-id').value;
+  const method = document.getElementById('payment-method').value || null;
+  const amount = document.getElementById('payment-amount').value;
+  const notes  = document.getElementById('payment-notes').value.trim() || null;
+  const { error } = await db.from('jobs').update({
+    owner_paid_at:        new Date().toISOString(),
+    owner_payment_method: method,
+    owner_payment_notes:  notes,
+    owner_payment_amount: amount ? Math.round(parseFloat(amount)*100) : null
+  }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-payment');
+  showToast('Payment recorded ✓');
+  await loadData();
+}
+
+async function unmarkOwnerPaid(jobId) {
+  if (!confirm('Remove this payment record?')) return;
+  await db.from('jobs').update({ owner_paid_at:null, owner_payment_method:null, owner_payment_notes:null, owner_payment_amount:null }).eq('id', jobId);
+  showToast('Payment removed');
+  await loadData();
+}
+
+// ── SCHEDULE VIEW TOGGLE ──
+function switchScheduleView(view, btn) {
+  schedView = view;
+  document.querySelectorAll('#page-schedule .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('schedule-list-view').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('schedule-cal-view').style.display  = view === 'cal'  ? 'block' : 'none';
+  renderScheduleView();
+}
+
+function renderScheduleView() {
+  if (schedView === 'list') renderScheduleList();
+  else renderCalendar();
+}
+
+function renderScheduleList() {
+  const wrap    = document.getElementById('schedule-list-view');
+  const filter  = document.getElementById('sched-filter').value;
+  const propId  = document.getElementById('sched-prop').value;
+  const days    = parseInt(document.getElementById('sched-range').value);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const endStr   = new Date(Date.now() + days*864e5).toISOString().split('T')[0];
+
+  let jobs = ownerJobs.filter(j => !propId || j.property_id === propId);
+
+  if (filter === 'upcoming')      jobs = jobs.filter(j => j.scheduled_date >= todayStr && j.scheduled_date <= endStr);
+  else if (filter === 'past')     jobs = jobs.filter(j => j.scheduled_date < todayStr);
+  else if (filter === 'pet')      jobs = jobs.filter(j => j.pet_fee_required);
+  else if (filter === 'short')    jobs = jobs.filter(j => j.is_short_window);
+
+  if (!jobs.length) { wrap.innerHTML = '<div class="empty-state">📅<p>No cleanings found.</p></div>'; return; }
+
+  let html = '';
+  ownerProps.forEach(prop => {
+    const pj = jobs.filter(j => j.property_id === prop.id);
+    if (!pj.length) return;
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
+    <div class="card"><table>
+      <thead><tr><th>Date</th><th>Checkout → Check-in</th><th>Guests</th><th>Source</th><th>Charge</th><th>Fees</th><th>Status</th></tr></thead>
+      <tbody>${pj.map(j => {
+        const checkoutTime = j.guest_checkout ? new Date(j.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+        const checkinTime  = j.guest_checkin  ? new Date(j.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : null;
+        const times = [checkoutTime ? '🚪 '+checkoutTime : null, checkinTime ? '🏠 '+checkinTime : null].filter(Boolean).join(' → ') || '—';
+        const isCompleted = j.status === 'completed';
+        const isShort = j.is_short_window;
+        return `<tr>
+          <td><strong>${formatDate(j.scheduled_date)}</strong>${isShort?'<span style="margin-left:6px;font-size:10px;background:#FDEEEE;color:var(--error);padding:1px 5px;border-radius:4px">⚑ Short</span>':''}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${times}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary||'—'}</td>
+          <td>${sourceTag(j.source)}</td>
+          <td>${j.charge_cents ? '$'+Math.round(j.charge_cents/100) : '—'}</td>
+          <td>
+            ${j.additional_cleaning_cents ? `<span class="fee-excessive">📸 $${Math.round(j.additional_cleaning_cents/100)}</span>` : ''}
+            ${j.pet_fee_required ? '<span class="fee-pet">🐶</span>' : ''}
+            ${!j.additional_cleaning_cents && !j.pet_fee_required ? '—' : ''}
+          </td>
+          <td><span class="badge ${isCompleted?'badge-completed':'badge-scheduled'}">${isCompleted?'✓ Completed':'Scheduled'}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+// ── CALENDAR ──
+function renderCalendar() {
+  const grid  = document.getElementById('cal-grid');
+  const label = document.getElementById('cal-month-label');
+  const propId = document.getElementById('sched-prop').value;
+  const year  = calDate.getFullYear();
+  const month = calDate.getMonth();
+
+  label.textContent = calDate.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  // Build day headers
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Jobs for this month (and surrounding days)
+  const jobs = ownerJobs.filter(j => {
+    if (propId && j.property_id !== propId) return false;
+    const d = new Date(j.scheduled_date + 'T12:00:00');
+    return d.getFullYear() === year && d.getMonth() === month;
   });
 
-  wrap.innerHTML = html || '<div class="empty-state">📅<p>No cleanings found.</p></div>';
+  // Previous month filler
+  const prevDays = new Date(year, month, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${prevDays - i}</div></div>`;
+  }
+
+  // This month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === todayStr;
+    const dayJobs = jobs.filter(j => j.scheduled_date === dateStr);
+    html += `<div class="cal-day ${isToday?'today':''}">
+      <div class="cal-day-num">${isToday ? `<span>${d}</span>` : d}</div>
+      ${dayJobs.map(j => {
+        const cls = j.source === 'airbnb' ? 'cal-event-airbnb' : j.source === 'vrbo' ? 'cal-event-vrbo' : 'cal-event-manual';
+        const label = j.ical_summary ? j.ical_summary.split(' ')[0] : (j.source||'Manual');
+        return `<div class="cal-event ${cls}" title="${j.properties?.name||''} — ${j.ical_summary||''}">${label}</div>
+                <div class="cal-event cal-event-clean">🧹 Clean</div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // Next month filler
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  for (let d = 1; d <= totalCells - firstDay - daysInMonth; d++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  grid.innerHTML = html;
 }
+
+function calPrev()  { calDate = new Date(calDate.getFullYear(), calDate.getMonth()-1, 1); renderCalendar(); }
+function calNext()  { calDate = new Date(calDate.getFullYear(), calDate.getMonth()+1, 1); renderCalendar(); }
+function calToday() { calDate = new Date(); renderCalendar(); }
 
 // ── FINANCIALS ──
 function renderFinancials() {
-  const wrap = document.getElementById('financials-content');
-  const selectedYear  = parseInt(document.getElementById('fin-year')?.value || new Date().getFullYear());
-  const selectedMonth = document.getElementById('fin-month')?.value;
-  const now = new Date();
+  const wrap  = document.getElementById('financials-content');
+  const year  = parseInt(document.getElementById('fin-year').value);
+  const month = document.getElementById('fin-month').value;
+  const propId = document.getElementById('fin-prop').value;
 
-  let completedJobs = ownerJobs.filter(j => j.status === 'completed');
+  let jobs = ownerJobs.filter(j => j.status === 'completed' && (!propId || j.property_id === propId));
+  jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getFullYear() === year);
+  if (month !== '') jobs = jobs.filter(j => new Date(j.scheduled_date+'T12:00:00').getMonth() === parseInt(month));
 
-  // Apply filters
-  completedJobs = completedJobs.filter(j => {
-    const d = new Date(j.scheduled_date + 'T12:00:00');
-    return d.getFullYear() === selectedYear;
-  });
-  if (selectedMonth !== '' && selectedMonth !== undefined) {
-    completedJobs = completedJobs.filter(j => {
-      return new Date(j.scheduled_date + 'T12:00:00').getMonth() === parseInt(selectedMonth);
-    });
-  }
+  const airbnbJobs = jobs.filter(j => j.source === 'airbnb');
+  const owesJobs   = jobs.filter(j => j.source !== 'airbnb');
+  const paidJobs   = owesJobs.filter(j => j.owner_paid_at);
+  const unpaidJobs = owesJobs.filter(j => !j.owner_paid_at);
 
-  const totalCharge = completedJobs.reduce((s, j) => s + (j.charge_cents || 0), 0);
-  const totalExtra  = completedJobs.reduce((s, j) => s + (j.additional_cleaning_cents || 0), 0);
-  const totalPet    = completedJobs.filter(j => j.pet_fee_required).length;
+  const airbnbTotal  = airbnbJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const owesTotal    = owesJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
+  const paidTotal    = paidJobs.reduce((s,j)=>s+(j.owner_payment_amount||(j.charge_cents||0)+(j.additional_cleaning_cents||0)),0);
+  const unpaidTotal  = unpaidJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0);
 
   let html = `
     <div class="stats-row">
-      <div class="stat-card gold">
-        <div class="stat-label">Base cleaning fees</div>
-        <div class="stat-value">$${Math.round(totalCharge / 100)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Additional fees</div>
-        <div class="stat-value">$${Math.round(totalExtra / 100)}</div>
+      <div class="stat-card success">
+        <div class="stat-label">Airbnb paid (platform)</div>
+        <div class="stat-value">$${Math.round(airbnbTotal/100)}</div>
+        <div class="stat-sub">${airbnbJobs.length} jobs — handled by Airbnb</div>
       </div>
       <div class="stat-card gold">
-        <div class="stat-label">Total billed</div>
-        <div class="stat-value">$${Math.round((totalCharge + totalExtra) / 100)}</div>
+        <div class="stat-label">Owner owes (VRBO + manual)</div>
+        <div class="stat-value">$${Math.round(owesTotal/100)}</div>
+        <div class="stat-sub">${owesJobs.length} jobs</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Cleanings completed</div>
-        <div class="stat-value">${completedJobs.length}</div>
+      <div class="stat-card success">
+        <div class="stat-label">You've paid</div>
+        <div class="stat-value">$${Math.round(paidTotal/100)}</div>
+        <div class="stat-sub">${paidJobs.length} jobs marked paid</div>
+      </div>
+      <div class="stat-card ${unpaidTotal?'':'success'}">
+        <div class="stat-label" style="${unpaidTotal?'color:var(--error)':''}">Outstanding</div>
+        <div class="stat-value" style="${unpaidTotal?'color:var(--error)':''}">$${Math.round(unpaidTotal/100)}</div>
+        <div class="stat-sub">${unpaidJobs.length} jobs unpaid</div>
       </div>
     </div>`;
 
-  if (!completedJobs.length) {
+  if (!jobs.length) {
     html += '<div class="card"><div class="empty-state">💰<p>No completed cleanings in this period.</p></div></div>';
     wrap.innerHTML = html;
     return;
   }
 
-  ownerProperties.forEach(prop => {
-    const propJobs = completedJobs.filter(j => j.property_id === prop.id);
-    if (!propJobs.length) return;
+  ownerProps.forEach(prop => {
+    const pj = jobs.filter(j => j.property_id === prop.id);
+    if (!pj.length) return;
 
-    html += `<div class="prop-header">🏠 ${prop.name}</div>
-    <div class="card">
-      <table>
-        <thead><tr>
-          <th>Date</th><th>Guests</th><th>Base fee</th><th>Additional fees</th><th>Total</th>
-        </tr></thead>
-        <tbody>${propJobs.map(j => {
-          const base  = j.charge_cents || 0;
-          const extra = j.additional_cleaning_cents || 0;
-          const total = base + extra;
-          const extraLabel = j.additional_cleaning_notes ? j.additional_cleaning_notes : 'extra';
-          return `<tr>
-            <td><strong>${formatDate(j.scheduled_date)}</strong></td>
-            <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary || '—'}</td>
-            <td>$${Math.round(base / 100)}</td>
-            <td>
-              ${extra ? `<span class="fee-tag fee-excessive">📸 $${Math.round(extra/100)} — ${extraLabel}</span>` : ''}
-              ${j.pet_fee_required ? '<span class="fee-tag fee-pet">🐶 Pet fee</span>' : ''}
-              ${!extra && !j.pet_fee_required ? '<span style="color:var(--text-muted);font-size:12px">—</span>' : ''}
-            </td>
-            <td><strong>$${Math.round(total / 100)}</strong></td>
-          </tr>`;
-        }).join('')}
-        <tr style="background:var(--gold-light)">
-          <td colspan="2" style="font-weight:500">Property total</td>
-          <td style="font-weight:500">$${Math.round(propJobs.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
-          <td style="font-weight:500">$${Math.round(propJobs.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
-          <td style="font-weight:700;color:var(--gold-dark)">$${Math.round(propJobs.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0)/100)}</td>
-        </tr>
-        </tbody>
-      </table>
-    </div>`;
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>
+    <div class="card"><table>
+      <thead><tr>
+        <th>Date</th><th>Source</th><th>Guests</th><th>Base fee</th><th>Additional fees</th><th>Total</th><th>Payment status</th>
+      </tr></thead>
+      <tbody>${pj.map(j => {
+        const base  = j.charge_cents || 0;
+        const extra = j.additional_cleaning_cents || 0;
+        const total = base + extra;
+        const isPaid = !!j.owner_paid_at;
+        const isAirbnb = j.source === 'airbnb';
+        return `<tr>
+          <td><strong>${formatDate(j.scheduled_date)}</strong></td>
+          <td>${sourceTag(j.source)}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${j.ical_summary||'—'}</td>
+          <td>$${Math.round(base/100)}</td>
+          <td>
+            ${extra ? `<span class="fee-excessive">📸 $${Math.round(extra/100)} — ${j.additional_cleaning_notes||'excessive clean'}</span>` : ''}
+            ${j.pet_fee_required ? '<span class="fee-pet">🐶 Pet fee</span>' : ''}
+            ${!extra && !j.pet_fee_required ? '—' : ''}
+          </td>
+          <td><strong>$${Math.round(total/100)}</strong></td>
+          <td>
+            ${isAirbnb ? '<span style="color:var(--success);font-size:13px">✓ Airbnb pays</span>' :
+              isPaid ? `<span class="paid-tag">✓ Paid${j.owner_payment_method ? ' via '+j.owner_payment_method : ''}</span>${j.owner_payment_notes?`<div style="font-size:11px;color:var(--text-muted)">${j.owner_payment_notes}</div>`:''}` :
+              `<span class="unpaid-tag">Unpaid</span>`}
+          </td>
+        </tr>`;
+      }).join('')}
+      <tr style="background:var(--gold-light);font-weight:600">
+        <td colspan="3">Property total</td>
+        <td>$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0),0)/100)}</td>
+        <td>$${Math.round(pj.reduce((s,j)=>s+(j.additional_cleaning_cents||0),0)/100)}</td>
+        <td style="color:var(--gold-dark)">$${Math.round(pj.reduce((s,j)=>s+(j.charge_cents||0)+(j.additional_cleaning_cents||0),0)/100)}</td>
+        <td></td>
+      </tr>
+      </tbody>
+    </table></div>`;
   });
 
   wrap.innerHTML = html;
 }
 
 // ── MAINTENANCE ──
-function filterMaintenance(filter, btn) {
-  maintenanceFilter = filter;
+function filterMaint(filter, btn) {
+  maintFilter = filter;
   document.querySelectorAll('#page-maintenance .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderMaintenance();
@@ -546,47 +817,43 @@ function filterMaintenance(filter, btn) {
 
 function renderMaintenance() {
   const wrap = document.getElementById('maintenance-content');
-  const categoryLabel = {
+  const catLabel = {
     supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
     cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
     good_idea:'💡 Good Idea', evidence:'📸 Excessive Clean', job_released:'↩ Job Released'
   };
 
   let reports = [...ownerReports];
-  if (maintenanceFilter === 'open')     reports = reports.filter(r => r.status === 'open');
-  if (maintenanceFilter === 'resolved') reports = reports.filter(r => r.status === 'resolved');
+  if (maintFilter === 'open')     reports = reports.filter(r => r.status === 'open');
+  if (maintFilter === 'resolved') reports = reports.filter(r => r.status === 'resolved');
 
   if (!reports.length) {
-    wrap.innerHTML = `<div class="empty-state">✅<p>${maintenanceFilter === 'open' ? 'No open reports.' : 'No reports found.'}</p></div>`;
+    wrap.innerHTML = `<div class="empty-state">✅<p>${maintFilter === 'open' ? 'No open reports.' : 'No reports found.'}</p></div>`;
     return;
   }
 
   let html = '';
-  ownerProperties.forEach(prop => {
-    const propReports = reports.filter(r => r.property_id === prop.id);
-    if (!propReports.length) return;
-
-    html += `<div class="prop-header">🏠 ${prop.name}</div>`;
-    propReports.forEach(r => {
-      html += `<div class="report-row" id="report-${r.id}">
+  ownerProps.forEach(prop => {
+    const pr = reports.filter(r => r.property_id === prop.id);
+    if (!pr.length) return;
+    html += `<div class="prop-section-title">🏠 ${prop.name}</div>`;
+    pr.forEach(r => {
+      html += `<div class="report-card" id="report-${r.id}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
-            <strong style="font-size:15px">${categoryLabel[r.category] || r.category}</strong>
-            <span style="font-size:12px;color:var(--text-muted);margin-left:10px">by ${r.profiles?.full_name || '—'} · ${timeAgo(r.created_at)}</span>
+            <strong style="font-size:15px">${catLabel[r.category]||r.category}</strong>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:10px">by ${r.profiles?.full_name||'—'} · ${timeAgo(r.created_at)}</span>
           </div>
-          <span class="${r.status === 'resolved' ? 'report-closed' : 'report-open'}">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            ${r.status === 'open' ? `<button class="btn btn-sm btn-success" onclick="closeReport('${r.id}')">Mark closed</button>` : `<button class="btn btn-sm btn-outline" onclick="reopenReport('${r.id}')">Reopen</button>`}
+            <span style="background:${r.status==='resolved'?'var(--success-bg)':'#FDEEEE'};color:${r.status==='resolved'?'var(--success)':'var(--error)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${r.status==='resolved'?'✓ Closed':'Open'}</span>
+          </div>
         </div>
-        <p style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:10px">${r.notes}</p>
-        ${r.photo_urls?.length ? `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            ${r.photo_urls.map(url => `
-              <div style="width:72px;height:72px;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--cream-dark)" onclick="window.open('${url}','_blank')">
-                <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
-              </div>`).join('')}
-          </div>` : ''}
-        <div id="comments-${r.id}"><div style="font-size:12px;color:var(--text-muted)">Loading comments…</div></div>
+        <p style="font-size:14px;line-height:1.5;margin-bottom:10px">${r.notes}</p>
+        ${r.photo_urls?.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:72px;height:72px;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid var(--cream-dark)" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
+        <div id="comments-${r.id}"><div style="font-size:12px;color:var(--text-muted)">Loading…</div></div>
         <div class="comment-box">
-          <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter') addComment('${r.id}')"/>
+          <input type="text" id="comment-input-${r.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')addComment('${r.id}')"/>
           <button class="btn btn-sm" onclick="addComment('${r.id}')">Send</button>
         </div>
       </div>`;
@@ -594,31 +861,38 @@ function renderMaintenance() {
   });
 
   wrap.innerHTML = html || '<div class="empty-state">✅<p>No reports found.</p></div>';
-
-  // Load comments for all visible reports
   reports.forEach(r => loadComments(r.id));
+}
+
+async function closeReport(id) {
+  await db.from('maintenance_requests').update({ status:'resolved' }).eq('id', id);
+  ownerReports = ownerReports.map(r => r.id===id ? {...r, status:'resolved'} : r);
+  // Update badge
+  const openCount = ownerReports.filter(r => r.status==='open').length;
+  const badge = document.getElementById('maint-badge');
+  badge.style.display = openCount ? 'inline-flex' : 'none';
+  badge.textContent = openCount;
+  showToast('Report closed ✓');
+  renderMaintenance();
+}
+
+async function reopenReport(id) {
+  await db.from('maintenance_requests').update({ status:'open' }).eq('id', id);
+  ownerReports = ownerReports.map(r => r.id===id ? {...r, status:'open'} : r);
+  showToast('Report reopened');
+  renderMaintenance();
 }
 
 // ── COMMENTS ──
 async function loadComments(reportId) {
   const wrap = document.getElementById(`comments-${reportId}`);
   if (!wrap) return;
-
-  const { data: comments } = await db
-    .from('report_comments')
-    .select('*, profiles(full_name, role)')
-    .eq('report_id', reportId)
-    .order('created_at', { ascending: true });
-
-  if (!comments?.length) {
-    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet — start the conversation.</p>';
-    return;
-  }
-
-  wrap.innerHTML = comments.map(c => {
-    const isAdmin = ['admin'].includes(c.profiles?.role);
-    return `<div class="comment ${isAdmin ? 'comment-admin' : 'comment-owner'}">
-      <div class="comment-meta">${c.profiles?.full_name || '—'}${isAdmin ? ' · Admin' : ''} · ${timeAgo(c.created_at)}</div>
+  const { data } = await db.from('report_comments').select('*, profiles(full_name, role)').eq('report_id', reportId).order('created_at', { ascending:true });
+  if (!data?.length) { wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet.</p>'; return; }
+  wrap.innerHTML = data.map(c => {
+    const isAdmin = c.profiles?.role === 'admin';
+    return `<div class="comment ${isAdmin?'comment-admin':'comment-owner'}">
+      <div class="comment-meta">${c.profiles?.full_name||'—'}${isAdmin?' · Admin':''} · ${timeAgo(c.created_at)}</div>
       ${c.content}
     </div>`;
   }).join('');
@@ -628,46 +902,33 @@ async function addComment(reportId) {
   const input = document.getElementById(`comment-input-${reportId}`);
   const content = input.value.trim();
   if (!content) return;
-
-  const { error } = await db.from('report_comments').insert({
-    report_id: reportId,
-    author_id: currentUser.id,
-    content
-  });
-
-  if (error) { showToast('Error: ' + error.message); return; }
+  const { error } = await db.from('report_comments').insert({ report_id:reportId, author_id:currentUser.id, content });
+  if (error) { showToast('Error: '+error.message); return; }
   input.value = '';
   await loadComments(reportId);
 }
 
-// ── SIGN OUT ──
-async function signOut() {
-  await db.auth.signOut();
-  window.location.replace('login.html?signout=1');
+// ── UTILS ──
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'schedule')    renderScheduleView();
+  if (name === 'financials')  renderFinancials();
+  if (name === 'maintenance') renderMaintenance();
 }
-
-// ── TOAST ──
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-// ── HELPERS ──
-function formatDate(d) {
-  if (!d) return '—';
-  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+async function signOut() { await db.auth.signOut(); window.location.replace('login.html?signout=1'); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
+function formatDate(d) { if(!d) return '—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
 function timeAgo(dt) {
-  const diff = Date.now() - new Date(dt).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dt).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  const diff = Date.now()-new Date(dt).getTime(), mins=Math.floor(diff/60000);
+  if(mins<1) return 'just now'; if(mins<60) return `${mins}m ago`;
+  const hrs=Math.floor(mins/60); if(hrs<24) return `${hrs}h ago`;
+  const days=Math.floor(hrs/24); if(days<30) return `${days}d ago`;
+  return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 
 init();
