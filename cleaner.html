@@ -1573,14 +1573,16 @@ async function uploadMaintenancePhotos(inputId, requestId) {
       showToast(`"${file.name}" is too large — try a screenshot instead`);
       continue;
     }
-    const path = `maintenance/${requestId}/${Date.now()}-${file.name}`;
-    const { error } = await db.storage.from('job photos').upload(path, file);
-    if (error) { showToast('Upload failed: ' + error.message); continue; }
+    // Use same path structure as job photos so existing storage policies apply
+    const path = `jobs/maintenance-${requestId}/${Date.now()}-${file.name}`;
+    const { data: uploadData, error } = await db.storage.from('job photos').upload(path, file);
+    if (error) { showToast('Upload failed: ' + error.message); console.error('Upload error:', error); continue; }
     const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
     urls.push(publicUrl);
   }
   if (urls.length > 0) {
-    await db.from('maintenance_requests').update({ photo_urls: urls }).eq('id', requestId);
+    const { error: updateError } = await db.from('maintenance_requests').update({ photo_urls: urls }).eq('id', requestId);
+    if (updateError) { console.error('Photo URL save error:', updateError); showToast('Photos uploaded but failed to save links: ' + updateError.message); }
   }
   return urls;
 }
