@@ -1412,7 +1412,7 @@ function renderJobsTable(jobs) {
           <td>
             <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
               ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑</span>' : ''}
-              ${job.pet_fee_required ? '<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">🐶</span>' : ''}
+              ${job.pet_fee_required ? `<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:3px 8px;font-size:13px;font-weight:500;white-space:nowrap">🐶${job.pet_fee_cents ? ' $'+Math.round(job.pet_fee_cents/100) : ''}</span>` : ''}
               ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
               ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
             </div>
