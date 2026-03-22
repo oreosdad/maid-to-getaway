@@ -212,8 +212,8 @@
       <br><button class="btn btn-gold btn-full" style="margin-top:10px;font-size:14px" onclick="switchTab('settings', document.querySelectorAll('.tab')[5])">Set my password →</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="filter-btn active" id="myjobs-btn-upcoming" onclick="setMyJobsView('upcoming',this)">Upcoming</button>
-      <button class="filter-btn" id="myjobs-btn-completed" onclick="setMyJobsView('completed',this)">Completed</button>
+      <button id="myjobs-btn-upcoming" onclick="setMyJobsView('upcoming',this)" style="padding:6px 18px;border-radius:20px;border:1.5px solid var(--navy);background:var(--navy);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Upcoming</button>
+      <button id="myjobs-btn-completed" onclick="setMyJobsView('completed',this)" style="padding:6px 18px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Completed</button>
     </div>
     <div id="my-jobs-list"><div class="empty-state"><div class="empty-state-icon">🧹</div><p>Loading your jobs…</p></div></div>
   </div>
@@ -610,8 +610,9 @@ let myJobsView = 'upcoming';
 
 function setMyJobsView(view, btn) {
   myJobsView = view;
-  document.querySelectorAll('#myjobs-btn-upcoming, #myjobs-btn-completed').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  document.getElementById('myjobs-btn-upcoming').style.cssText  = 'padding:6px 18px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;color:var(--text-muted);font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;cursor:pointer';
+  document.getElementById('myjobs-btn-completed').style.cssText = 'padding:6px 18px;border-radius:20px;border:1.5px solid var(--cream-dark);background:transparent;color:var(--text-muted);font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;cursor:pointer';
+  if (btn) btn.style.cssText = 'padding:6px 18px;border-radius:20px;border:1.5px solid var(--navy);background:var(--navy);color:white;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;cursor:pointer';
   renderMyJobs();
 }
 
@@ -864,10 +865,12 @@ async function renderChecklist(propertyId) {
 }
 
 async function markJobDone(assignmentId, jobId) {
-  await db.from('job_assignments').update({ completed_at: new Date().toISOString() }).eq('id', assignmentId);
-  const { error } = await db.from('jobs').update({ status: 'pending_payment', completed_at: new Date().toISOString() }).eq('id', jobId);
-  if (error) { showToast('Error: ' + error.message); return; }
+  const { error: aErr } = await db.from('job_assignments').update({ completed_at: new Date().toISOString() }).eq('id', assignmentId);
+  if (aErr) { showToast('Error: ' + aErr.message); return; }
+  const { error: jErr } = await db.from('jobs').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', jobId);
+  if (jErr) { showToast('Error: ' + jErr.message); return; }
   showHighFive();
+  closeModal('modal-job-detail');
   await loadMyJobs();
 }
 
