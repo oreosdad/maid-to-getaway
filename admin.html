@@ -558,7 +558,20 @@
     <div class="page" id="page-users">
       <div class="page-header">
         <h2>Users</h2>
-        <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+        <div style="display:flex;align-items:center;gap:12px">
+          <!-- Active / Archived toggle -->
+          <div style="display:flex;background:var(--cream-dark);border-radius:20px;padding:3px;gap:2px">
+            <button id="toggle-active" onclick="setUserArchiveView(false)" 
+              style="padding:6px 16px;border-radius:18px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:var(--navy);color:white;transition:all 0.15s">
+              Active
+            </button>
+            <button id="toggle-archived" onclick="setUserArchiveView(true)"
+              style="padding:6px 16px;border-radius:18px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--text-muted);transition:all 0.15s">
+              Archived
+            </button>
+          </div>
+          <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+        </div>
       </div>
       <!-- Role tabs -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
@@ -696,7 +709,7 @@
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-outline" style="color:var(--error);border-color:var(--error)" onclick="deleteUserFromModal()">Delete user</button>
+      <button class="btn btn-outline" style="color:var(--error);border-color:var(--error)" onclick="archiveUserFromModal()">Archive user</button>
       <div style="display:flex;gap:10px">
         <button class="btn btn-outline" onclick="closeModal('modal-edit-user')">Cancel</button>
         <button class="btn" onclick="saveEditUser()">Save changes</button>
@@ -2388,6 +2401,25 @@ function clearReportFilters() {
 // ── USER MANAGEMENT ──
 let allUsers = [];
 let userTabFilter = 'cleaner';
+let showingArchived = false;
+
+function setUserArchiveView(archived) {
+  showingArchived = archived;
+  const activeBtn   = document.getElementById('toggle-active');
+  const archivedBtn = document.getElementById('toggle-archived');
+  if (archived) {
+    activeBtn.style.background   = 'transparent';
+    activeBtn.style.color        = 'var(--text-muted)';
+    archivedBtn.style.background = 'var(--navy)';
+    archivedBtn.style.color      = 'white';
+  } else {
+    activeBtn.style.background   = 'var(--navy)';
+    activeBtn.style.color        = 'white';
+    archivedBtn.style.background = 'transparent';
+    archivedBtn.style.color      = 'var(--text-muted)';
+  }
+  renderUsers();
+}
 
 function setUserTab(role, btn) {
   userTabFilter = role;
@@ -2404,16 +2436,20 @@ async function loadUsers() {
 
 function renderUsers() {
   const wrap = document.getElementById('users-table-wrap');
-  let users = [...allUsers];
+  let users = allUsers.filter(u => showingArchived ? !u.is_active : u.is_active !== false);
   if (userTabFilter !== 'all') users = users.filter(u => u.role === userTabFilter);
 
   if (!users.length) {
-    wrap.innerHTML = '<div class="empty-state">👥<p>No users found.</p></div>';
+    wrap.innerHTML = `<div class="empty-state">👥<p>${showingArchived ? 'No archived users.' : 'No active users found.'}</p></div>`;
     return;
   }
 
   const roleBadge = r => {
-    const map = { admin:'#E8F0FB:#1A56A4:⚙️ Admin', cleaner:'var(--success-bg):var(--success):🧹 Cleaner', owner:'var(--gold-light):var(--gold-dark):🏠 Owner' };
+    const map = {
+      admin:   '#E8F0FB:#1A56A4:⚙️ Admin',
+      cleaner: 'var(--success-bg):var(--success):🧹 Cleaner',
+      owner:   'var(--gold-light):var(--gold-dark):🏠 Owner'
+    };
     const [bg, color, label] = (map[r] || 'var(--cream):var(--text-muted):'+r).split(':');
     return `<span style="background:${bg};color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${label}</span>`;
   };
@@ -2421,25 +2457,47 @@ function renderUsers() {
   wrap.innerHTML = `<table>
     <thead><tr>
       <th>Name</th><th>Email</th><th>Phone</th><th>Role</th>
-      <th>Status</th><th>Owner/Operator</th><th>Actions</th>
+      ${showingArchived ? '<th>Archived</th>' : '<th>Owner/Operator</th>'}
+      <th>Actions</th>
     </tr></thead>
     <tbody>${users.map(u => `
-      <tr style="cursor:pointer" onclick="openEditUserModal('${u.id}')">
+      <tr style="cursor:pointer;${showingArchived ? 'opacity:0.7' : ''}" onclick="openEditUserModal('${u.id}')">
         <td><strong>${u.full_name || '—'}</strong></td>
         <td style="font-size:13px">${u.email || '—'}</td>
         <td style="font-size:13px;color:var(--text-muted)">${u.phone || '—'}</td>
         <td>${roleBadge(u.role)}</td>
-        <td><span class="badge ${u.is_active ? 'badge-accepted' : 'badge-declined'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
-        <td style="font-size:13px;color:var(--text-muted)">${u.is_owner_operator ? '✓ Owner/operator' : '—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${showingArchived
+          ? `<span style="color:var(--error);font-size:12px">Archived</span>`
+          : (u.is_owner_operator ? '✓ Owner/operator' : '—')}</td>
         <td onclick="event.stopPropagation()">
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')">Edit</button>
-            <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset pwd</button>
+            ${showingArchived
+              ? `<button class="btn btn-sm btn-success" onclick="restoreUser('${u.id}','${(u.full_name||'').replace(/'/g,"\\'")}')">Restore</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')">Edit</button>
+                 <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset pwd</button>
+                 <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="archiveUser('${u.id}','${(u.full_name||'').replace(/'/g,"\\'")}')">Archive</button>`
+            }
           </div>
         </td>
       </tr>`).join('')}
     </tbody>
   </table>`;
+}
+
+async function archiveUser(userId, userName) {
+  if (!confirm(`Archive ${userName}? They won't be able to log in until restored.`)) return;
+  const { error } = await db.from('profiles').update({ is_active: false }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`${userName} archived`);
+  loadUsers();
+}
+
+async function restoreUser(userId, userName) {
+  if (!confirm(`Restore ${userName}? They'll be able to log in again.`)) return;
+  const { error } = await db.from('profiles').update({ is_active: true }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`${userName} restored ✓`);
+  loadUsers();
 }
 
 function openNewUserModal() {
@@ -2534,6 +2592,16 @@ async function saveEditUser() {
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-user');
   showToast(emailChanged ? 'User updated ✓ — email changed' : 'User updated ✓');
+  loadUsers();
+}
+
+async function archiveUserFromModal() {
+  const id   = document.getElementById('edit-user-id').value;
+  const name = document.getElementById('edit-user-name').value;
+  if (!confirm(`Archive ${name}? They won't be able to log in. You can restore them anytime from the Archived view.`)) return;
+  await db.from('profiles').update({ is_active: false }).eq('id', id);
+  closeModal('modal-edit-user');
+  showToast(`${name} archived`);
   loadUsers();
 }
 
