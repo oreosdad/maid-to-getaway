@@ -490,7 +490,8 @@ async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { window.location.replace('login.html'); return; }
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  if (!profile || profile.role !== 'owner') { window.location.replace('login.html'); return; }
+  const ownerRoles = profile.notification_prefs?.roles || [profile.role];
+  if (!profile || !ownerRoles.includes('owner')) { window.location.replace('login.html'); return; }
   currentUser = session.user;
   currentProfile = profile;
   document.getElementById('auth-loading').style.display = 'none';
