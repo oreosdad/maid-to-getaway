@@ -285,6 +285,27 @@
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
     .empty-state p { font-size: 15px; margin-top: 8px; }
 
+    .short-window-alert {
+      background: linear-gradient(135deg, #C0392B, #E74C3C);
+      color: white;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      animation: pulse-alert 1.5s ease-in-out infinite;
+      box-shadow: 0 4px 20px rgba(192,57,43,0.4);
+    }
+    .short-window-alert .alert-icon { font-size: 32px; flex-shrink: 0; }
+    .short-window-alert .alert-body { flex: 1; }
+    .short-window-alert .alert-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; letter-spacing: 0.02em; }
+    .short-window-alert .alert-sub { font-size: 13px; opacity: 0.9; }
+    @keyframes pulse-alert {
+      0%, 100% { box-shadow: 0 4px 20px rgba(192,57,43,0.4); }
+      50% { box-shadow: 0 4px 32px rgba(192,57,43,0.8); transform: scale(1.005); }
+    }
+
     .modal-overlay {
       display: none;
       position: fixed;
@@ -438,11 +459,14 @@
       <a class="nav-item" id="nav-properties" onclick="showPage('properties', this)">
         <span class="nav-icon">🏠</span> Properties
       </a>
-      <a class="nav-item" id="nav-cleaners" onclick="showPage('cleaners', this)">
-        <span class="nav-icon">👤</span> Cleaners
-      </a>
       <a class="nav-item" id="nav-payments" onclick="showPage('payments', this)">
         <span class="nav-icon">💰</span> Payments
+      </a>
+      <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
+        <span class="nav-icon">📋</span> Reports
+      </a>
+      <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
+        <span class="nav-icon">👥</span> Users
       </a>
     </nav>
     <div class="sidebar-footer">
@@ -530,24 +554,203 @@
       </div>
     </div>
 
-    <div class="page" id="page-cleaners">
+    <!-- USERS PAGE (unified — cleaners, owners, admins) -->
+    <div class="page" id="page-users">
       <div class="page-header">
-        <h2>Cleaners</h2>
-        <button class="btn" onclick="openNewCleanerModal()">+ Add cleaner</button>
+        <h2>Users</h2>
+        <div style="display:flex;align-items:center;gap:12px">
+          <!-- Active / Archived toggle -->
+          <div style="display:flex;background:var(--cream-dark);border-radius:20px;padding:3px;gap:2px">
+            <button id="toggle-active" onclick="setUserArchiveView(false)" 
+              style="padding:6px 16px;border-radius:18px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:var(--navy);color:white;transition:all 0.15s">
+              Active
+            </button>
+            <button id="toggle-archived" onclick="setUserArchiveView(true)"
+              style="padding:6px 16px;border-radius:18px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--text-muted);transition:all 0.15s">
+              Archived
+            </button>
+          </div>
+          <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+        </div>
+      </div>
+      <!-- Role tabs -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="filter-btn active" id="user-tab-cleaner" onclick="setUserTab('cleaner',this)">🧹 Cleaners</button>
+        <button class="filter-btn" id="user-tab-owner"          onclick="setUserTab('owner',this)">🏠 Owners</button>
+        <button class="filter-btn" id="user-tab-admin"          onclick="setUserTab('admin',this)">⚙️ Admins</button>
+        <button class="filter-btn" id="user-tab-all"            onclick="setUserTab('all',this)">All</button>
       </div>
       <div class="card">
-        <div id="cleaners-table-wrap"><div class="loading-inline">Loading…</div></div>
+        <div id="users-table-wrap"><div class="loading-inline">Loading users…</div></div>
       </div>
     </div>
 
     <div class="page" id="page-payments">
       <div class="page-header"><h2>Payments</h2></div>
+      <div class="stats-row" id="payment-stats-row" style="margin-bottom:20px"></div>
       <div class="card">
+        <div class="card-header">
+          <span class="card-title">Cleaner payments</span>
+          <div class="filter-row">
+            <select id="pay-filter-cleaner" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All cleaners</option>
+            </select>
+            <select id="pay-filter-month" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="pay-filter-year" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All years</option>
+            </select>
+            <select id="pay-filter-status" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+              <option value="">All statuses</option>
+              <option value="unpaid">Unpaid only</option>
+              <option value="paid">Paid only</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="clearPaymentFilters()">Clear</button>
+          </div>
+        </div>
         <div id="payments-table-wrap"></div>
       </div>
     </div>
 
+    <!-- REPORTS PAGE -->
+    <div class="page" id="page-reports">
+      <div class="page-header">
+        <h2>Reports</h2>
+        <div id="closed-count-bar" style="font-size:13px;color:var(--text-muted)"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <select id="report-filter-type" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All types</option>
+          <option value="supply">Supply needed</option>
+          <option value="plumbing">Plumbing</option>
+          <option value="appliance">Appliance</option>
+          <option value="cosmetic">Cosmetic</option>
+          <option value="electrical">Electrical</option>
+          <option value="other">Other</option>
+          <option value="good_idea">Good Ideas</option>
+          <option value="job_released">Job Released</option>
+          <option value="evidence">Excessive Clean</option>
+        </select>
+        <select id="report-filter-status" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All statuses</option>
+          <option value="open" selected>Open</option>
+          <option 
+          <option value="resolved">Closed</option>
+        </select>
+        <select id="report-filter-property" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="">All properties</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearReportFilters()">Clear</button>
+      </div>
+      <div class="card">
+        <div id="admin-reports-wrap"><div class="loading-inline">Loading reports…</div></div>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit user</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-user')">✕</button>
+    </div>
+    <input type="hidden" id="edit-user-id"/>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" id="edit-user-name" placeholder="Jane Smith"/>
+      </div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="tel" id="edit-user-phone" placeholder="(816) 555-0100"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="edit-user-email" placeholder="jane@example.com"/>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Changing email updates their login address immediately.</p>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="edit-user-role">
+        <option value="cleaner">🧹 Cleaner</option>
+        <option value="owner">🏠 Owner</option>
+        <option value="admin">⚙️ Admin</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-user-active"/>
+          Active account
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-user-owner-op"/>
+          Owner/operator (excludes from payments)
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" style="color:var(--error);border-color:var(--error)" onclick="archiveUserFromModal()">Archive user</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="closeModal('modal-edit-user')">Cancel</button>
+        <button class="btn" onclick="saveEditUser()">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New User Modal -->
+<div class="modal-overlay" id="modal-new-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add user</span>
+      <button class="modal-close" onclick="closeModal('modal-new-user')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>Full name</label>
+      <input type="text" id="new-user-name" placeholder="Jane Smith"/>
+    </div>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="new-user-email" placeholder="jane@example.com"/>
+    </div>
+    <div class="form-group">
+      <label>Phone (optional)</label>
+      <input type="tel" id="new-user-phone" placeholder="(816) 555-0100"/>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="new-user-role">
+        <option value="cleaner">Cleaner</option>
+        <option value="owner">Owner</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:-8px">Temporary password: <strong>ChangeMe123!</strong> — user should change on first login.</p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-new-user')">Cancel</button>
+      <button class="btn" onclick="saveNewUser()">Create user</button>
+    </div>
+  </div>
 </div>
 
 <!-- New Job Modal -->
@@ -557,22 +760,35 @@
       <span class="modal-title">New cleaning job</span>
       <button class="modal-close" onclick="closeModal('modal-job')">✕</button>
     </div>
+    <div class="short-window-alert" id="new-job-short-alert" style="display:none">
+      <div class="alert-icon">⚑</div>
+      <div class="alert-body">
+        <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
+        <div class="alert-sub" id="new-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
+      </div>
+    </div>
     <div class="form-group">
       <label>Property</label>
       <select id="job-property"><option value="">Select a property…</option></select>
     </div>
-    <div class="form-group">
-      <label>Scheduled date</label>
-      <input type="date" id="job-date"/>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Scheduled date</label>
+        <input type="date" id="job-date"/>
+      </div>
+      <div class="form-group">
+        <label>Scheduled time</label>
+        <input type="time" id="job-time"/>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Old guest checkout time</label>
-        <input type="datetime-local" id="job-checkout"/>
+        <label>Guest checkout</label>
+        <input type="datetime-local" id="job-checkout" oninput="checkNewJobShortWindow()"/>
       </div>
       <div class="form-group">
-        <label>New guest check-in time</label>
-        <input type="datetime-local" id="job-checkin"/>
+        <label>Guest check-in</label>
+        <input type="datetime-local" id="job-checkin" oninput="checkNewJobShortWindow()"/>
       </div>
     </div>
     <div class="form-group">
@@ -589,11 +805,17 @@
         <input type="number" id="job-payout" placeholder="e.g. 85" min="0" step="1"/>
       </div>
     </div>
-    <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="job-pet-fee"/>
-        🐶 Pet fee needs to be collected
-      </label>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top:8px">
+          <input type="checkbox" id="job-pet-fee"/>
+          🐶 Pet fee
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Pet fee amount ($)</label>
+        <input type="number" id="job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('job-pet-fee').checked=true"/>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -606,13 +828,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="job-flagged"/>
-        ⚑ Flag as short window / urgent
-      </label>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
+      <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="job-notes" placeholder="Any special instructions…"></textarea>
     </div>
     <div class="modal-footer">
@@ -747,6 +963,12 @@
       </div>
     </div>
     <div class="form-group">
+      <label>Assign owner</label>
+      <select id="edit-prop-owner">
+        <option value="">No owner assigned</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label>Notes</label>
       <textarea id="edit-prop-notes" placeholder="Gate code, parking, special instructions…"></textarea>
     </div>
@@ -763,6 +985,13 @@
     <div class="modal-header">
       <span class="modal-title">Edit job</span>
       <button class="modal-close" onclick="closeModal('modal-edit-job')">✕</button>
+    </div>
+    <div class="short-window-alert" id="edit-job-short-alert" style="display:none">
+      <div class="alert-icon">⚑</div>
+      <div class="alert-body">
+        <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
+        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
+      </div>
     </div>
     <input type="hidden" id="edit-job-id"/>
     <div class="form-group">
@@ -808,11 +1037,17 @@
         <input type="number" id="edit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
       </div>
     </div>
-    <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="edit-job-pet-fee"/>
-        🐶 Pet fee needs to be collected
-      </label>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top:8px">
+          <input type="checkbox" id="edit-job-pet-fee"/>
+          🐶 Pet fee
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Pet fee amount ($)</label>
+        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -825,13 +1060,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="checkbox-label">
-        <input type="checkbox" id="edit-job-flagged"/>
-        ⚑ Flag as short window / urgent
-      </label>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
+      <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="edit-job-notes" placeholder="Any special instructions…"></textarea>
     </div>
     <p id="edit-job-pay-date-display" style="font-size:13px;color:var(--gold-dark);margin-bottom:8px;font-weight:500"></p>
@@ -885,6 +1114,13 @@
       <label>Phone (optional)</label>
       <input type="tel" id="edit-cleaner-phone"/>
     </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="edit-cleaner-is-owner-operator"/>
+        🏠 Owner/operator — no payout tracking
+      </label>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px;padding-left:28px">Check this for yourself or your spouse. This cleaner won't appear in payment totals or the Payments page.</p>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-cleaner')">Cancel</button>
       <button class="btn" onclick="saveEditCleaner()">Save changes</button>
@@ -923,7 +1159,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJ'
+    + 'kcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -975,19 +1212,16 @@ async function init() {
     return;
   }
 
-  // Show the app immediately — don't wait for data to load
+  // Auth confirmed — show the app, hide loading screen
   document.getElementById('auth-loading').style.display = 'none';
   document.getElementById('app').classList.add('ready');
   authChecked = true;
 
-  // Load data in background — page is already visible
-  try {
-    await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
-    await autoPurgeTrash();
-  } catch(e) {
-    console.error('Data load error:', e);
-    showToast('Error loading data — please refresh');
-  }
+  await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
+  await autoPurgeTrash();
+  // Load owner profiles for property assignment dropdown
+  const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
+  window._ownerProfiles = owners || [];
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1004,8 +1238,9 @@ function showPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
   el.classList.add('active');
   if (name === 'properties') renderProperties();
-  if (name === 'cleaners')   renderCleaners();
-  if (name === 'payments')   renderPayments();
+  if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
+  if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
+  if (name === 'users')      { loadUsers(); }
 }
 
 // ── JOBS ──
@@ -1022,6 +1257,24 @@ async function loadJobs() {
   // Default view: hide completed and deleted
   const activeJobs = allJobs.filter(j => j.status !== 'completed' && !j.deleted_at);
   renderJobsTable(activeJobs);
+}
+
+async function checkNewJobShortWindow() {
+  const cout = document.getElementById('job-checkout').value;
+  const cin  = document.getElementById('job-checkin').value;
+  const alert = document.getElementById('new-job-short-alert');
+  if (cout && cin) {
+    const gap = (new Date(cin) - new Date(cout)) / 36e5;
+    if (gap < 8 && gap > 0) {
+      const coutStr = new Date(cout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const cinStr  = new Date(cin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      document.getElementById('new-job-short-alert-sub').textContent =
+        `Only ${Math.round(gap * 10)/10} hours between checkout (${coutStr}) and check-in (${cinStr}). Coordinate with your cleaner immediately.`;
+      alert.style.display = 'flex';
+      return;
+    }
+  }
+  alert.style.display = 'none';
 }
 
 async function autoPurgeTrash() {
@@ -1205,7 +1458,7 @@ function renderTrashInline() {
         const daysLeft = Math.ceil((purgeDate - new Date()) / 864e5);
         return `
         <tr>
-<td>${job.is_short_window ? '🚨 ' : ''}${formatDate(job.scheduled_date)}</td>
+          <td>${formatDate(job.scheduled_date)}</td>
           <td>${job.properties?.name || '—'}</td>
           <td style="font-size:12px;color:var(--text-muted)">${deletedDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
           <td style="font-size:13px;color:var(--text-muted)">${job.deleted_reason || '—'}</td>
@@ -1246,7 +1499,7 @@ function renderJobsTable(jobs) {
       </tr></thead>
       <tbody>${jobs.map(job => `
         <tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-<td>${job.is_short_window ? '🚨 ' : ''}${formatDate(job.scheduled_date)}</td>
+          <td>${job.is_short_window ? '🚨 ' : ''}${formatDate(job.scheduled_date)}</td>
           <td>${job.properties?.name || '—'}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
           <td style="font-size:13px;color:var(--text-muted)">${job.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
@@ -1255,19 +1508,19 @@ function renderJobsTable(jobs) {
           <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
           <td>
             <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
-              ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑ SHORT</span>' : ''}
-              ${job.pet_fee_required ? '<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:2px 6px;font-size:16px;font-weight:500;white-space:nowrap">🐶</span>' : ''}
+              ${job.is_short_window ? '<span style="background:linear-gradient(135deg,#C0392B,#E74C3C);color:white;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(192,57,43,0.4)">⚑ SHORT</span>' : ''}
+              ${job.pet_fee_required ? `<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:3px 8px;font-size:16px;font-weight:500;white-space:nowrap">🐶${job.pet_fee_cents ? ' $'+Math.round(job.pet_fee_cents/100) : ''}</span>` : ''}
               ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
               ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
             </div>
           </td>
           <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
           <td>${job.source === 'airbnb' ? '<span style="background:#FF5A5F;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">Airbnb</span>' : job.source === 'vrbo' ? '<span style="background:#1A5276;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">VRBO</span>' : '<span style="color:#B0A896;font-size:12px">Manual</span>'}</td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-              ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
-              ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
+              ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
+              ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="event.stopPropagation();markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
               ${job.cleaner_paid_at ? '<span style="font-size:12px;color:var(--success)">✓ Paid</span>' : ''}
             </div>
           </td>
@@ -1292,6 +1545,7 @@ function openEditJobModal(id) {
 
   document.getElementById('edit-job-id').value          = job.id;
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
+  document.getElementById('edit-job-time').value        = job.scheduled_time || '';
   // Pre-fill payout from job, or fall back to property default
   const jobProp = properties.find(p => p.id === job.property_id);
   const payoutCents = job.payout_cents || (jobProp && jobProp.default_payout_cents) || null;
@@ -1302,10 +1556,23 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
-  document.getElementById('edit-job-flagged').checked   = job.is_short_window;
+  document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
   document.getElementById('edit-job-notes').value                     = job.notes || '';
+
+  // Short turnaround alert
+  const shortAlert = document.getElementById('edit-job-short-alert');
+  if (job.is_short_window) {
+    shortAlert.style.display = 'flex';
+    const cout = job.guest_checkout ? new Date(job.guest_checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+    const cin  = job.guest_checkin  ? new Date(job.guest_checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/Chicago'}) : null;
+    const timePart = cout && cin ? ` Checkout ${cout} → Check-in ${cin}.` : '';
+    document.getElementById('edit-job-short-alert-sub').textContent =
+      `Less than 8 hours between guest checkout and next check-in.${timePart} Coordinate with your cleaner immediately.`;
+  } else {
+    shortAlert.style.display = 'none';
+  }
   // Show calculated pay date
   const payDateEl = document.getElementById('edit-job-pay-date-display');
   if (payDateEl) {
@@ -1328,7 +1595,7 @@ async function saveEditJob() {
   const checkin   = document.getElementById('edit-job-checkin').value || null;
   const status    = document.getElementById('edit-job-status').value;
 
-  let isShortWindow = document.getElementById('edit-job-flagged').checked;
+  let isShortWindow = false;
   if (checkout && checkin) {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
@@ -1337,11 +1604,13 @@ async function saveEditJob() {
   const { error } = await db.from('jobs').update({
     property_id:      propertyId,
     scheduled_date:   date,
+    scheduled_time:   document.getElementById('edit-job-time').value || null,
     guest_checkout:   checkout,
     guest_checkin:    checkin,
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
+    pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
     charge_cents:              document.getElementById('edit-job-charge').value ? Math.round(parseFloat(document.getElementById('edit-job-charge').value) * 100) : null,
@@ -1382,7 +1651,9 @@ async function markPaid(jobId) {
   const { error } = await db.from('jobs').update({ cleaner_paid_at: new Date().toISOString() }).eq('id', jobId);
   if (error) { showToast('Error marking paid'); return; }
   showToast('Cleaner marked as paid ✓');
+  allPaymentJobs = [];
   await loadJobs();
+  if (document.getElementById('page-payments').classList.contains('active')) await renderPayments();
 }
 
 function openDeleteJobModal(jobId) {
@@ -1447,6 +1718,7 @@ function openNewJobModal() {
     '<option value="">Leave unassigned</option>' +
     cleaners.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
   document.getElementById('job-date').value = today();
+  document.getElementById('job-time').value = '';
   document.getElementById('job-checkout').value = '';
   document.getElementById('job-checkin').value = '';
 
@@ -1470,7 +1742,8 @@ function openNewJobModal() {
   };
   document.getElementById('job-notes').value = '';
   document.getElementById('job-pet-fee').checked = false;
-  document.getElementById('job-flagged').checked = false;
+  document.getElementById('job-pet-fee-cents').value = '';
+  
   document.getElementById('modal-job').classList.add('open');
 }
 
@@ -1484,7 +1757,7 @@ async function saveJob() {
   const checkout  = document.getElementById('job-checkout').value || null;
   const checkin   = document.getElementById('job-checkin').value || null;
 
-  let isShortWindow = document.getElementById('job-flagged').checked;
+  let isShortWindow = false;
   if (checkout && checkin) {
     const gap = (new Date(checkin) - new Date(checkout)) / 36e5;
     if (gap < 8) isShortWindow = true;
@@ -1493,11 +1766,13 @@ async function saveJob() {
   const { data: job, error } = await db.from('jobs').insert({
     property_id:      propertyId,
     scheduled_date:   date,
+    scheduled_time:   document.getElementById('job-time').value || null,
     guest_checkout:   checkout,
     guest_checkin:    checkin,
     status:           cleanerId ? 'assigned' : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('job-pet-fee').checked,
+    pet_fee_cents:    document.getElementById('job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('job-notes').value || null,
     source:           'manual',
     cleaner_pay_date: calcPayDate(date),
@@ -1534,7 +1809,7 @@ function renderProperties() {
     <table>
       <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Notes</th><th>Actions</th></tr></thead>
       <tbody>${properties.map(p => `
-        <tr>
+        <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
           <td>${p.address}</td>
           <td>${p.airbnb_ical_url ? '✓ Set' : '—'}</td>
@@ -1543,7 +1818,7 @@ function renderProperties() {
           <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
           <td style="color:var(--text-muted);font-size:13px">${p.notes || '—'}</td>
-          <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" onclick="openPropertyChecklist('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📋 Checklist</button>
           </td>
@@ -1565,6 +1840,12 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-charge').value         = p.default_charge_cents ? Math.round(p.default_charge_cents / 100) : '';
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
+
+  // Populate owner dropdown
+  const ownerSel = document.getElementById('edit-prop-owner');
+  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
+    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
+
   document.getElementById('modal-edit-property').classList.add('open');
 }
 
@@ -1575,21 +1856,30 @@ async function saveEditProperty() {
   if (!name)    { showToast('Please enter a property name'); return; }
   if (!address) { showToast('Please enter an address'); return; }
 
+  const airbnb = document.getElementById('edit-prop-airbnb').value.trim() || null;
+  const vrbo   = document.getElementById('edit-prop-vrbo').value.trim() || null;
+
   const { error } = await db.from('properties').update({
-    name,
-    address,
-    airbnb_ical_url:        document.getElementById('edit-prop-airbnb').value.trim() || null,
-    vrbo_ical_url:          document.getElementById('edit-prop-vrbo').value.trim() || null,
+    name, address,
+    airbnb_ical_url:        airbnb,
+    vrbo_ical_url:          vrbo,
     default_checkout_time:  document.getElementById('edit-prop-checkout-time').value || null,
     default_checkin_time:   document.getElementById('edit-prop-checkin-time').value || null,
     default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
     default_payout_cents:   document.getElementById('edit-prop-payout').value ? Math.round(parseFloat(document.getElementById('edit-prop-payout').value) * 100) : null,
-    notes:                  document.getElementById('edit-prop-notes').value.trim() || null
+    notes:                  document.getElementById('edit-prop-notes').value.trim() || null,
+    owner_id:               document.getElementById('edit-prop-owner').value || null
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-property');
-  showToast('Property updated ✓');
+
+  if (airbnb || vrbo) {
+    showToast('Property updated — syncing calendar…');
+    await triggerIcalSync();
+  } else {
+    showToast('Property updated ✓');
+  }
   await loadProperties();
   renderProperties();
 }
@@ -1605,10 +1895,13 @@ async function saveProperty() {
   if (!name)    { showToast('Please enter a property name'); return; }
   if (!address) { showToast('Please enter an address'); return; }
 
+  const airbnb = document.getElementById('prop-airbnb').value.trim() || null;
+  const vrbo   = document.getElementById('prop-vrbo').value.trim() || null;
+
   const { error } = await db.from('properties').insert({
     name, address,
-    airbnb_ical_url:        document.getElementById('prop-airbnb').value.trim() || null,
-    vrbo_ical_url:          document.getElementById('prop-vrbo').value.trim() || null,
+    airbnb_ical_url:        airbnb,
+    vrbo_ical_url:          vrbo,
     default_checkout_time:  document.getElementById('prop-checkout-time').value || null,
     default_checkin_time:   document.getElementById('prop-checkin-time').value || null,
     default_charge_cents:   document.getElementById('prop-charge').value ? Math.round(parseFloat(document.getElementById('prop-charge').value) * 100) : null,
@@ -1618,9 +1911,28 @@ async function saveProperty() {
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-property');
-  showToast('Property added ✓');
+
+  if (airbnb || vrbo) {
+    showToast('Property added — syncing calendar…');
+    await triggerIcalSync();
+  } else {
+    showToast('Property added ✓');
+  }
   await loadProperties();
   renderProperties();
+}
+
+async function triggerIcalSync() {
+  try {
+    const res  = await fetch('/.netlify/functions/sync-ical?secret=MaidSync2026!');
+    const data = await res.json();
+    const msg  = data.created > 0
+      ? `✓ Calendar synced — ${data.created} new job${data.created !== 1 ? 's' : ''} added`
+      : '✓ Calendar synced — no new jobs found';
+    showToast(msg);
+  } catch (e) {
+    showToast('Property saved ✓ (calendar sync will run on next hourly cycle)');
+  }
 }
 
 // ── CLEANERS ──
@@ -1639,12 +1951,12 @@ function renderCleaners() {
     <table>
       <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>${cleaners.map(c => `
-        <tr>
+        <tr style="cursor:pointer" onclick="openEditCleanerModal('${c.id}')">
           <td><strong>${c.full_name}</strong></td>
           <td>${c.email}</td>
           <td>${c.phone || '—'}</td>
           <td><span class="badge ${c.is_active ? 'badge-accepted' : 'badge-declined'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
-          <td>
+          <td onclick="event.stopPropagation()">
             <button class="btn btn-outline btn-sm" onclick="openEditCleanerModal('${c.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="resetCleanerPassword('${c.id}', '${c.email}')">Reset password</button>
           </td>
@@ -1665,15 +1977,22 @@ async function saveCleaner() {
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
-  const { data, error } = await db.rpc('create_cleaner', {
-    p_name: name,
-    p_email: email,
-    p_phone: phone
+  const { data, error } = await db.auth.signUp({
+    email,
+    password: 'ChangeMe123!',
+    options: { data: { full_name: name, role: 'cleaner' } }
   });
-
   if (error) { showToast('Error: ' + error.message); return; }
+
+  if (data?.user?.id) {
+    await db.from('profiles').upsert({
+      id: data.user.id, email, full_name: name, phone,
+      role: 'cleaner', is_active: true, is_owner_operator: false
+    }, { onConflict: 'id' });
+  }
+
   closeModal('modal-cleaner');
-  showToast('Cleaner added ✓ — temp password: ChangeMe123!');
+  showToast('Cleaner added ✓ — they\'ll need to confirm their email');
   await loadCleaners();
   renderCleaners();
 }
@@ -1685,21 +2004,21 @@ function openEditCleanerModal(id) {
   document.getElementById('edit-cleaner-name').value  = c.full_name;
   document.getElementById('edit-cleaner-email').value = c.email;
   document.getElementById('edit-cleaner-phone').value = c.phone || '';
+  document.getElementById('edit-cleaner-is-owner-operator').checked = c.is_owner_operator || false;
   document.getElementById('modal-edit-cleaner').classList.add('open');
 }
 
 async function saveEditCleaner() {
-  const id    = document.getElementById('edit-cleaner-id').value;
-  const name  = document.getElementById('edit-cleaner-name').value.trim();
-  const email = document.getElementById('edit-cleaner-email').value.trim();
-  const phone = document.getElementById('edit-cleaner-phone').value.trim() || null;
+  const id              = document.getElementById('edit-cleaner-id').value;
+  const name            = document.getElementById('edit-cleaner-name').value.trim();
+  const email           = document.getElementById('edit-cleaner-email').value.trim();
+  const phone           = document.getElementById('edit-cleaner-phone').value.trim() || null;
+  const isOwnerOperator = document.getElementById('edit-cleaner-is-owner-operator').checked;
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
   const { error } = await db.from('profiles').update({
-    full_name: name,
-    email,
-    phone
+    full_name: name, email, phone, is_owner_operator: isOwnerOperator
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
@@ -1725,9 +2044,138 @@ async function resetCleanerPassword(cleanerId, cleanerEmail) {
 }
 
 // ── PAYMENTS ──
-function renderPayments() {
-  document.getElementById('payments-table-wrap').innerHTML =
-    '<div class="empty-state">💰<p>Payment tracking coming soon. Completed jobs will appear here.</p></div>';
+let allPaymentJobs = [];
+
+async function loadPaymentData() {
+  const { data } = await db
+    .from('jobs')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id, is_owner_operator))')
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .order('scheduled_date', { ascending: false });
+  // Exclude jobs where the assigned cleaner is an owner/operator
+  allPaymentJobs = (data || []).filter(j => {
+    const cleaner = j.job_assignments?.[0]?.profiles;
+    return !cleaner?.is_owner_operator;
+  });
+}
+
+function clearPaymentFilters() {
+  document.getElementById('pay-filter-cleaner').value = '';
+  document.getElementById('pay-filter-month').value   = '';
+  document.getElementById('pay-filter-year').value    = '';
+  document.getElementById('pay-filter-status').value  = '';
+  renderPayments();
+}
+
+async function renderPayments() {
+  // Load data if not yet loaded
+  if (!allPaymentJobs.length) await loadPaymentData();
+
+  const cleanerFilter = document.getElementById('pay-filter-cleaner')?.value || '';
+  const monthFilter   = document.getElementById('pay-filter-month')?.value   || '';
+  const yearFilter    = document.getElementById('pay-filter-year')?.value    || '';
+  const statusFilter  = document.getElementById('pay-filter-status')?.value  || '';
+
+  // Populate cleaner dropdown
+  const cleanerSel = document.getElementById('pay-filter-cleaner');
+  if (cleanerSel && cleanerSel.options.length <= 1) {
+    const uniqueCleaners = {};
+    allPaymentJobs.forEach(j => {
+      const c = j.job_assignments?.[0]?.profiles;
+      if (c) uniqueCleaners[c.id] = c.full_name;
+    });
+    Object.entries(uniqueCleaners).forEach(([id, name]) => {
+      const opt = document.createElement('option');
+      opt.value = id; opt.textContent = name;
+      cleanerSel.appendChild(opt);
+    });
+  }
+
+  // Populate year dropdown
+  const yearSel = document.getElementById('pay-filter-year');
+  if (yearSel && yearSel.options.length <= 1) {
+    const years = [...new Set(allPaymentJobs
+      .filter(j => j.scheduled_date)
+      .map(j => j.scheduled_date.slice(0, 4)))].sort().reverse();
+    years.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      yearSel.appendChild(opt);
+    });
+  }
+
+  let filtered = [...allPaymentJobs];
+
+  if (cleanerFilter) filtered = filtered.filter(j => j.job_assignments?.[0]?.profiles?.id === cleanerFilter);
+  if (monthFilter)   filtered = filtered.filter(j => j.scheduled_date && new Date(j.scheduled_date + 'T12:00:00').getMonth() + 1 === parseInt(monthFilter));
+  if (yearFilter)    filtered = filtered.filter(j => j.scheduled_date?.startsWith(yearFilter));
+  if (statusFilter === 'unpaid') filtered = filtered.filter(j => !j.cleaner_paid_at);
+  if (statusFilter === 'paid')   filtered = filtered.filter(j =>  j.cleaner_paid_at);
+
+  // Summary stats
+  const totalOwed   = filtered.filter(j => !j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
+  const totalPaid   = filtered.filter(j =>  j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
+  const statsEl = document.getElementById('payment-stats-row');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div class="stat-card flagged">
+        <div class="stat-label">Owed to cleaners</div>
+        <div class="stat-value">$${Math.round(totalOwed / 100)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Paid out</div>
+        <div class="stat-value">$${Math.round(totalPaid / 100)}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Jobs shown</div>
+        <div class="stat-value">${filtered.length}</div>
+      </div>`;
+  }
+
+  const wrap = document.getElementById('payments-table-wrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">💰<p>No completed jobs match your filters.</p></div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Property</th><th>Cleaner</th><th>Payout</th>
+        <th>Pay date</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${filtered.map(job => {
+        const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
+        const isPaid  = !!job.cleaner_paid_at;
+        return `<tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name || '—'}</td>
+          <td>${cleaner}</td>
+          <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
+          <td>
+            ${isPaid
+              ? `<span class="badge badge-accepted">✓ Paid ${job.cleaner_paid_at ? new Date(job.cleaner_paid_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}</span>`
+              : `<span class="badge badge-flagged">Unpaid</span>`}
+          </td>
+          <td>
+            ${!isPaid
+              ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPaid('${job.id}')">Mark paid</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="unmarkPaid('${job.id}')">Undo</button>`}
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function unmarkPaid(jobId) {
+  const { error } = await db.from('jobs').update({ cleaner_paid_at: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Payment undone ✓');
+  allPaymentJobs = [];
+  await renderPayments();
 }
 
 // ── PROPERTY CHECKLIST ──
@@ -1837,6 +2285,18 @@ async function signOut() {
 }
 
 // ── HELPERS ──
+async function addAdminComment(reportId) {
+  const input = document.getElementById(`admin-comment-input-${reportId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  const { data: { session } } = await db.auth.getSession();
+  const { error } = await db.from('report_comments').insert({ report_id: reportId, author_id: session.user.id, content });
+  if (error) { showToast('Error: ' + error.message); return; }
+  input.value = '';
+  await loadReportComments(reportId, `admin-comments-${reportId}`);
+  showToast('Comment sent ✓');
+}
+
 function today() { return new Date().toISOString().split('T')[0]; }
 
 function formatDate(d) {
@@ -1849,6 +2309,379 @@ function formatTime(t) {
   const [h, m] = t.split(':');
   const hour = parseInt(h);
   return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+// ── ADMIN REPORTS ──
+let allAdminReports = [];
+
+async function renderAdminReports() {
+  if (!allAdminReports.length) {
+    const { data } = await db
+      .from('maintenance_requests')
+      .select('*, properties(name), profiles!submitted_by(full_name)')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    allAdminReports = data || [];
+
+    // Show resolved archive count
+    const resolvedCount = allAdminReports.filter(r => r.status === 'resolved').length;
+    const countBar = document.getElementById('closed-count-bar');
+    if (countBar && resolvedCount > 0) {
+      countBar.innerHTML = `<span style="cursor:pointer;color:var(--gold-dark);text-decoration:underline" onclick="showResolvedReports()">📦 ${resolvedCount} closed report${resolvedCount !== 1 ? 's' : ''} in archive</span>`;
+    }
+
+    // Populate property filter
+    const propSel = document.getElementById('report-filter-property');
+    if (propSel && propSel.options.length <= 1) {
+      const seen = {};
+      allAdminReports.forEach(r => {
+        if (r.properties?.name && !seen[r.property_id]) {
+          seen[r.property_id] = true;
+          const opt = document.createElement('option');
+          opt.value = r.property_id;
+          opt.textContent = r.properties.name;
+          propSel.appendChild(opt);
+        }
+      });
+    }
+  }
+
+  const typeFilter     = document.getElementById('report-filter-type')?.value     || '';
+  const statusFilter   = document.getElementById('report-filter-status')?.value   || 'open';
+  const propertyFilter = document.getElementById('report-filter-property')?.value || '';
+
+  let filtered = [...allAdminReports];
+  if (typeFilter)     filtered = filtered.filter(r => r.category === typeFilter);
+  if (statusFilter)   filtered = filtered.filter(r => r.status === statusFilter);
+  if (propertyFilter) filtered = filtered.filter(r => r.property_id === propertyFilter);
+
+  const wrap = document.getElementById('admin-reports-wrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">📋<p>No reports match your filters.</p></div>';
+    return;
+  }
+
+  const categoryLabel = {
+    supply:'🛍️ Supply needed', plumbing:'🔧 Plumbing', appliance:'⚙️ Appliance',
+    cosmetic:'🎨 Cosmetic', electrical:'⚡ Electrical', other:'📝 Other',
+    good_idea:'💡 Good Idea', job_released:'↩ Job Released', evidence:'📸 Excessive Clean'
+  };
+  const statusColor = { open:'#C0392B', resolved:'#1E7B4B' };
+  const statusBg    = { open:'#FDEEEE', resolved:'#EAF7F0' };
+
+  wrap.innerHTML = filtered.map(r => `
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);padding:20px;margin-bottom:16px" id="admin-report-${r.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div>
+          <strong style="font-size:15px">${categoryLabel[r.category] || r.category}</strong>
+          <span style="font-size:13px;color:var(--text-muted);margin-left:8px">${r.properties?.name||'—'} · ${r.profiles?.full_name||'—'}</span>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
+            <option value="open" ${r.status==='open'?'selected':''}>Open</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>Closed</option>
+          </select>
+          <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteAdminReport('${r.id}')">Delete</button>
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
+      ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
+      <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
+        <div id="admin-comments-${r.id}"><span style="font-size:12px;color:var(--text-muted)">Loading…</span></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input type="text" id="admin-comment-input-${r.id}" placeholder="Reply…" onkeydown="if(event.key==='Enter')addAdminComment('${r.id}')"
+            style="flex:1;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--cream-dark);border-radius:8px;background:var(--cream);outline:none;color:var(--text)"/>
+          <button class="btn btn-sm" onclick="addAdminComment('${r.id}')">Send</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Load comments for all reports
+  filtered.forEach(r => loadReportComments(r.id, `admin-comments-${r.id}`));
+}
+
+async function updateReportStatus(reportId, status) {
+  const { error } = await db.from('maintenance_requests').update({ status }).eq('id', reportId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Status updated ✓');
+  // Update local cache
+  allAdminReports = allAdminReports.map(r => r.id === reportId ? { ...r, status } : r);
+}
+
+async function deleteAdminReport(reportId) {
+  if (!confirm('Permanently delete this report?')) return;
+  const { error } = await db.from('maintenance_requests').delete().eq('id', reportId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Report deleted ✓');
+  allAdminReports = allAdminReports.filter(r => r.id !== reportId);
+  renderAdminReports();
+}
+
+function showResolvedReports() {
+  document.getElementById('report-filter-status').value = 'resolved';
+  renderAdminReports();
+}
+
+function clearReportFilters() {
+  document.getElementById('report-filter-type').value     = '';
+  document.getElementById('report-filter-status').value   = '';
+  document.getElementById('report-filter-property').value = '';
+  allAdminReports = [];
+  renderAdminReports();
+}
+
+// ── USER MANAGEMENT ──
+let allUsers = [];
+let userTabFilter = 'cleaner';
+let showingArchived = false;
+
+function setUserArchiveView(archived) {
+  showingArchived = archived;
+  const activeBtn   = document.getElementById('toggle-active');
+  const archivedBtn = document.getElementById('toggle-archived');
+  if (archived) {
+    activeBtn.style.background   = 'transparent';
+    activeBtn.style.color        = 'var(--text-muted)';
+    archivedBtn.style.background = 'var(--navy)';
+    archivedBtn.style.color      = 'white';
+  } else {
+    activeBtn.style.background   = 'var(--navy)';
+    activeBtn.style.color        = 'white';
+    archivedBtn.style.background = 'transparent';
+    archivedBtn.style.color      = 'var(--text-muted)';
+  }
+  renderUsers();
+}
+
+function setUserTab(role, btn) {
+  userTabFilter = role;
+  document.querySelectorAll('[id^="user-tab-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsers();
+}
+
+async function loadUsers() {
+  const { data } = await db.from('profiles').select('*').order('full_name');
+  allUsers = data || [];
+  renderUsers();
+}
+
+function renderUsers() {
+  const wrap = document.getElementById('users-table-wrap');
+  let users = allUsers.filter(u => showingArchived ? !u.is_active : u.is_active !== false);
+  if (userTabFilter !== 'all') users = users.filter(u => u.role === userTabFilter);
+
+  if (!users.length) {
+    wrap.innerHTML = `<div class="empty-state">👥<p>${showingArchived ? 'No archived users.' : 'No active users found.'}</p></div>`;
+    return;
+  }
+
+  const roleBadge = r => {
+    const map = {
+      admin:   '#E8F0FB:#1A56A4:⚙️ Admin',
+      cleaner: 'var(--success-bg):var(--success):🧹 Cleaner',
+      owner:   'var(--gold-light):var(--gold-dark):🏠 Owner'
+    };
+    const [bg, color, label] = (map[r] || 'var(--cream):var(--text-muted):'+r).split(':');
+    return `<span style="background:${bg};color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${label}</span>`;
+  };
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Name</th><th>Email</th><th>Phone</th><th>Role</th>
+      ${showingArchived ? '<th>Archived</th>' : '<th>Owner/Operator</th>'}
+      <th>Actions</th>
+    </tr></thead>
+    <tbody>${users.map(u => `
+      <tr style="cursor:pointer;${showingArchived ? 'opacity:0.7' : ''}" onclick="openEditUserModal('${u.id}')">
+        <td><strong>${u.full_name || '—'}</strong></td>
+        <td style="font-size:13px">${u.email || '—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${u.phone || '—'}</td>
+        <td>${roleBadge(u.role)}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${showingArchived
+          ? `<span style="color:var(--error);font-size:12px">Archived</span>`
+          : (u.is_owner_operator ? '✓ Owner/operator' : '—')}</td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${showingArchived
+              ? `<button class="btn btn-sm btn-success" onclick="restoreUser('${u.id}','${(u.full_name||'').replace(/'/g,"\\'")}')">Restore</button>`
+              : `<button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')">Edit</button>
+                 <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset pwd</button>
+                 <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="archiveUser('${u.id}','${(u.full_name||'').replace(/'/g,"\\'")}')">Archive</button>`
+            }
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function archiveUser(userId, userName) {
+  if (!confirm(`Archive ${userName}? They won't be able to log in until restored.`)) return;
+  const { error } = await db.from('profiles').update({ is_active: false }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`${userName} archived`);
+  loadUsers();
+}
+
+async function restoreUser(userId, userName) {
+  if (!confirm(`Restore ${userName}? They'll be able to log in again.`)) return;
+  const { error } = await db.from('profiles').update({ is_active: true }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`${userName} restored ✓`);
+  loadUsers();
+}
+
+function openNewUserModal() {
+  ['new-user-name','new-user-email','new-user-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('new-user-role').value = 'cleaner';
+  document.getElementById('modal-new-user').classList.add('open');
+}
+
+async function saveNewUser() {
+  const name  = document.getElementById('new-user-name').value.trim();
+  const email = document.getElementById('new-user-email').value.trim();
+  const phone = document.getElementById('new-user-phone').value.trim() || null;
+  const role  = document.getElementById('new-user-role').value;
+  if (!name)  { showToast('Please enter a name'); return; }
+  if (!email) { showToast('Please enter an email'); return; }
+
+  const { data, error } = await db.auth.signUp({
+    email, password: 'ChangeMe123!',
+    options: { data: { full_name: name, role } }
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  if (data?.user?.id) {
+    await db.from('profiles').upsert({
+      id: data.user.id, email, full_name: name, phone,
+      role, is_active: true, is_owner_operator: false
+    }, { onConflict: 'id' });
+  }
+  closeModal('modal-new-user');
+  showToast('User created ✓ — they need to confirm their email');
+  loadUsers();
+}
+
+function openEditUserModal(userId) {
+  const u = allUsers.find(u => u.id === userId);
+  if (!u) return;
+  document.getElementById('edit-user-id').value            = u.id;
+  document.getElementById('edit-user-name').value          = u.full_name || '';
+  document.getElementById('edit-user-email').value         = u.email || '';
+  document.getElementById('edit-user-phone').value         = u.phone || '';
+  document.getElementById('edit-user-role').value          = u.role || 'cleaner';
+  document.getElementById('edit-user-active').checked      = !!u.is_active;
+  document.getElementById('edit-user-owner-op').checked    = !!u.is_owner_operator;
+  document.getElementById('modal-edit-user').classList.add('open');
+}
+
+async function saveEditUser() {
+  const id       = document.getElementById('edit-user-id').value;
+  const name     = document.getElementById('edit-user-name').value.trim();
+  const newEmail = document.getElementById('edit-user-email').value.trim();
+  const phone    = document.getElementById('edit-user-phone').value.trim() || null;
+  const role     = document.getElementById('edit-user-role').value;
+  const isActive   = document.getElementById('edit-user-active').checked;
+  const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
+  if (!name)     { showToast('Please enter a name'); return; }
+  if (!newEmail) { showToast('Please enter an email'); return; }
+
+  const originalUser = allUsers.find(u => u.id === id);
+  const emailChanged = originalUser && originalUser.email !== newEmail;
+
+  // If email changed, call Netlify function to update auth.users
+  if (emailChanged) {
+    try {
+      const res = await fetch('/.netlify/functions/update-user-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'MaidSync2026!'
+        },
+        body: JSON.stringify({ userId: id, newEmail })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast('Email update failed: ' + (data.error || 'unknown error'));
+        return;
+      }
+    } catch (e) {
+      showToast('Email update failed: ' + e.message);
+      return;
+    }
+  }
+
+  // Update profile
+  const { error } = await db.from('profiles').update({
+    full_name: name,
+    email: newEmail,
+    phone, role,
+    is_active: isActive,
+    is_owner_operator: isOwnerOp
+  }).eq('id', id);
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-user');
+  showToast(emailChanged ? 'User updated ✓ — email changed' : 'User updated ✓');
+  loadUsers();
+}
+
+async function archiveUserFromModal() {
+  const id   = document.getElementById('edit-user-id').value;
+  const name = document.getElementById('edit-user-name').value;
+  if (!confirm(`Archive ${name}? They won't be able to log in. You can restore them anytime from the Archived view.`)) return;
+  await db.from('profiles').update({ is_active: false }).eq('id', id);
+  closeModal('modal-edit-user');
+  showToast(`${name} archived`);
+  loadUsers();
+}
+
+async function deleteUserFromModal() {
+  const id   = document.getElementById('edit-user-id').value;
+  const name = document.getElementById('edit-user-name').value;
+  if (!confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
+  await db.from('profiles').delete().eq('id', id);
+  closeModal('modal-edit-user');
+  showToast('User deleted');
+  loadUsers();
+}
+
+async function resetUserPassword(userId, userEmail) {
+  if (!confirm(`Send password reset email to ${userEmail}?`)) return;
+  const { error } = await db.auth.resetPasswordForEmail(userEmail, {
+    redirectTo: window.location.origin + '/login.html'
+  });
+  showToast(error ? 'Could not send — reset manually in Supabase' : `Reset email sent to ${userEmail} ✓`);
+}
+
+// ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
+async function loadReportComments(reportId, wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const { data } = await db.from('report_comments')
+    .select('*, profiles(full_name, role)')
+    .eq('report_id', reportId)
+    .order('created_at', { ascending: true });
+
+  if (!data?.length) {
+    wrap.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">No comments yet.</p>';
+    return;
+  }
+
+  const roleLabel = { admin:'Admin', owner:'Owner', cleaner:'Cleaner' };
+  wrap.innerHTML = data.map(c => {
+    const role = c.profiles?.role || 'cleaner';
+    const bg   = role==='admin' ? 'var(--navy)' : role==='owner' ? 'var(--gold-light)' : 'var(--cream)';
+    const color = role==='admin' ? 'white' : 'var(--text)';
+    const border = role==='admin' ? '' : 'border:1px solid var(--cream-dark)';
+    return `<div style="padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:13px;background:${bg};color:${color};${border}">
+      <div style="font-size:11px;opacity:0.65;margin-bottom:3px;font-weight:500">${c.profiles?.full_name||'—'} · ${roleLabel[role]||role} · ${timeAgo(c.created_at)}</div>
+      ${c.content}
+    </div>`;
+  }).join('');
 }
 
 init();
