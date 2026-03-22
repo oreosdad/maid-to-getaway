@@ -709,7 +709,7 @@
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-outline" style="color:var(--error);border-color:var(--error)" onclick="archiveUserFromModal()">Archive user</button>
+      <button class="btn btn-outline" id="modal-user-left-btn" style="color:var(--error);border-color:var(--error)" onclick="archiveUserFromModal()">Archive user</button>
       <div style="display:flex;gap:10px">
         <button class="btn btn-outline" onclick="closeModal('modal-edit-user')">Cancel</button>
         <button class="btn" onclick="saveEditUser()">Save changes</button>
@@ -2584,6 +2584,16 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-role').value          = u.role || 'cleaner';
   document.getElementById('edit-user-active').checked      = !!u.is_active;
   document.getElementById('edit-user-owner-op').checked    = !!u.is_owner_operator;
+  // Change left button based on whether user is archived
+  const leftBtn = document.getElementById('modal-user-left-btn');
+  const u2 = allUsers.find(u => u.id === userId);
+  if (u2 && !u2.is_active) {
+    leftBtn.textContent = 'Delete forever';
+    leftBtn.onclick = deleteUserFromModal;
+  } else {
+    leftBtn.textContent = 'Archive user';
+    leftBtn.onclick = archiveUserFromModal;
+  }
   document.getElementById('modal-edit-user').classList.add('open');
 }
 
