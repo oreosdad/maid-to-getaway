@@ -430,18 +430,8 @@
       <span class="modal-title">Claim a Property</span>
       <button class="modal-close" onclick="closeModal('modal-claim-property')">✕</button>
     </div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Enter the address of your property. Your admin will be notified to approve it.</p>
-    <div class="form-group">
-      <label>Property address</label>
-      <input type="text" id="claim-address-input" placeholder="123 Main St, Kansas City, MO" oninput="searchClaimableProperties(this.value)"/>
-    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Select an existing property to add to your account. Your admin will be notified.</p>
     <div id="claimable-properties-list"></div>
-    <div id="claim-request-section" style="display:none">
-      <div style="background:var(--gold-light);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--gold-dark);margin-bottom:14px">
-        💡 Don't see your property? Submit a request and your admin will add it.
-      </div>
-      <button class="btn btn-full" onclick="submitClaimRequest()">Request to claim this address</button>
-    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-claim-property')">Cancel</button>
     </div>
@@ -1109,75 +1099,25 @@ async function removeProperty(propId, propName) {
   renderProperties();
 }
 
-let allClaimableProps = [];
-
 async function openClaimPropertyModal() {
-  // Load ALL properties so owner can search by address
-  const { data: all } = await db.from('properties').select('id,name,address,owner_id').order('name');
-  allClaimableProps = all || [];
-  document.getElementById('claim-address-input').value = '';
-  document.getElementById('claimable-properties-list').innerHTML = '';
-  document.getElementById('claim-request-section').style.display = 'none';
+  const { data: unowned } = await db.from('properties').select('id,name,address').is('owner_id', null).order('name');
+  const wrap = document.getElementById('claimable-properties-list');
+  if (!unowned?.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px">No unowned properties available. Contact your admin.</div>';
+  } else {
+    wrap.innerHTML = unowned.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--cream-dark)">
+        <div>
+          <div style="font-weight:500">${p.name}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${p.address||'—'}</div>
+        </div>
+        <button class="btn btn-sm" onclick="claimProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')">Claim</button>
+      </div>`).join('');
+  }
   document.getElementById('modal-claim-property').classList.add('open');
 }
 
-function searchClaimableProperties(query) {
-  const wrap = document.getElementById('claimable-properties-list');
-  const requestSection = document.getElementById('claim-request-section');
-  if (!query || query.length < 3) {
-    wrap.innerHTML = '';
-    requestSection.style.display = 'none';
-    return;
-  }
-  const q = query.toLowerCase();
-  const matches = allClaimableProps.filter(p =>
-    (p.address||'').toLowerCase().includes(q) || (p.name||'').toLowerCase().includes(q)
-  );
-  if (!matches.length) {
-    wrap.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:10px 0">No matching properties found.</div>';
-    requestSection.style.display = 'block';
-    return;
-  }
-  requestSection.style.display = 'none';
-  wrap.innerHTML = matches.map(p => {
-    const isOwned = p.owner_id && p.owner_id !== currentUser.id;
-    return `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--cream-dark)">
-      <div>
-        <div style="font-weight:500">${p.name}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${p.address||'—'}</div>
-        ${isOwned ? '<div style="font-size:11px;color:var(--gold-dark);margin-top:2px">⚠️ Has an existing owner — admin will review</div>' : ''}
-      </div>
-      <button class="btn btn-sm" onclick="claimProperty('${p.id}','${p.name.replace(/'/g,"\\'")}',${isOwned})">Claim</button>
-    </div>`;
-  }).join('');
-}
-
-async function submitClaimRequest() {
-  const address = document.getElementById('claim-address-input').value.trim();
-  if (!address) { showToast('Please enter an address first'); return; }
-  await db.from('maintenance_requests').insert({
-    submitted_by: currentUser.id,
-    category: 'other',
-    notes: `Owner ${currentProfile.full_name} wants to claim a property at: ${address}. Please add it to the system and assign ownership.`
-  });
-  closeModal('modal-claim-property');
-  showToast('Request sent ✓ Admin will add your property shortly');
-}
-
-async function claimProperty(propId, propName, isOwned = false) {
-  if (isOwned) {
-    // Already has an owner — just notify admin, don't auto-assign
-    await db.from('maintenance_requests').insert({
-      property_id: propId,
-      submitted_by: currentUser.id,
-      category: 'other',
-      notes: `Owner ${currentProfile.full_name} is requesting to claim "${propName}" which already has an owner assigned. Please review and update ownership.`
-    });
-    closeModal('modal-claim-property');
-    showToast('Request sent ✓ Admin will review ownership for this property');
-    return;
-  }
+async function claimProperty(propId, propName) {
   const { error } = await db.from('properties').update({ owner_id: currentUser.id }).eq('id', propId);
   if (error) { showToast('Error: '+error.message); return; }
   await db.from('maintenance_requests').insert({
