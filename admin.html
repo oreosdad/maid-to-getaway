@@ -275,7 +275,7 @@
       font-weight: 500;
     }
 
-    .badge-unassigned { background: #F0EFED; color: #7A7060; }
+    .badge-unassigned { background: #C0392B; color: #FFFFFF; }
     .badge-assigned   { background: #E8F0FB; color: #1A56A4; }
     .badge-accepted   { background: var(--success-bg); color: var(--success); }
     .badge-completed  { background: #EAF7F0; color: #1E7B4B; }
@@ -1205,7 +1205,7 @@ function renderTrashInline() {
         const daysLeft = Math.ceil((purgeDate - new Date()) / 864e5);
         return `
         <tr>
-          <td>${formatDate(job.scheduled_date)}</td>
+          ${job.is_short_window ? '<td style="font-size:18px;padding-right:2px">🚨</td>' : '<td style="display:none"></td>'}<td>${formatDate(job.scheduled_date)}</td>
           <td>${job.properties?.name || '—'}</td>
           <td style="font-size:12px;color:var(--text-muted)">${deletedDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
           <td style="font-size:13px;color:var(--text-muted)">${job.deleted_reason || '—'}</td>
@@ -1245,8 +1245,8 @@ function renderJobsTable(jobs) {
         <th>Source</th><th>Actions</th>
       </tr></thead>
       <tbody>${jobs.map(job => `
-        <tr>
-          <td>${formatDate(job.scheduled_date)}</td>
+        <tr style="${job.is_short_window ? 'outline:2px solid #C0392B;outline-offset:-2px;' : ''}">
+          ${job.is_short_window ? '<td style="font-size:18px;padding-right:2px">🚨</td>' : '<td style="display:none"></td>'}<td>${formatDate(job.scheduled_date)}</td>
           <td>${job.properties?.name || '—'}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
           <td style="font-size:13px;color:var(--text-muted)">${job.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
@@ -1255,8 +1255,8 @@ function renderJobsTable(jobs) {
           <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
           <td>
             <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
-              ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑</span>' : ''}
-              ${job.pet_fee_required ? '<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">🐶</span>' : ''}
+              ${job.is_short_window ? '<span style="background:#FDEEEE;color:#C0392B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">⚑ SHORT</span>' : ''}
+              ${job.pet_fee_required ? '<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:2px 6px;font-size:16px;font-weight:500;white-space:nowrap">🐶</span>' : ''}
               ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
               ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
             </div>
@@ -1271,6 +1271,7 @@ function renderJobsTable(jobs) {
               ${job.cleaner_paid_at ? '<span style="font-size:12px;color:var(--success)">✓ Paid</span>' : ''}
             </div>
           </td>
+          ${job.is_short_window ? '<td style="font-size:18px;padding-left:2px">🚨</td>' : '<td style="display:none"></td>'}
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -1547,6 +1548,7 @@ function renderProperties() {
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" onclick="openPropertyChecklist('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📋 Checklist</button>
           </td>
+          ${job.is_short_window ? '<td style="font-size:18px;padding-left:2px">🚨</td>' : '<td style="display:none"></td>'}
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -1648,6 +1650,7 @@ function renderCleaners() {
             <button class="btn btn-outline btn-sm" onclick="openEditCleanerModal('${c.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="resetCleanerPassword('${c.id}', '${c.email}')">Reset password</button>
           </td>
+          ${job.is_short_window ? '<td style="font-size:18px;padding-left:2px">🚨</td>' : '<td style="display:none"></td>'}
         </tr>`).join('')}
       </tbody>
     </table>`;
