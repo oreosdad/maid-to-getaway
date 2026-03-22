@@ -2578,8 +2578,10 @@ async function saveNewUser() {
     closeModal('modal-new-user');
     showToast('User created ✓ — temp password: ChangeMe123!');
   } else {
-    // Tracking-only profile, no auth account
+    // Tracking-only profile, no auth account — generate a UUID since there's no auth user
+    const fakeId = crypto.randomUUID();
     const { error } = await db.from('profiles').insert({
+      id: fakeId,
       full_name: name, phone, role,
       is_active: true, is_owner_operator: false,
       email: null
