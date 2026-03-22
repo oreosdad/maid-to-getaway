@@ -959,7 +959,16 @@ function sortJobsTable(col) {
 
 // ── AUTH: runs once, shows app or redirects ──
 async function init() {
-  const { data: { session } } = await db.auth.getSession();
+  let session = null;
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+    const authCheck = db.auth.getSession();
+    const result = await Promise.race([authCheck, timeout]);
+    session = result?.data?.session || null;
+  } catch(e) {
+    window.location.replace('login.html');
+    return;
+  }
 
   if (!session) {
     window.location.replace('login.html');
