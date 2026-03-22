@@ -1853,10 +1853,13 @@ async function saveEditProperty() {
   if (!name)    { showToast('Please enter a property name'); return; }
   if (!address) { showToast('Please enter an address'); return; }
 
+  const airbnb = document.getElementById('edit-prop-airbnb').value.trim() || null;
+  const vrbo   = document.getElementById('edit-prop-vrbo').value.trim() || null;
+
   const { error } = await db.from('properties').update({
     name, address,
-    airbnb_ical_url:        document.getElementById('edit-prop-airbnb').value.trim() || null,
-    vrbo_ical_url:          document.getElementById('edit-prop-vrbo').value.trim() || null,
+    airbnb_ical_url:        airbnb,
+    vrbo_ical_url:          vrbo,
     default_checkout_time:  document.getElementById('edit-prop-checkout-time').value || null,
     default_checkin_time:   document.getElementById('edit-prop-checkin-time').value || null,
     default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
@@ -1867,7 +1870,13 @@ async function saveEditProperty() {
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-property');
-  showToast('Property updated ✓');
+
+  if (airbnb || vrbo) {
+    showToast('Property updated — syncing calendar…');
+    await triggerIcalSync();
+  } else {
+    showToast('Property updated ✓');
+  }
   await loadProperties();
   renderProperties();
 }
@@ -1883,10 +1892,13 @@ async function saveProperty() {
   if (!name)    { showToast('Please enter a property name'); return; }
   if (!address) { showToast('Please enter an address'); return; }
 
+  const airbnb = document.getElementById('prop-airbnb').value.trim() || null;
+  const vrbo   = document.getElementById('prop-vrbo').value.trim() || null;
+
   const { error } = await db.from('properties').insert({
     name, address,
-    airbnb_ical_url:        document.getElementById('prop-airbnb').value.trim() || null,
-    vrbo_ical_url:          document.getElementById('prop-vrbo').value.trim() || null,
+    airbnb_ical_url:        airbnb,
+    vrbo_ical_url:          vrbo,
     default_checkout_time:  document.getElementById('prop-checkout-time').value || null,
     default_checkin_time:   document.getElementById('prop-checkin-time').value || null,
     default_charge_cents:   document.getElementById('prop-charge').value ? Math.round(parseFloat(document.getElementById('prop-charge').value) * 100) : null,
@@ -1896,9 +1908,28 @@ async function saveProperty() {
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-property');
-  showToast('Property added ✓');
+
+  if (airbnb || vrbo) {
+    showToast('Property added — syncing calendar…');
+    await triggerIcalSync();
+  } else {
+    showToast('Property added ✓');
+  }
   await loadProperties();
   renderProperties();
+}
+
+async function triggerIcalSync() {
+  try {
+    const res  = await fetch('/.netlify/functions/sync-ical?secret=MaidSync2026!');
+    const data = await res.json();
+    const msg  = data.created > 0
+      ? `✓ Calendar synced — ${data.created} new job${data.created !== 1 ? 's' : ''} added`
+      : '✓ Calendar synced — no new jobs found';
+    showToast(msg);
+  } catch (e) {
+    showToast('Property saved ✓ (calendar sync will run on next hourly cycle)');
+  }
 }
 
 // ── CLEANERS ──
