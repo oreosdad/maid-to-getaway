@@ -1091,6 +1091,7 @@ async function renderEarnings() {
 
 function earningsCard(assignment, isPaid) {
   const job = assignment.jobs;
+  const payoutDollars = job.payout_cents ? Math.round(job.payout_cents / 100) : '';
   return `
   <div class="pay-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1101,8 +1102,27 @@ function earningsCard(assignment, isPaid) {
       </div>
       <span class="${isPaid ? 'pay-status-paid' : 'pay-status-pending'}">${isPaid ? '✓ Paid' : 'Pending'}</span>
     </div>
-    ${job.payout_cents ? `<div class="pay-amount" style="margin-top:8px">$${Math.round(job.payout_cents/100)}</div>` : '<div style="font-size:13px;color:var(--text-muted);margin-top:8px">Amount TBD</div>'}
+    ${isPaid
+      ? `<div class="pay-amount" style="margin-top:8px">${payoutDollars ? '$' + payoutDollars : 'Amount TBD'}</div>`
+      : `<div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+          <div style="font-size:22px;font-weight:500;color:var(--navy)">$</div>
+          <input type="number" value="${payoutDollars}" min="0" step="1"
+            style="width:100px;padding:8px 10px;font-size:20px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--navy);background:var(--cream);border:1.5px solid var(--cream-dark);border-radius:var(--radius);outline:none"
+            onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--cream-dark)'"
+            onchange="updateJobPayout('${job.id}', this.value, this)"/>
+          <span style="font-size:12px;color:var(--text-muted)">tap to edit</span>
+        </div>`
+    }
   </div>`;
+}
+
+async function updateJobPayout(jobId, dollars, inputEl) {
+  const cents = dollars ? Math.round(parseFloat(dollars) * 100) : null;
+  const { error } = await db.from('jobs').update({ payout_cents: cents }).eq('id', jobId);
+  if (error) { showToast('Error saving payout'); inputEl.style.borderColor = 'var(--error)'; return; }
+  inputEl.style.borderColor = 'var(--success)';
+  setTimeout(() => inputEl.style.borderColor = 'var(--cream-dark)', 1500);
+  showToast('Payout updated ✓');
 }
 
 // ── PROPERTIES ──
