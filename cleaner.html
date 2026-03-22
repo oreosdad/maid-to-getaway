@@ -1070,23 +1070,63 @@ async function renderEarnings() {
       }).join('');
   }
 
-  // Pending payment (completed but not paid)
+  // Pending payment — group by pay date
   if (!pending.length) {
     pendingEl.innerHTML += '<div class="section-label">Awaiting payment</div><div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:24px">⏳</div><p>No pending payments.</p></div>';
   } else {
-    pendingEl.innerHTML += `
-      <div class="section-label">Awaiting payment</div>
-      <div style="background:var(--gold-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:13px;color:var(--gold-dark);font-weight:500">Total owed to you</span>
-        <span style="font-size:20px;font-weight:500;color:var(--navy)">$${Math.round(pendingTotal/100)}</span>
-      </div>` +
-      pending.map(a => earningsCard(a, false)).join('');
+    // Group by pay date
+    const byPayDate = {};
+    pending.forEach(a => {
+      const pd = a.jobs.cleaner_pay_date || 'no-date';
+      if (!byPayDate[pd]) byPayDate[pd] = [];
+      byPayDate[pd].push(a);
+    });
+    const sortedDates = Object.keys(byPayDate).sort();
+
+    let html = '<div class="section-label">Awaiting payment</div>';
+    sortedDates.forEach(pd => {
+      const group = byPayDate[pd];
+      const groupTotal = group.reduce((s, a) => s + (a.jobs.payout_cents || 0), 0);
+      html += `
+        <div style="background:var(--gold-light);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--gold-dark);font-weight:500">💰 Pay date: ${pd !== 'no-date' ? formatDate(pd) : 'TBD'}</div>
+            <div style="font-size:11px;color:var(--gold-dark);margin-top:2px">${group.length} job${group.length !== 1 ? 's' : ''}</div>
+          </div>
+          <span style="font-size:22px;font-weight:500;color:var(--navy)">$${Math.round(groupTotal/100)}</span>
+        </div>`;
+      group.forEach(a => { html += earningsCard(a, false); });
+    });
+    pendingEl.innerHTML += html;
   }
 
+  // Paid history — group by pay date
+  const paidEl2 = document.getElementById('pay-paid-list');
   if (!paid.length) {
-    paidEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>No payment history yet.</p></div>';
+    paidEl2.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>No payment history yet.</p></div>';
   } else {
-    paidEl.innerHTML = paid.map(a => earningsCard(a, true)).join('');
+    const byPayDatePaid = {};
+    paid.forEach(a => {
+      const pd = a.jobs.cleaner_pay_date || 'no-date';
+      if (!byPayDatePaid[pd]) byPayDatePaid[pd] = [];
+      byPayDatePaid[pd].push(a);
+    });
+    const sortedPaidDates = Object.keys(byPayDatePaid).sort().reverse();
+    let html = '';
+    sortedPaidDates.forEach(pd => {
+      const group = byPayDatePaid[pd];
+      const groupTotal = group.reduce((s, a) => s + (a.jobs.payout_cents || 0), 0);
+      html += `
+        <div style="background:var(--success-bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--success);font-weight:500">✓ Paid: ${pd !== 'no-date' ? formatDate(pd) : 'TBD'}</div>
+            <div style="font-size:11px;color:var(--success);margin-top:2px">${group.length} job${group.length !== 1 ? 's' : ''}</div>
+          </div>
+          <span style="font-size:22px;font-weight:500;color:var(--navy)">$${Math.round(groupTotal/100)}</span>
+        </div>`;
+      group.forEach(a => { html += earningsCard(a, true); });
+    });
+    paidEl2.innerHTML = html;
   }
 }
 
