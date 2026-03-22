@@ -519,7 +519,7 @@
             <button class="filter-btn" onclick="filterJobs('all', this)">All</button>
             <button class="filter-btn" onclick="filterJobs('unassigned', this)">Unassigned</button>
             <button class="filter-btn" onclick="filterJobs('needs-paid', this)">💰 Needs paid</button>
-            <button class="filter-btn" onclick="filterJobs('completed', this)">Completed</button>
+            <button class="filter-btn" onclick="filterJobs('completed', this)">Paid out</button>
             <button class="filter-btn" onclick="filterJobs('trash', this)">🗑️ Trash</button>
           </div>
         </div>
@@ -1520,6 +1520,7 @@ function renderJobsTable(jobs) {
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
               ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
+              ${job.status === 'completed' ? '<button class="btn btn-outline btn-sm" style="font-size:12px" onclick="event.stopPropagation();unmarkComplete(\''+job.id+'\')">↩ Undo</button>' : ''}
               ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="event.stopPropagation();markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
               ${job.cleaner_paid_at ? '<span style="font-size:12px;color:var(--success)">✓ Paid</span>' : ''}
             </div>
@@ -1644,6 +1645,13 @@ async function markComplete(jobId) {
   }).eq('id', jobId);
   if (error) { showToast('Error updating job'); return; }
   showToast('Job marked complete ✓' + (payDate ? ' — pay date: ' + formatDate(payDate) : ''));
+  await loadJobs();
+}
+
+async function unmarkComplete(jobId) {
+  const { error } = await db.from('jobs').update({ status: 'assigned', completed_at: null, cleaner_paid_at: null }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Job marked as not completed');
   await loadJobs();
 }
 
