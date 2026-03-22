@@ -2578,13 +2578,13 @@ async function saveNewUser() {
     closeModal('modal-new-user');
     showToast('User created ✓ — temp password: ChangeMe123!');
   } else {
-    // Tracking-only profile, no auth account — generate a UUID since there's no auth user
+    // Tracking-only profile — use SECURITY DEFINER function to bypass RLS
     const fakeId = crypto.randomUUID();
-    const { error } = await db.from('profiles').insert({
-      id: fakeId,
-      full_name: name, phone, role,
-      is_active: true, is_owner_operator: false,
-      email: null
+    const { error } = await db.rpc('create_tracking_profile', {
+      p_id: fakeId,
+      p_name: name,
+      p_phone: phone || null,
+      p_role: role
     });
     if (error) { showToast('Error: ' + error.message); return; }
     closeModal('modal-new-user');
