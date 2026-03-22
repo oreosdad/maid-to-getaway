@@ -776,18 +776,14 @@
         <label>Scheduled date</label>
         <input type="date" id="job-date"/>
       </div>
-      <div class="form-group">
-        <label>Scheduled time</label>
-        <input type="time" id="job-time"/>
-      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Guest checkout</label>
+        <label>Old guest checkout time</label>
         <input type="datetime-local" id="job-checkout" oninput="checkNewJobShortWindow()"/>
       </div>
       <div class="form-group">
-        <label>Guest check-in</label>
+        <label>New guest check-in time</label>
         <input type="datetime-local" id="job-checkin" oninput="checkNewJobShortWindow()"/>
       </div>
     </div>
@@ -1554,7 +1550,6 @@ function openEditJobModal(id) {
 
   document.getElementById('edit-job-id').value          = job.id;
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
-  document.getElementById('edit-job-time').value        = job.scheduled_time || '';
   // Pre-fill payout from job, or fall back to property default
   const jobProp = properties.find(p => p.id === job.property_id);
   const payoutCents = job.payout_cents || (jobProp && jobProp.default_payout_cents) || null;
@@ -1613,7 +1608,6 @@ async function saveEditJob() {
   const { error } = await db.from('jobs').update({
     property_id:      propertyId,
     scheduled_date:   date,
-    scheduled_time:   document.getElementById('edit-job-time').value || null,
     guest_checkout:   checkout,
     guest_checkin:    checkin,
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
@@ -1732,7 +1726,6 @@ function openNewJobModal() {
     properties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('job-cleaner').innerHTML = buildAssigneeOptions();
   document.getElementById('job-date').value = today();
-  document.getElementById('job-time').value = '';
   document.getElementById('job-checkout').value = '';
   document.getElementById('job-checkin').value = '';
 
@@ -1780,7 +1773,6 @@ async function saveJob() {
   const { data: job, error } = await db.from('jobs').insert({
     property_id:      propertyId,
     scheduled_date:   date,
-    scheduled_time:   document.getElementById('job-time').value || null,
     guest_checkout:   checkout,
     guest_checkin:    checkin,
     status:           cleanerId ? 'assigned' : 'unassigned',
