@@ -687,12 +687,18 @@
       <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Changing email updates their login address immediately.</p>
     </div>
     <div class="form-group">
-      <label>Role</label>
-      <select id="edit-user-role">
-        <option value="cleaner">🧹 Cleaner</option>
-        <option value="owner">🏠 Owner</option>
-        <option value="admin">⚙️ Admin</option>
-      </select>
+      <label>Role <span style="font-weight:400;color:var(--text-muted)">(check all that apply — multiple roles shows a view picker on login)</span></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="edit-role-admin"/> ⚙️ Admin
+        </label>
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="edit-role-cleaner"/> 🧹 Cleaner
+        </label>
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="edit-role-owner"/> 🏠 Owner
+        </label>
+      </div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -738,12 +744,18 @@
       <input type="tel" id="new-user-phone" placeholder="(816) 555-0100"/>
     </div>
     <div class="form-group">
-      <label>Role</label>
-      <select id="new-user-role">
-        <option value="cleaner">Cleaner</option>
-        <option value="owner">Owner</option>
-        <option value="admin">Admin</option>
-      </select>
+      <label>Role <span style="font-weight:400;color:var(--text-muted)">(check all that apply)</span></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="new-role-admin"/> ⚙️ Admin
+        </label>
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="new-role-cleaner" checked/> 🧹 Cleaner
+        </label>
+        <label class="checkbox-label" style="flex:1;min-width:120px">
+          <input type="checkbox" id="new-role-owner"/> 🏠 Owner
+        </label>
+      </div>
     </div>
     <p style="font-size:12px;color:var(--text-muted);margin-top:-8px">If email is provided, temporary password is <strong>ChangeMe123!</strong>. Without an email, the user is added for tracking only and cannot log in until an email is assigned.</p>
     <div class="modal-footer">
@@ -2551,7 +2563,9 @@ async function permanentDeleteUser(userId, userName) {
 
 function openNewUserModal() {
   ['new-user-name','new-user-email','new-user-phone'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('new-user-role').value = 'cleaner';
+  document.getElementById('new-role-admin').checked   = false;
+  document.getElementById('new-role-cleaner').checked = true;
+  document.getElementById('new-role-owner').checked   = false;
   document.getElementById('modal-new-user').classList.add('open');
 }
 
@@ -2559,7 +2573,9 @@ async function saveNewUser() {
   const name  = document.getElementById('new-user-name').value.trim();
   const email = document.getElementById('new-user-email').value.trim();
   const phone = document.getElementById('new-user-phone').value.trim() || null;
-  const role  = document.getElementById('new-user-role').value;
+  const newRoles = ['admin','cleaner','owner'].filter(r => document.getElementById('new-role-'+r).checked);
+  if (!newRoles.length) { showToast('Please select at least one role'); return; }
+  const role = newRoles[0]; // primary role
   if (!name) { showToast('Please enter a name'); return; }
 
   if (email) {
@@ -2586,6 +2602,12 @@ async function saveNewUser() {
       p_phone: phone || null,
       p_role: role
     });
+    // Store multi-roles after creation
+    if (!error && newRoles.length > 1) {
+      await db.from('profiles').update({
+        notification_prefs: { roles: newRoles }
+      }).eq('id', fakeId);
+    }
     if (error) { showToast('Error: ' + error.message); return; }
     closeModal('modal-new-user');
     showToast('User added for tracking ✓ — add an email later to give login access');
@@ -2600,7 +2622,11 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-name').value          = u.full_name || '';
   document.getElementById('edit-user-email').value         = u.email || '';
   document.getElementById('edit-user-phone').value         = u.phone || '';
-  document.getElementById('edit-user-role').value          = u.role || 'cleaner';
+  // Load roles — support both multi-role (notification_prefs.roles) and single role
+  const userRoles = u.notification_prefs?.roles || [u.role || 'cleaner'];
+  document.getElementById('edit-role-admin').checked   = userRoles.includes('admin');
+  document.getElementById('edit-role-cleaner').checked = userRoles.includes('cleaner');
+  document.getElementById('edit-role-owner').checked   = userRoles.includes('owner');
   document.getElementById('edit-user-active').checked      = !!u.is_active;
   document.getElementById('edit-user-owner-op').checked    = !!u.is_owner_operator;
   // Change left button based on whether user is archived
@@ -2621,7 +2647,9 @@ async function saveEditUser() {
   const name     = document.getElementById('edit-user-name').value.trim();
   const newEmail = document.getElementById('edit-user-email').value.trim();
   const phone    = document.getElementById('edit-user-phone').value.trim() || null;
-  const role     = document.getElementById('edit-user-role').value;
+  const selectedRoles = ['admin','cleaner','owner'].filter(r => document.getElementById('edit-role-'+r).checked);
+  if (!selectedRoles.length) { showToast('Please select at least one role'); return; }
+  const role = selectedRoles[0]; // primary role for portal routing
   const isActive   = document.getElementById('edit-user-active').checked;
   const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
   if (!name)     { showToast('Please enter a name'); return; }
@@ -2652,13 +2680,16 @@ async function saveEditUser() {
     }
   }
 
-  // Update profile
+  // Update profile — store multi-roles in notification_prefs.roles
+  const existingPrefs = allUsers.find(u => u.id === id)?.notification_prefs || {};
+  const updatedPrefs = { ...existingPrefs, roles: selectedRoles };
   const { error } = await db.from('profiles').update({
     full_name: name,
     email: newEmail,
     phone, role,
     is_active: isActive,
-    is_owner_operator: isOwnerOp
+    is_owner_operator: isOwnerOp,
+    notification_prefs: updatedPrefs
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
