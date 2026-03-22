@@ -207,14 +207,15 @@
   <!-- MY JOBS -->
   <div class="tab-content active" id="tab-my-jobs">
     <div id="inactive-banner" style="display:none" class="inactive-banner">Your account is currently inactive. Contact your admin if you think this is a mistake.</div>
-    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--radius);overflow:hidden">
-      <button class="sub-tab active" id="subtab-upcoming" onclick="switchSubTab('upcoming')">Upcoming</button>
-      <button class="sub-tab" id="subtab-completed" onclick="switchSubTab('completed')">Completed</button>
+    <div id="first-login-banner" style="display:none" class="first-login-banner">
+      👋 Welcome! Please <strong>set a new password</strong> before getting started.
+      <br><button class="btn btn-gold btn-full" style="margin-top:10px;font-size:14px" onclick="switchTab('settings', document.querySelectorAll('.tab')[5])">Set my password →</button>
     </div>
-    <div id="my-jobs-list"></div>
-    <div style="margin-top:16px;text-align:center">
-      <button class="btn btn-outline btn-sm" onclick="openSubmitJobModal()">+ Submit unscheduled job</button>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="filter-btn active" id="myjobs-btn-upcoming" onclick="setMyJobsView('upcoming',this)">Upcoming</button>
+      <button class="filter-btn" id="myjobs-btn-completed" onclick="setMyJobsView('completed',this)">Completed</button>
     </div>
+    <div id="my-jobs-list"><div class="empty-state"><div class="empty-state-icon">🧹</div><p>Loading your jobs…</p></div></div>
   </div>
 
   <!-- OPEN JOBS -->
@@ -242,18 +243,14 @@
   <!-- REPORT -->
   <div class="tab-content" id="tab-report">
     <div class="section-label">What type of report?</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openMaintenanceModal()">
-        🔧<br><strong style="display:block;margin-top:6px;font-size:13px">Property Issue</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openMaintenanceModal()">
+        🔧<br><strong style="display:block;margin-top:6px;font-size:14px">Property Issue</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Damage, repairs, maintenance</span>
       </button>
-      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openEvidenceModal()">
-        📸<br><strong style="display:block;margin-top:6px;font-size:13px">Excessive Clean</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess</span>
-      </button>
-      <button class="btn btn-outline btn-full" style="padding:16px 8px;font-size:13px" onclick="openGoodIdeasModal()">
-        💡<br><strong style="display:block;margin-top:6px;font-size:13px">Good Ideas</strong>
-        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Property suggestions</span>
+      <button class="btn btn-outline btn-full" style="padding:18px 10px;font-size:13px" onclick="openEvidenceModal()">
+        📸<br><strong style="display:block;margin-top:6px;font-size:14px">Excessive Clean</strong>
+        <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px">Extra work, mess, pet issues</span>
       </button>
     </div>
     <div class="section-label">Your recent submissions</div>
@@ -363,7 +360,7 @@
       </label>
       <div class="photo-grid" id="evidence-preview"></div>
     </div>
-    <button class="done-btn" id="detail-done-btn" onclick="">💪 I Did It! 🎉</button>
+    <button class="done-btn" id="detail-done-btn">💪 I Did It! 🎉</button>
   </div>
 </div>
 
@@ -409,27 +406,15 @@
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Submit a cleaning job that wasn't in the system. Your admin will review and approve it.</p>
     <div class="form-group">
       <label>Property</label>
-      <select id="submit-job-property" onchange="prefillSubmitPayout()"></select>
+      <select id="submit-job-property"></select>
     </div>
     <div class="form-group">
       <label>Date of cleaning</label>
       <input type="date" id="submit-job-date"/>
     </div>
     <div class="form-group">
-      <label>Base payout ($) <span style="font-size:11px;color:var(--text-muted);font-weight:400">— auto-filled from property default</span></label>
+      <label>Payout amount ($)</label>
       <input type="number" id="submit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
-    </div>
-    <div class="form-group">
-      <label>Extra pay request ($) <span style="font-size:11px;color:var(--text-muted);font-weight:400">— optional, for excessive clean or pet fee</span></label>
-      <input type="number" id="submit-job-extra-pay" placeholder="e.g. 25" min="0" step="1"/>
-    </div>
-    <div class="form-group">
-      <label id="submit-extra-reason-label" style="display:none">Reason for extra pay</label>
-      <select id="submit-extra-reason" style="display:none">
-        <option value="excessive_clean">Excessive clean</option>
-        <option value="pet_fee">Pet fee</option>
-        <option value="other">Other</option>
-      </select>
     </div>
     <div class="form-group">
       <label>Notes</label>
@@ -464,7 +449,6 @@
     <div class="form-group">
       <label>Category</label>
       <select id="maint-category">
-        <option value="supply">Supply needed</option>
         <option value="plumbing">Plumbing</option>
         <option value="appliance">Appliance</option>
         <option value="cosmetic">Cosmetic damage (paint, trim, etc.)</option>
@@ -524,89 +508,6 @@
   </div>
 </div>
 
-<!-- PHOTO VIEWER MODAL -->
-<div class="modal-overlay" id="modal-photo-viewer">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="photo-viewer-title">My Photos</div>
-    <div id="photo-viewer-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px"></div>
-    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-photo-viewer')">Close</button>
-  </div>
-</div>
-
-<!-- PROPERTY DETAIL MODAL -->
-<div class="modal-overlay" id="modal-property-detail">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="prop-detail-title">Property</div>
-    <div id="prop-detail-body"></div>
-    <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="closeModal('modal-property-detail')">Close</button>
-  </div>
-</div>
-
-<!-- GOOD IDEAS MODAL -->
-<div class="modal-overlay" id="modal-good-ideas">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">💡 Good Ideas</div>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Share property-specific suggestions with your admin.</p>
-    <div class="form-group">
-      <label>Property</label>
-      <select id="ideas-property"></select>
-    </div>
-    <div class="form-group">
-      <label>Your suggestion</label>
-      <textarea id="ideas-notes" placeholder="e.g. Guests always ask about extra towels — maybe stock an extra set in the closet?" style="min-height:100px"></textarea>
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-outline btn-full" onclick="closeModal('modal-good-ideas')">Cancel</button>
-      <button class="btn btn-gold btn-full" onclick="submitGoodIdea()">Submit idea</button>
-    </div>
-  </div>
-</div>
-
-<!-- EDIT REPORT MODAL -->
-<div class="modal-overlay" id="modal-edit-report">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Edit report</div>
-    <input type="hidden" id="edit-report-id"/>
-    <div class="form-group">
-      <label>Category</label>
-      <select id="edit-report-category">
-        <option value="supply">Supply needed</option>
-        <option value="plumbing">Plumbing</option>
-        <option value="appliance">Appliance</option>
-        <option value="cosmetic">Cosmetic damage</option>
-        <option value="electrical">Electrical</option>
-        <option value="good_idea">Good Idea</option>
-        <option value="other">Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
-      <textarea id="edit-report-notes" style="min-height:100px"></textarea>
-    </div>
-    <div id="edit-report-photos-section" style="margin-bottom:14px;display:none">
-      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Photos <span style="font-size:11px;color:var(--text-muted);font-weight:400">— tap ✕ to remove</span></label>
-      <div id="edit-report-photos-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
-    </div>
-    <div style="margin-bottom:14px">
-      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px">Add more photos</label>
-      <label class="photo-upload-area">
-        <input type="file" id="edit-report-new-photos" multiple accept="image/*" onchange="previewPhotos(this, 'edit-report-new-preview')"/>
-        <div class="photo-upload-icon">📷</div>
-        <div class="photo-upload-text">Tap to add photos</div>
-      </label>
-      <div class="photo-grid" id="edit-report-new-preview"></div>
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-outline btn-full" onclick="closeModal('modal-edit-report')">Cancel</button>
-      <button class="btn btn-gold btn-full" onclick="saveEditReport()">Save changes</button>
-    </div>
-  </div>
-</div>
-
 <!-- HIGH FIVE OVERLAY -->
 <div id="highfive-overlay">
   <div class="highfive-hand">🖐️</div>
@@ -619,8 +520,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJ'
-    + 'kcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Njc4NTQsImV4cCI6MjA4OTU0Mzg1NH0.aRkN7N_3Es17PO-q1o9964LWY0Iamk1EGO3NTNudLCo';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -706,60 +606,74 @@ async function loadMyJobs() {
   renderMyJobs();
 }
 
+let myJobsView = 'upcoming';
+
+function setMyJobsView(view, btn) {
+  myJobsView = view;
+  document.querySelectorAll('#myjobs-btn-upcoming, #myjobs-btn-completed').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderMyJobs();
+}
+
 function renderMyJobs() {
   const list = document.getElementById('my-jobs-list');
   const active         = myJobs.filter(a => !['pending_payment','completed'].includes(a.jobs.status));
   const pendingPayment = myJobs.filter(a => a.jobs.status === 'pending_payment');
   const completed      = myJobs.filter(a => a.jobs.status === 'completed');
 
-  if (!active.length && !pendingPayment.length && !completed.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No upcoming jobs in the next 30 days.</p></div>';
+  if (myJobsView === 'completed') {
+    if (!completed.length && !pendingPayment.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧹</div><p>No completed jobs yet.</p></div>';
+      return;
+    }
+    let html = '';
+    if (pendingPayment.length) {
+      html += `<div class="section-label">Pending payment</div>` +
+        pendingPayment.map(a => {
+          const job = a.jobs;
+          return `<div class="job-card" style="border-color:var(--gold)">
+            <div class="job-card-header">
+              <div>
+                <div class="job-property">${job.properties?.name || '—'}</div>
+                <div class="job-date">${formatDate(job.scheduled_date)}</div>
+              </div>
+              <span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">⏳ Pending payment</span>
+            </div>
+            <div class="job-card-body">
+              <div class="job-meta">
+                ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+                ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay by ${formatDate(job.cleaner_pay_date)}</span>` : ''}
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo</button>
+            </div>
+          </div>`;
+        }).join('');
+    }
+    if (completed.length) {
+      html += `<div class="section-label" style="margin-top:${pendingPayment.length ? '20px' : '0'}">Completed & paid</div>` +
+        completed.map(a => {
+          const job = a.jobs;
+          return `<div class="job-card" style="opacity:0.7">
+            <div class="job-card-header">
+              <div>
+                <div class="job-property">${job.properties?.name || '—'}</div>
+                <div class="job-date">${formatDate(job.scheduled_date)}</div>
+              </div>
+              <span class="status-accepted">✓ Paid</span>
+            </div>
+          </div>`;
+        }).join('');
+    }
+    list.innerHTML = html;
     return;
   }
 
-  let html = active.length ? active.map(a => jobCard(a)).join('') :
-    '<div class="empty-state" style="padding:20px"><div class="empty-state-icon" style="font-size:28px">🎉</div><p style="font-size:13px">No active jobs right now.</p></div>';
-
-  if (pendingPayment.length) {
-    html += `<div class="section-label" style="margin-top:20px">Pending payment</div>` +
-      pendingPayment.map(a => {
-        const job = a.jobs;
-        return `<div class="job-card" style="border-color:var(--gold)">
-          <div class="job-card-header">
-            <div>
-              <div class="job-property">${job.properties?.name || '—'}</div>
-              <div class="job-date">${formatDate(job.scheduled_date)}</div>
-            </div>
-            <span style="background:var(--gold-light);color:var(--gold-dark);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">⏳ Pending payment</span>
-          </div>
-          <div class="job-card-body">
-            <div class="job-meta">
-              ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
-              ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay by ${formatDate(job.cleaner_pay_date)}</span>` : ''}
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo</button>
-          </div>
-        </div>`;
-      }).join('');
+  // Upcoming view
+  if (!active.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎉</div><p>No upcoming jobs right now.</p></div>';
+    return;
   }
-
-  if (completed.length) {
-    html += `<div class="section-label" style="margin-top:20px">Completed & paid</div>` +
-      completed.map(a => {
-        const job = a.jobs;
-        return `<div class="job-card" style="opacity:0.7">
-          <div class="job-card-header">
-            <div>
-              <div class="job-property">${job.properties?.name || '—'}</div>
-              <div class="job-date">${formatDate(job.scheduled_date)}</div>
-            </div>
-            <span class="status-accepted">✓ Paid</span>
-          </div>
-        </div>`;
-      }).join('');
-  }
-
-  list.innerHTML = html;
+  list.innerHTML = active.map(a => jobCard(a)).join('');
 }
 
 function jobCard(assignment) {
@@ -778,10 +692,10 @@ function jobCard(assignment) {
 
   return `
   <div class="job-card">
-    <div class="job-card-header">
+    <div class="job-card-header" style="${job.is_short_window ? 'background:#FDEEEE;' : ''}">
       <div>
-        <div class="job-property">${prop?.name || 'Unknown property'}</div>
-        <div class="job-date">${formatDate(job.scheduled_date)}</div>
+        <div class="job-property">${job.is_short_window ? '🚨 ' : ''}${prop?.name || 'Unknown property'}</div>
+        <div class="job-date">${formatDate(job.scheduled_date)}${job.is_short_window ? ' · <strong style="color:#C0392B">Short turnaround!</strong>' : ''}</div>
       </div>
       ${statusBadge}
     </div>
@@ -789,8 +703,8 @@ function jobCard(assignment) {
       <div class="job-meta">
         ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
         ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Paid ${formatDate(job.cleaner_pay_date)}</span>` : ''}
-        ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Pet fee</span>' : ''}
-        ${job.is_short_window  ? '<span class="meta-pill pill-short">⚑ Short window</span>' : ''}
+        ${job.pet_fee_required ? '<span class="meta-pill pill-pet" style="font-size:16px">🐶 Pet fee</span>' : ''}
+        ${job.is_short_window  ? '<span class="meta-pill pill-short">🚨 Short turnaround</span>' : ''}
       </div>
       ${prop?.notes ? `<div style="background:var(--gold-light);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--gold-dark);margin-bottom:10px">📌 ${prop.notes}</div>` : ''}
       <div class="job-actions">
@@ -800,10 +714,8 @@ function jobCard(assignment) {
           <button class="btn btn-danger"  onclick="openResponseModal('${assignment.id}','${job.id}','decline')">Decline</button>
         ` : ''}
         ${isAccepted ? `
-          <button class="btn btn-outline btn-sm" style="margin-bottom:8px;width:100%" onclick="openPropertyDetail('${job.property_id}')">📋 View checklist</button>
-          <button class="btn btn-outline btn-sm" style="margin-bottom:8px;width:100%" onclick="viewJobPhotos('${job.id}','${job.properties?.name || ''}','${job.scheduled_date}')">📸 View my photos</button>
           <button class="done-btn" style="margin-top:0" onclick="markJobDone('${assignment.id}','${job.id}')">💪 I Did It! 🎉</button>
-          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;padding:10px;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at||''}')">↩ Release job back to pool</button>
+          <button class="btn btn-danger btn-full" style="margin-top:8px;width:100%;text-align:center" onclick="releaseJob('${assignment.id}','${job.id}','${assignment.responded_at || ''}')">↩ Release job back to pool</button>
         ` : ''}
         ${(isDeclined || isUnsure) ? `
           <button class="btn btn-outline" onclick="respondToJob('${assignment.id}','${job.id}','accept')">Actually, I can do it</button>
@@ -811,6 +723,40 @@ function jobCard(assignment) {
       </div>
     </div>
   </div>`;
+}
+
+async function releaseJob(assignmentId, jobId, respondedAt) {
+  if (!confirm('Release this job back to the open pool?')) return;
+
+  // Check if cleaner held it for more than 5 minutes
+  const heldMinutes = respondedAt
+    ? (Date.now() - new Date(respondedAt).getTime()) / 60000
+    : 0;
+
+  // Delete assignment and reset job
+  await db.from('job_assignments').delete().eq('id', assignmentId);
+  const { error } = await db.from('jobs').update({
+    status: 'unassigned',
+    assigned_cleaner_id: null
+  }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  // If held > 5 minutes, notify admin via maintenance_requests as a workaround
+  if (heldMinutes > 5) {
+    const job = myJobs.find(a => a.id === assignmentId)?.jobs;
+    const propName = job?.properties?.name || 'Unknown property';
+    const date = job?.scheduled_date ? formatDate(job.scheduled_date) : '—';
+    await db.from('maintenance_requests').insert({
+      property_id: job?.property_id || null,
+      submitted_by: currentUser.id,
+      category: 'job_released',
+      notes: `${currentProfile.full_name} released a job back to the pool after holding it for ${Math.round(heldMinutes)} minutes. Property: ${propName}, Date: ${date}. Job needs to be reassigned.`
+    });
+  }
+
+  showToast('Job released back to pool ✓');
+  await loadMyJobs();
+  await loadOpenJobs();
 }
 
 // ── JOB RESPONSES ──
@@ -882,7 +828,8 @@ async function openJobDetail(assignmentId, jobId) {
       <span class="meta-pill pill-time">${formatDate(job.scheduled_date)}</span>
       ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
       ${job.cleaner_pay_date ? `<span class="meta-pill pill-paydate">📅 Pay date: ${formatDate(job.cleaner_pay_date)}</span>` : ''}
-      ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Collect pet fee</span>' : ''}
+      ${job.pet_fee_required ? '<span class="meta-pill pill-pet" style="font-size:16px">🐶 Collect pet fee</span>' : ''}
+      ${job.is_short_window ? '<span class="meta-pill pill-short">🚨 Short turnaround</span>' : ''}
     </div>`;
 
   await renderChecklist(job.property_id);
@@ -960,17 +907,17 @@ function renderOpenJobs() {
     const daysOut = Math.ceil((new Date(job.scheduled_date) - new Date()) / 864e5);
     return `
     <div class="job-card">
-      <div class="job-card-header">
+      <div class="job-card-header" style="${job.is_short_window ? 'background:#FDEEEE;' : ''}">
         <div>
-          <div class="job-property">${job.properties?.name || 'Unknown property'}</div>
-          <div class="job-date">${formatDate(job.scheduled_date)} · ${daysOut <= 3 ? `<span style="color:#C0392B;font-weight:500">In ${daysOut} day${daysOut !== 1 ? 's' : ''}</span>` : `In ${daysOut} days`}</div>
+          <div class="job-property">${job.is_short_window ? '🚨 ' : ''}${job.properties?.name || 'Unknown property'}</div>
+          <div class="job-date">${formatDate(job.scheduled_date)} · ${daysOut <= 3 ? `<span style="color:#C0392B;font-weight:500">In ${daysOut} day${daysOut !== 1 ? 's' : ''}</span>` : `In ${daysOut} days`}${job.is_short_window ? ' · <strong style="color:#C0392B">Short turnaround!</strong>' : ''}</div>
         </div>
       </div>
       <div class="job-card-body">
         <div class="job-meta">
           ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
-          ${job.pet_fee_required ? '<span class="meta-pill pill-pet">🐶 Pet fee</span>' : ''}
-          ${job.is_short_window  ? '<span class="meta-pill pill-short">⚑ Short window</span>' : ''}
+          ${job.pet_fee_required ? '<span class="meta-pill pill-pet" style="font-size:16px">🐶 Pet fee</span>' : ''}
+          ${job.is_short_window  ? '<span class="meta-pill pill-short">🚨 Short turnaround</span>' : ''}
         </div>
         <button class="btn btn-gold btn-full" onclick="openClaimModal('${job.id}','${job.properties?.name || ''}','${job.scheduled_date}',${job.payout_cents || 0})">Claim this job</button>
       </div>
@@ -1003,73 +950,36 @@ async function confirmClaimJob() {
 // ── SUBMIT UNSCHEDULED JOB ──
 function openSubmitJobModal() {
   const sel = document.getElementById('submit-job-property');
-  sel.innerHTML = allProperties.map(p => `<option value="${p.id}" data-payout="${p.default_payout_cents || ''}">${p.name}</option>`).join('');
+  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('submit-job-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('submit-job-payout').value = '';
   document.getElementById('submit-job-notes').value = '';
-  document.getElementById('submit-job-extra-pay').value = '';
-  document.getElementById('submit-extra-reason').style.display = 'none';
-  document.getElementById('submit-extra-reason-label').style.display = 'none';
   document.getElementById('submit-job-preview').innerHTML = '';
-  selectedFilesMap['submit-job-photos'] = [];
-  prefillSubmitPayout();
   document.getElementById('modal-submit-job').classList.add('open');
 }
-
-function prefillSubmitPayout() {
-  const sel = document.getElementById('submit-job-property');
-  const opt = sel.options[sel.selectedIndex];
-  const payout = opt?.getAttribute('data-payout');
-  document.getElementById('submit-job-payout').value = payout ? Math.round(parseInt(payout) / 100) : '';
-}
-
-// Show extra reason when extra pay is entered
-document.addEventListener('DOMContentLoaded', () => {
-  const extraPay = document.getElementById('submit-job-extra-pay');
-  if (extraPay) {
-    extraPay.addEventListener('input', function() {
-      const show = this.value && parseFloat(this.value) > 0;
-      document.getElementById('submit-extra-reason').style.display = show ? 'block' : 'none';
-      document.getElementById('submit-extra-reason-label').style.display = show ? 'block' : 'none';
-    });
-  }
-});
 
 async function confirmSubmitJob() {
   const propertyId = document.getElementById('submit-job-property').value;
   const date       = document.getElementById('submit-job-date').value;
   const payout     = document.getElementById('submit-job-payout').value;
-  const extraPay   = document.getElementById('submit-job-extra-pay').value;
-  const extraReason = document.getElementById('submit-extra-reason').value;
   const notes      = document.getElementById('submit-job-notes').value.trim();
   if (!date)  { showToast('Please select a date'); return; }
   if (!notes) { showToast('Please add notes describing the cleaning'); return; }
 
-  let fullNotes = `Submitted by cleaner: ${notes}`;
-  if (extraPay && parseFloat(extraPay) > 0) {
-    fullNotes += `\nExtra pay requested: $${extraPay} (${extraReason})`;
-  }
-
-  const totalPayout = payout ? Math.round(parseFloat(payout) * 100) : null;
-  const additionalCents = extraPay ? Math.round(parseFloat(extraPay) * 100) : null;
-
   const { data: job, error } = await db.from('jobs').insert({
-    property_id:               propertyId,
-    scheduled_date:            date,
-    status:                    'pending_review',
-    source:                    'manual',
-    submitted_by:              currentUser.id,
-    payout_cents:              totalPayout,
-    additional_cleaning_cents: additionalCents,
-    additional_cleaning_notes: extraPay && parseFloat(extraPay) > 0 ? extraReason : null,
-    notes:                     fullNotes
+    property_id:   propertyId,
+    scheduled_date: date,
+    status:        'pending_review',
+    source:        'manual',
+    submitted_by:  currentUser.id,
+    payout_cents:  payout ? Math.round(parseFloat(payout) * 100) : null,
+    notes:         `Submitted by cleaner: ${notes}`
   }).select().single();
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  if ((selectedFilesMap['submit-job-photos'] || []).length > 0 && job) {
-    await uploadPhotos('submit-job-photos', job.id, 'evidence');
-    selectedFilesMap['submit-job-photos'] = [];
-  }
+  const files = document.getElementById('submit-job-photos').files;
+  if (files.length > 0 && job) await uploadPhotos(files, job.id, 'evidence');
 
   closeModal('modal-submit-job');
   showToast('Submitted for admin review ✓');
@@ -1198,152 +1108,17 @@ async function renderProperties() {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No properties found.</p></div>';
     return;
   }
-  list.innerHTML = allProperties.map(p => {
-    // Extract door code from notes if present
-    const doorCodeMatch = p.notes ? p.notes.match(/(?:door|lock|code|entry|access)[^\d]*(\d{4,8})/i) : null;
-    const doorCode = doorCodeMatch ? doorCodeMatch[1] : null;
-    return `
-    <div class="prop-card" onclick="openPropertyDetail('${p.id}')" style="cursor:pointer">
+  list.innerHTML = allProperties.map(p => `
+    <div class="prop-card">
       <div class="prop-name">${p.name}</div>
-      <div class="prop-address">📍 ${p.address || '—'}</div>
-      ${doorCode ? `<div style="background:var(--navy);color:white;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:18px">🔑</span>
-        <div><div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.08em">Door code</div>
-        <div style="font-size:20px;font-weight:700;letter-spacing:0.15em">${doorCode}</div></div>
-      </div>` : ''}
+      <div class="prop-address">📍 ${p.address}</div>
       ${p.notes ? `<div class="prop-notes">📌 ${p.notes}</div>` : ''}
       ${p.default_checkout_time || p.default_checkin_time ? `
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           ${p.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(p.default_checkout_time)}</span>` : ''}
           ${p.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(p.default_checkin_time)}</span>`  : ''}
         </div>` : ''}
-      <button class="btn btn-gold btn-full" style="margin-top:12px" onclick="event.stopPropagation();openPropertyDetail('${p.id}')">📋 View checklist</button>
-    </div>`;
-  }).join('');
-}
-
-// ── PROPERTY DETAIL (checklist + door code) ──
-async function openPropertyDetail(propertyId) {
-  const prop = allProperties.find(p => p.id === propertyId);
-  if (!prop) return;
-
-  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
-  let items = [...masterChecklist];
-  if (propChecklist?.items?.length) {
-    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
-  }
-  const sections = {};
-  items.forEach(item => { if (!sections[item.section]) sections[item.section] = []; sections[item.section].push(item); });
-
-  const doorCodeMatch = prop.notes ? prop.notes.match(/(?:door|lock|code|entry|access)[^\d]*(\d{4,8})/i) : null;
-  const doorCode = doorCodeMatch ? doorCodeMatch[1] : null;
-
-  const checklistHtml = Object.entries(sections).map(([section, sectionItems]) => `
-    <div class="checklist-section">
-      <div class="checklist-section-title">${section}</div>
-      ${sectionItems.map(item => `
-        <label class="checklist-item">
-          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
-          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
-        </label>`).join('')}
     </div>`).join('');
-
-  document.getElementById('prop-detail-title').textContent = prop.name;
-  document.getElementById('prop-detail-body').innerHTML = `
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">📍 ${prop.address || '—'}</div>
-    ${doorCode ? `<div style="background:var(--navy);color:white;border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:24px">🔑</span>
-      <div><div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.08em">Door code</div>
-      <div style="font-size:28px;font-weight:700;letter-spacing:0.2em">${doorCode}</div></div>
-    </div>` : ''}
-    ${prop.default_checkout_time || prop.default_checkin_time ? `
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        ${prop.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(prop.default_checkout_time)}</span>` : ''}
-        ${prop.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(prop.default_checkin_time)}</span>`  : ''}
-      </div>` : ''}
-    ${prop.notes ? `<div class="prop-notes" style="margin-bottom:14px">📌 ${prop.notes}</div>` : ''}
-    ${checklistHtml || '<p style="font-size:13px;color:var(--text-muted)">No checklist items yet.</p>'}
-  `;
-  document.getElementById('modal-property-detail').classList.add('open');
-}
-
-// ── GOOD IDEAS ──
-function openGoodIdeasModal() {
-  const sel = document.getElementById('ideas-property');
-  sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('ideas-notes').value = '';
-  document.getElementById('modal-good-ideas').classList.add('open');
-}
-
-async function submitGoodIdea() {
-  const propertyId = document.getElementById('ideas-property').value;
-  const notes      = document.getElementById('ideas-notes').value.trim();
-  if (!notes) { showToast('Please describe your idea'); return; }
-  const { error } = await db.from('maintenance_requests').insert({
-    property_id: propertyId,
-    submitted_by: currentUser.id,
-    category: 'good_idea',
-    notes
-  });
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeModal('modal-good-ideas');
-  showToast('Idea submitted ✓ Admin will review it');
-  renderReportHistory();
-}
-
-// ── VIEW JOB PHOTOS ──
-async function viewJobPhotos(jobId, propName, date) {
-  document.getElementById('photo-viewer-title').textContent = `${propName} — ${formatDate(date)}`;
-  const grid = document.getElementById('photo-viewer-grid');
-  grid.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">Loading…</p>';
-  document.getElementById('modal-photo-viewer').classList.add('open');
-
-  const { data: photos } = await db.from('photos')
-    .select('*')
-    .eq('job_id', jobId)
-    .eq('uploaded_by', currentUser.id)
-    .order('created_at', { ascending: false });
-
-  if (!photos?.length) {
-    grid.innerHTML = '<p style="font-size:13px;color:var(--text-muted);grid-column:span 2;text-align:center;padding:20px">No photos uploaded for this job yet.</p>';
-    return;
-  }
-  grid.innerHTML = photos.map(ph => `
-    <div style="aspect-ratio:1;border-radius:10px;overflow:hidden">
-      <img src="${ph.storage_path}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
-        onerror="this.parentElement.innerHTML='<div style=\'background:var(--cream-dark);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px\'>📷</div>'"
-        onclick="window.open('${ph.storage_path}','_blank')"/>
-    </div>`).join('');
-}
-
-// ── SUB TABS (My Jobs Upcoming/Completed) ──
-let myJobsSubTab = 'upcoming';
-function switchSubTab(tab) {
-  myJobsSubTab = tab;
-  document.getElementById('subtab-upcoming').classList.toggle('active', tab === 'upcoming');
-  document.getElementById('subtab-completed').classList.toggle('active', tab === 'completed');
-  renderMyJobs();
-}
-
-// ── RELEASE JOB ──
-async function releaseJob(assignmentId, jobId, respondedAt) {
-  if (!confirm('Release this job back to the open pool?')) return;
-  const heldMinutes = respondedAt ? (Date.now() - new Date(respondedAt).getTime()) / 60000 : 0;
-  await db.from('job_assignments').delete().eq('id', assignmentId);
-  const { error } = await db.from('jobs').update({ status: 'unassigned', assigned_cleaner_id: null }).eq('id', jobId);
-  if (error) { showToast('Error: ' + error.message); return; }
-  if (heldMinutes > 5) {
-    const job = myJobs.find(a => a.id === assignmentId)?.jobs;
-    await db.from('maintenance_requests').insert({
-      property_id: job?.property_id || null,
-      submitted_by: currentUser.id,
-      category: 'job_released',
-      notes: `${currentProfile.full_name} released a job after holding it ${Math.round(heldMinutes)} mins. Property: ${job?.properties?.name || '—'}, Date: ${formatDate(job?.scheduled_date)}. Needs reassignment.`
-    });
-  }
-  showToast('Job released back to pool ✓');
-  await loadMyJobs();
-  await loadOpenJobs();
 }
 
 // ── REPORT ──
@@ -1352,7 +1127,6 @@ function openMaintenanceModal() {
   sel.innerHTML = allProperties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('maint-notes').value = '';
   document.getElementById('maint-preview').innerHTML = '';
-  selectedFilesMap['maint-photos'] = [];
   document.getElementById('modal-maintenance').classList.add('open');
 }
 
@@ -1361,53 +1135,18 @@ async function submitMaintenance() {
   const category   = document.getElementById('maint-category').value;
   const notes      = document.getElementById('maint-notes').value.trim();
   if (!notes) { showToast('Please describe the issue'); return; }
-  const { data: req, error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes }).select().single();
+  const { error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes });
   if (error) { showToast('Error: ' + error.message); return; }
-  if ((selectedFilesMap['maint-photos'] || []).length > 0 && req) {
-    await uploadMaintenancePhotos('maint-photos', req.id);
-    selectedFilesMap['maint-photos'] = [];
-  }
   closeModal('modal-maintenance');
   showToast('Issue reported ✓ Admin has been notified');
   renderReportHistory();
 }
 
-async function openEvidenceModal() {
+function openEvidenceModal() {
   const sel = document.getElementById('evidence-job');
-
-  // Load both assigned jobs AND cleaner-submitted jobs
-  const { data: submittedJobs } = await db
-    .from('jobs')
-    .select('id, scheduled_date, properties(name)')
-    .eq('submitted_by', currentUser.id)
-    .is('deleted_at', null)
-    .order('scheduled_date', { ascending: false })
-    .limit(50);
-
-  // Combine assigned jobs from myJobs + submitted jobs
-  const assignedOptions = myJobs.map(a => ({
-    id: a.job_id || a.jobs?.id,
-    label: `${a.jobs?.properties?.name || 'Job'} — ${formatDate(a.jobs?.scheduled_date)}`
-  }));
-
-  const submittedOptions = (submittedJobs || [])
-    .filter(j => !assignedOptions.find(a => a.id === j.id))
-    .map(j => ({
-      id: j.id,
-      label: `${j.properties?.name || 'Job'} — ${formatDate(j.scheduled_date)} (submitted)`
-    }));
-
-  const allOptions = [...assignedOptions, ...submittedOptions];
-
-  if (!allOptions.length) {
-    sel.innerHTML = '<option value="">No jobs found</option>';
-  } else {
-    sel.innerHTML = allOptions.map(o => `<option value="${o.id}">${o.label}</option>`).join('');
-  }
-
+  sel.innerHTML = myJobs.map(a => `<option value="${a.job_id || a.jobs?.id}">${a.jobs?.properties?.name || 'Job'} — ${formatDate(a.jobs?.scheduled_date)}</option>`).join('');
   document.getElementById('evidence-notes').value = '';
   document.getElementById('evidence-standalone-preview').innerHTML = '';
-  selectedFilesMap['evidence-photos-standalone'] = [];
   document.getElementById('modal-evidence').classList.add('open');
 }
 
@@ -1415,10 +1154,8 @@ async function submitEvidence() {
   const jobId = document.getElementById('evidence-job').value;
   const notes = document.getElementById('evidence-notes').value.trim();
   if (!notes) { showToast('Please describe the situation'); return; }
-  if ((selectedFilesMap['evidence-photos-standalone'] || []).length > 0) {
-    await uploadPhotos('evidence-photos-standalone', jobId, 'evidence');
-    selectedFilesMap['evidence-photos-standalone'] = [];
-  }
+  const files = document.getElementById('evidence-photos-standalone').files;
+  if (files.length > 0) await uploadPhotos(files, jobId, 'evidence');
   const { data: existing } = await db.from('jobs').select('notes').eq('id', jobId).single();
   const newNote = (existing?.notes ? existing.notes + '\n' : '') + 'Excessive cleaning reported: ' + notes;
   await db.from('jobs').update({ notes: newNote }).eq('id', jobId);
@@ -1429,131 +1166,22 @@ async function submitEvidence() {
 
 async function renderReportHistory() {
   const list = document.getElementById('report-history-list');
-  const { data } = await db.from('maintenance_requests').select('*, properties(name), photo_urls').eq('submitted_by', currentUser.id).order('created_at', { ascending: false }).limit(20);
+  const { data } = await db.from('maintenance_requests').select('*, properties(name)').eq('submitted_by', currentUser.id).order('created_at', { ascending: false }).limit(10);
   if (!data?.length) {
     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>No recent submissions</p></div>';
     return;
   }
-  const categoryLabel = { supply:'🛍️ Supply needed', plumbing:'Plumbing', appliance:'Appliance', cosmetic:'Cosmetic', electrical:'Electrical', other:'Other', good_idea:'💡 Good Idea', job_released:'Job Released', evidence:'Excessive Clean' };
   list.innerHTML = data.map(r => `
-    <div class="job-card" style="margin-bottom:10px" data-report-id="${r.id}" data-report-notes="${encodeURIComponent(r.notes)}" data-report-category="${r.category || ''}" data-report-photos="${encodeURIComponent(JSON.stringify(r.photo_urls || []))}">
+    <div class="job-card" style="margin-bottom:10px">
       <div class="job-card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
-          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status === 'resolved' ? '✓ Closed' : 'Open'}</span>
+          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status}</span>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${categoryLabel[r.category] || r.category} · ${timeAgo(r.created_at)}</div>
-        <div style="font-size:13px;margin-bottom:${r.photo_urls?.length ? '10px' : '10px'}">${r.notes}</div>
-        ${r.photo_urls?.length ? `
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-            ${r.photo_urls.map(url => `
-              <div style="aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')">
-                <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"
-                  onerror="this.parentElement.style.display='none'"/>
-              </div>`).join('')}
-          </div>` : ''}
-        ${r.status !== 'resolved' ? `
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" onclick="openEditReportFromCard(this)">✏️ Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReportFromCard(this)">🗑️ Delete</button>
-        </div>` : ''}
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${r.category} · ${timeAgo(r.created_at)}</div>
+        <div style="font-size:13px">${r.notes}</div>
       </div>
     </div>`).join('');
-}
-
-function openEditReportFromCard(btn) {
-  const card = btn.closest('[data-report-id]');
-  const id       = card.getAttribute('data-report-id');
-  const notes    = decodeURIComponent(card.getAttribute('data-report-notes'));
-  const category = card.getAttribute('data-report-category');
-  const photos   = card.getAttribute('data-report-photos') ? JSON.parse(decodeURIComponent(card.getAttribute('data-report-photos'))) : [];
-
-  document.getElementById('edit-report-id').value = id;
-  document.getElementById('edit-report-notes').value = notes;
-  const catSel = document.getElementById('edit-report-category');
-  if (catSel) catSel.value = category || 'other';
-  document.getElementById('edit-report-new-preview').innerHTML = '';
-  selectedFilesMap['edit-report-new-photos'] = [];
-
-  // Show existing photos with X buttons
-  const photosSection = document.getElementById('edit-report-photos-section');
-  const photosGrid = document.getElementById('edit-report-photos-grid');
-  if (photos.length) {
-    photosSection.style.display = 'block';
-    photosGrid.innerHTML = photos.map((url, i) => `
-      <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden" id="edit-photo-${i}">
-        <img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>
-        <button onclick="removeExistingPhoto('${id}', ${i}, '${encodeURIComponent(url)}')"
-          style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.7);color:white;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">✕</button>
-      </div>`).join('');
-  } else {
-    photosSection.style.display = 'none';
-  }
-
-  document.getElementById('modal-edit-report').classList.add('open');
-}
-
-async function removeExistingPhoto(reportId, photoIndex, encodedUrl) {
-  const url = decodeURIComponent(encodedUrl);
-  // Remove from storage
-  const path = url.split('/job%20photos/')[1] || url.split('/job photos/')[1];
-  if (path) await db.storage.from('job photos').remove([decodeURIComponent(path)]);
-
-  // Get current photo_urls and remove this one
-  const { data } = await db.from('maintenance_requests').select('photo_urls').eq('id', reportId).single();
-  const updated = (data?.photo_urls || []).filter(u => u !== url);
-  await db.from('maintenance_requests').update({ photo_urls: updated }).eq('id', reportId);
-
-  // Remove from DOM
-  document.getElementById(`edit-photo-${photoIndex}`)?.remove();
-  showToast('Photo removed ✓');
-}
-
-async function deleteReportFromCard(btn) {
-  if (!confirm('Delete this report?')) return;
-  const id = btn.closest('[data-report-id]').getAttribute('data-report-id');
-  const { error } = await db.from('maintenance_requests').delete().eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  showToast('Report deleted ✓');
-  renderReportHistory();
-}
-
-function openEditReport(id, notes) {
-  document.getElementById('edit-report-id').value = id;
-  document.getElementById('edit-report-notes').value = notes;
-  document.getElementById('modal-edit-report').classList.add('open');
-}
-
-async function saveEditReport() {
-  const id       = document.getElementById('edit-report-id').value;
-  const notes    = document.getElementById('edit-report-notes').value.trim();
-  const category = document.getElementById('edit-report-category')?.value || 'other';
-  if (!notes) { showToast('Please enter notes'); return; }
-  const { error } = await db.from('maintenance_requests').update({ notes, category }).eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  // Upload any new photos added
-  if ((selectedFilesMap['edit-report-new-photos'] || []).length > 0) {
-    const { data } = await db.from('maintenance_requests').select('photo_urls').eq('id', id).single();
-    const existing = data?.photo_urls || [];
-    const newUrls = await uploadMaintenancePhotos('edit-report-new-photos', id);
-    if (newUrls.length) {
-      await db.from('maintenance_requests').update({ photo_urls: [...existing, ...newUrls] }).eq('id', id);
-    }
-    selectedFilesMap['edit-report-new-photos'] = [];
-  }
-
-  closeModal('modal-edit-report');
-  showToast('Report updated ✓');
-  renderReportHistory();
-}
-
-async function deleteReport(id) {
-  if (!confirm('Delete this report?')) return;
-  const { error } = await db.from('maintenance_requests').delete().eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  showToast('Report deleted ✓');
-  renderReportHistory();
 }
 
 // ── SETTINGS ──
@@ -1653,124 +1281,25 @@ document.addEventListener('click', e => {
 });
 
 // ── PHOTO UPLOAD ──
-// ── PHOTO UPLOAD ──
-const MAX_FILE_SIZE_MB = 10;
-
-// Compress image to max 1200px wide and ~80% quality before upload
-async function compressImage(file, maxWidth = 1200, quality = 0.8) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
-        }, 'image/jpeg', quality);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-// Store selected files per input since we can't modify FileList directly
-const selectedFilesMap = {};
-
-async function uploadMaintenancePhotos(inputId, requestId) {
-  const files = selectedFilesMap[inputId] || [];
-  const urls = [];
-  for (const file of files) {
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      showToast(`"${file.name}" is too large — try a screenshot instead`);
-      continue;
-    }
-    const compressed = await compressImage(file);
-    const path = `jobs/maintenance-${requestId}/${Date.now()}-${compressed.name}`;
-    const { error } = await db.storage.from('job photos').upload(path, compressed);
-    if (error) { showToast('Upload failed: ' + error.message); continue; }
-    const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
-    urls.push(publicUrl);
-  }
-  if (urls.length > 0) {
-    const { error: updateError } = await db.from('maintenance_requests').update({ photo_urls: urls }).eq('id', requestId);
-    if (updateError) showToast('Photos uploaded but failed to save links: ' + updateError.message);
-  }
-  return urls;
-}
-
-async function uploadPhotos(inputIdOrFiles, jobId, type) {
+async function uploadPhotos(files, jobId, type) {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  const files = typeof inputIdOrFiles === 'string'
-    ? (selectedFilesMap[inputIdOrFiles] || [])
-    : Array.from(inputIdOrFiles);
-
-  for (const file of files) {
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      showToast(`"${file.name}" is too large — try a screenshot instead`);
-      continue;
-    }
-    const compressed = await compressImage(file);
-    const path = `jobs/${jobId}/${type}/${Date.now()}-${compressed.name}`;
-    const { error } = await db.storage.from('job photos').upload(path, compressed);
-    if (error) { showToast('Upload failed: ' + error.message); continue; }
+  for (const file of Array.from(files)) {
+    const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
+    const { error } = await db.storage.from('job photos').upload(path, file);
+    if (error) { console.error('Upload error:', error); continue; }
     const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
     await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
   }
 }
 
-
 function previewPhotos(input, previewId) {
   const preview = document.getElementById(previewId);
-  if (!selectedFilesMap[input.id]) selectedFilesMap[input.id] = [];
-
-  // Add new files to our tracked list
-  Array.from(input.files).forEach(file => {
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      showToast(`"${file.name}" is too large (max ${MAX_FILE_SIZE_MB}MB). Try taking a screenshot instead.`);
-      return;
-    }
-    // Avoid duplicates
-    if (!selectedFilesMap[input.id].find(f => f.name === file.name && f.size === file.size)) {
-      selectedFilesMap[input.id].push(file);
-    }
-  });
-
-  renderPhotoPreview(input.id, previewId);
-}
-
-function renderPhotoPreview(inputId, previewId) {
-  const preview = document.getElementById(previewId);
-  const files = selectedFilesMap[inputId] || [];
   preview.innerHTML = '';
-  files.forEach((file, i) => {
+  Array.from(input.files).forEach((file, i) => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const div = document.createElement('div');
-      div.className = 'photo-thumb';
-      div.style.position = 'relative';
-      div.innerHTML = `
-        <img src="${e.target.result}" alt="Photo ${i+1}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>
-        <button onclick="removePhoto('${inputId}','${previewId}',${i})" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.6);color:white;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
-      `;
-      preview.appendChild(div);
-    };
+    reader.onload = e => { preview.innerHTML += `<div class="photo-thumb"><img src="${e.target.result}" alt="Photo ${i+1}"/></div>`; };
     reader.readAsDataURL(file);
   });
-}
-
-function removePhoto(inputId, previewId, index) {
-  if (selectedFilesMap[inputId]) {
-    selectedFilesMap[inputId].splice(index, 1);
-    renderPhotoPreview(inputId, previewId);
-  }
 }
 
 // ── MASTER CHECKLIST ──
