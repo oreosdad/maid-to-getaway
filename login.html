@@ -182,6 +182,90 @@
 
     .footer-note a { color: var(--gold); text-decoration: none; }
     .footer-note a:hover { text-decoration: underline; }
+
+    /* Role picker */
+    .picker-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 40px rgba(28,43,58,0.10), 0 1px 4px rgba(28,43,58,0.06);
+      animation: fadeUp 0.5s ease both;
+      display: none;
+    }
+
+    .picker-card.visible { display: block; }
+
+    .picker-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .picker-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .role-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--white);
+      border: 1.5px solid var(--cream-dark);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 12px;
+      font-family: 'DM Sans', sans-serif;
+      text-align: left;
+    }
+
+    .role-btn:hover {
+      border-color: var(--gold);
+      background: var(--gold-light, #FBF3D5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(196,154,42,0.15);
+    }
+
+    .role-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .role-icon-admin   { background: #EEF2FF; }
+    .role-icon-cleaner { background: var(--cream); }
+    .role-icon-owner   { background: #EAF7F0; }
+
+    .role-label { font-size: 16px; font-weight: 500; color: var(--navy); }
+    .role-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .picker-signout {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .picker-signout a {
+      color: var(--gold);
+      text-decoration: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -208,6 +292,20 @@
   <p class="footer-note">
     Having trouble? <a href="/cdn-cgi/l/email-protection#9cffe9e8fff3f6f3f4f2fbf5f0f1f3eef9dcfbf1fdf5f0b2fff3f1">Contact admin</a>
   </p>
+</div>
+
+<!-- Role picker (shown after login for multi-role users) -->
+<div class="picker-card" id="picker-card">
+  <div class="logo-area" style="margin-bottom:20px">
+    <div class="logo-icon">🧹</div>
+    <h1>Maid to <em>Getaway</em></h1>
+  </div>
+  <div class="picker-title">Choose your view</div>
+  <div class="picker-sub" id="picker-greeting">Welcome back</div>
+  <div id="role-buttons"></div>
+  <div class="picker-signout">
+    Not you? <a onclick="signOutPicker()">Sign out</a>
+  </div>
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -253,22 +351,63 @@
     await redirectByRole(data.user.id);
   }
 
+  const ROLE_CONFIG = {
+    admin:   { icon: '⚙️', iconClass: 'role-icon-admin',   label: 'Admin',   desc: 'Manage jobs, properties, payments & users', url: 'admin.html'   },
+    cleaner: { icon: '🧹', iconClass: 'role-icon-cleaner', label: 'Cleaner', desc: 'View your jobs, earnings & reports',          url: 'cleaner.html' },
+    owner:   { icon: '🏠', iconClass: 'role-icon-owner',   label: 'Owner',   desc: 'Financials, schedule & maintenance',          url: 'owner.html'   }
+  };
+
   async function redirectByRole(userId) {
     const { data: profile, error } = await db
       .from('profiles')
-      .select('role')
+      .select('role, full_name, notification_prefs')
       .eq('id', userId)
       .single();
 
-    // If profile can't be read, go to admin.html anyway (for testing)
     if (error || !profile) {
       window.location.href = 'admin.html';
       return;
     }
 
+    // Check for multi-role in notification_prefs
+    const extraRoles = profile.notification_prefs?.roles;
+    if (extraRoles && Array.isArray(extraRoles) && extraRoles.length > 1) {
+      showRolePicker(profile, extraRoles);
+      return;
+    }
+
+    // Single role — redirect directly
     if (profile.role === 'admin')   window.location.href = 'admin.html';
     if (profile.role === 'cleaner') window.location.href = 'cleaner.html';
     if (profile.role === 'owner')   window.location.href = 'owner.html';
+  }
+
+  function showRolePicker(profile, roles) {
+    // Hide login card, show picker
+    document.querySelector('.card').style.display = 'none';
+    const picker = document.getElementById('picker-card');
+    picker.classList.add('visible');
+
+    const firstName = (profile.full_name || '').split(' ')[0] || 'there';
+    document.getElementById('picker-greeting').textContent = `Hi ${firstName} — where would you like to go?`;
+
+    const btns = document.getElementById('role-buttons');
+    btns.innerHTML = roles.map(role => {
+      const cfg = ROLE_CONFIG[role];
+      if (!cfg) return '';
+      return `<button class="role-btn" onclick="window.location.href='${cfg.url}'">
+        <div class="role-icon ${cfg.iconClass}">${cfg.icon}</div>
+        <div>
+          <div class="role-label">${cfg.label}</div>
+          <div class="role-desc">${cfg.desc}</div>
+        </div>
+      </button>`;
+    }).join('');
+  }
+
+  async function signOutPicker() {
+    await db.auth.signOut();
+    window.location.href = 'login.html?signout=1';
   }
 
   function showError(msg) {
