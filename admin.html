@@ -1823,7 +1823,7 @@ function renderProperties() {
           <td>${p.default_charge_cents ? '$' + Math.round(p.default_charge_cents / 100) : '—'}</td>
           <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
-          <td style="color:var(--text-muted);font-size:13px">${p.notes || '—'}</td>
+          <td style="color:var(--text-muted);font-size:13px;max-width:200px"><span title="${p.notes || ''}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default">${p.notes || '—'}</span></td>
           <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
             <button class="btn btn-outline btn-sm" onclick="openPropertyChecklist('${p.id}', '${p.name.replace(/'/g, "\\'")}')">📋 Checklist</button>
