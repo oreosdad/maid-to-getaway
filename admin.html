@@ -1528,7 +1528,7 @@ function renderJobsTable(jobs) {
           <td>${job.source === 'airbnb' ? '<span style="background:#FF5A5F;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">Airbnb</span>' : job.source === 'vrbo' ? '<span style="background:#1A5276;color:white;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500">VRBO</span>' : '<span style="color:#B0A896;font-size:12px">Manual</span>'}</td>
           <td onclick="event.stopPropagation()">
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
+              <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEditJobModal('${job.id}')">Edit</button>
               ${job.status !== 'completed' ? '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();markComplete(\''+job.id+'\')">✓ Done</button>' : ''}
               ${job.status === 'completed' ? '<button class="btn btn-outline btn-sm" style="font-size:12px" onclick="event.stopPropagation();unmarkComplete(\''+job.id+'\')">↩ Undo</button>' : ''}
               ${job.status === 'completed' && !job.cleaner_paid_at ? '<button class="btn btn-sm" style="background:var(--success);color:white;padding:6px 12px" onclick="event.stopPropagation();markPaid(\''+job.id+'\')">Mark paid</button>' : ''}
