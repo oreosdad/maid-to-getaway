@@ -654,13 +654,19 @@ function renderMyJobs() {
       html += `<div class="section-label" style="margin-top:${pendingPayment.length ? '20px' : '0'}">Completed & paid</div>` +
         completed.map(a => {
           const job = a.jobs;
-          return `<div class="job-card" style="opacity:0.7">
+          return `<div class="job-card">
             <div class="job-card-header">
               <div>
                 <div class="job-property">${job.properties?.name || '—'}</div>
                 <div class="job-date">${formatDate(job.scheduled_date)}</div>
               </div>
               <span class="status-accepted">✓ Paid</span>
+            </div>
+            <div class="job-card-body">
+              <div class="job-meta">
+                ${job.payout_cents ? `<span class="meta-pill pill-payout">💰 $${Math.round(job.payout_cents/100)}</span>` : ''}
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="undoComplete('${a.id}','${job.id}')">↩ Undo complete</button>
             </div>
           </div>`;
         }).join('');
