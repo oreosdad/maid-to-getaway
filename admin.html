@@ -1340,8 +1340,18 @@ function populateJobFilters() {
   // Cleaners
   const cleanerSel = document.getElementById('filter-cleaner');
   if (cleanerSel) {
-    cleanerSel.innerHTML = '<option value="">All cleaners</option>' +
-      cleaners.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
+    const roles2 = { cleaner: '🧹 Cleaners', owner: '🏠 Owners', admin: '⚙️ Admins' };
+    const grouped2 = { cleaner: [], owner: [], admin: [] };
+    cleaners.forEach(u => { if (grouped2[u.role]) grouped2[u.role].push(u); });
+    let cleanerHtml = '<option value="">All assignees</option>';
+    Object.entries(roles2).forEach(([role, label]) => {
+      if (grouped2[role].length) {
+        cleanerHtml += `<optgroup label="${label}">`;
+        grouped2[role].forEach(u => { cleanerHtml += `<option value="${u.id}">${u.full_name}</option>`; });
+        cleanerHtml += '</optgroup>';
+      }
+    });
+    cleanerSel.innerHTML = cleanerHtml;
   }
   // Months — build from actual job dates
   const monthSel = document.getElementById('filter-month');
@@ -1540,9 +1550,7 @@ function openEditJobModal(id) {
     properties.map(p => `<option value="${p.id}" ${p.id === job.property_id ? 'selected' : ''}>${p.name}</option>`).join('');
 
   // Populate cleaner dropdown
-  document.getElementById('edit-job-cleaner').innerHTML =
-    '<option value="">Unassigned</option>' +
-    cleaners.map(c => `<option value="${c.id}" ${c.id === job.assigned_cleaner_id ? 'selected' : ''}>${c.full_name}</option>`).join('');
+  document.getElementById('edit-job-cleaner').innerHTML = buildAssigneeOptions(job.assigned_cleaner_id || '');
 
   document.getElementById('edit-job-id').value          = job.id;
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
@@ -1722,9 +1730,7 @@ function openNewJobModal() {
   document.getElementById('job-property').innerHTML =
     '<option value="">Select a property…</option>' +
     properties.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-  document.getElementById('job-cleaner').innerHTML =
-    '<option value="">Leave unassigned</option>' +
-    cleaners.map(c => `<option value="${c.id}">${c.full_name}</option>`).join('');
+  document.getElementById('job-cleaner').innerHTML = buildAssigneeOptions();
   document.getElementById('job-date').value = today();
   document.getElementById('job-time').value = '';
   document.getElementById('job-checkout').value = '';
@@ -1945,7 +1951,7 @@ async function triggerIcalSync() {
 
 // ── CLEANERS ──
 async function loadCleaners() {
-  const { data } = await db.from('profiles').select('*').eq('role', 'cleaner').order('full_name');
+  const { data } = await db.from('profiles').select('*').eq('is_active', true).order('full_name');
   cleaners = data || [];
 }
 
@@ -2720,6 +2726,23 @@ async function loadReportComments(reportId, wrapId) {
       ${c.content}
     </div>`;
   }).join('');
+}
+
+function buildAssigneeOptions(selectedId = '') {
+  const roles = { cleaner: '🧹 Cleaners', owner: '🏠 Owners', admin: '⚙️ Admins' };
+  const grouped = { cleaner: [], owner: [], admin: [] };
+  cleaners.forEach(u => { if (grouped[u.role]) grouped[u.role].push(u); });
+  let html = '<option value="">Leave unassigned</option>';
+  Object.entries(roles).forEach(([role, label]) => {
+    if (grouped[role].length) {
+      html += `<optgroup label="${label}">`;
+      grouped[role].forEach(u => {
+        html += `<option value="${u.id}" ${u.id === selectedId ? 'selected' : ''}>${u.full_name}${u.is_owner_operator ? ' (owner/op)' : ''}</option>`;
+      });
+      html += '</optgroup>';
+    }
+  });
+  return html;
 }
 
 init();
