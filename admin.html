@@ -586,43 +586,25 @@
     </div>
 
     <div class="page" id="page-payments">
-      <div class="page-header"><h2>Cleaner Payments</h2></div>
-      <div class="stats-row" id="payment-stats-row" style="margin-bottom:20px"></div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Cleaner payments</span>
-          <div class="filter-row">
-            <select id="pay-filter-cleaner" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-              <option value="">All cleaners</option>
-            </select>
-            <select id="pay-filter-month" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-              <option value="">All months</option>
-              <option value="1">January</option>
-              <option value="2">February</option>
-              <option value="3">March</option>
-              <option value="4">April</option>
-              <option value="5">May</option>
-              <option value="6">June</option>
-              <option value="7">July</option>
-              <option value="8">August</option>
-              <option value="9">September</option>
-              <option value="10">October</option>
-              <option value="11">November</option>
-              <option value="12">December</option>
-            </select>
-            <select id="pay-filter-year" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-              <option value="">All years</option>
-            </select>
-            <select id="pay-filter-status" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-              <option value="">All statuses</option>
-              <option value="unpaid">Unpaid only</option>
-              <option value="paid">Paid only</option>
-            </select>
-            <button class="btn btn-outline btn-sm" onclick="clearPaymentFilters()">Clear</button>
-          </div>
+      <div class="page-header">
+        <h2>Cleaner Payments</h2>
+        <div style="display:flex;gap:8px">
+          <select id="pay-filter-cleaner" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All cleaners</option>
+          </select>
+          <select id="pay-filter-paydate" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="">All pay dates</option>
+          </select>
+          <select id="pay-filter-status" onchange="renderPayments()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="unpaid">Unpaid</option>
+            <option value="paid">Paid</option>
+            <option value="">All</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearPaymentFilters()">Clear</button>
         </div>
-        <div id="payments-table-wrap"></div>
       </div>
+      <div class="stats-row" id="payment-stats-row" style="margin-bottom:20px"></div>
+      <div id="payments-table-wrap"></div>
     </div>
 
     <!-- REPORTS PAGE -->
@@ -2067,125 +2049,193 @@ let allPaymentJobs = [];
 async function loadPaymentData() {
   const { data } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id, is_owner_operator))')
+    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, profiles(full_name, id, is_owner_operator))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .order('scheduled_date', { ascending: false });
-  // Exclude jobs where the assigned cleaner is an owner/operator
-  allPaymentJobs = (data || []).filter(j => {
-    const cleaner = j.job_assignments?.[0]?.profiles;
-    return !cleaner?.is_owner_operator;
+    .order('cleaner_pay_date', { ascending: true });
+
+  // Expand jobs with multiple assignments into separate payment rows
+  allPaymentJobs = [];
+  (data || []).forEach(j => {
+    const assignments = j.job_assignments || [];
+    const validAssignments = assignments.filter(a => a.profiles && !a.profiles.is_owner_operator);
+    if (!validAssignments.length) return;
+    validAssignments.forEach(a => {
+      allPaymentJobs.push({
+        ...j,
+        _cleaner_id:   a.cleaner_id,
+        _cleaner_name: a.profiles.full_name,
+        _payout_cents: a.payout_cents || j.payout_cents || 0,
+      });
+    });
   });
 }
 
 function clearPaymentFilters() {
   document.getElementById('pay-filter-cleaner').value = '';
-  document.getElementById('pay-filter-month').value   = '';
-  document.getElementById('pay-filter-year').value    = '';
-  document.getElementById('pay-filter-status').value  = '';
+  document.getElementById('pay-filter-paydate').value = '';
+  document.getElementById('pay-filter-status').value  = 'unpaid';
   renderPayments();
 }
 
 async function renderPayments() {
-  // Load data if not yet loaded
   if (!allPaymentJobs.length) await loadPaymentData();
 
-  const cleanerFilter = document.getElementById('pay-filter-cleaner')?.value || '';
-  const monthFilter   = document.getElementById('pay-filter-month')?.value   || '';
-  const yearFilter    = document.getElementById('pay-filter-year')?.value    || '';
-  const statusFilter  = document.getElementById('pay-filter-status')?.value  || '';
+  const cleanerFilter  = document.getElementById('pay-filter-cleaner')?.value  || '';
+  const paydateFilter  = document.getElementById('pay-filter-paydate')?.value  || '';
+  const statusFilter   = document.getElementById('pay-filter-status')?.value   || '';
 
   // Populate cleaner dropdown
   const cleanerSel = document.getElementById('pay-filter-cleaner');
   if (cleanerSel && cleanerSel.options.length <= 1) {
-    const uniqueCleaners = {};
-    allPaymentJobs.forEach(j => {
-      const c = j.job_assignments?.[0]?.profiles;
-      if (c) uniqueCleaners[c.id] = c.full_name;
-    });
-    Object.entries(uniqueCleaners).forEach(([id, name]) => {
-      const opt = document.createElement('option');
-      opt.value = id; opt.textContent = name;
-      cleanerSel.appendChild(opt);
+    const seen = {};
+    allPaymentJobs.forEach(j => { if (j._cleaner_id) seen[j._cleaner_id] = j._cleaner_name; });
+    Object.entries(seen).sort((a,b) => a[1].localeCompare(b[1])).forEach(([id, name]) => {
+      const o = document.createElement('option'); o.value = id; o.textContent = name;
+      cleanerSel.appendChild(o);
     });
   }
 
-  // Populate year dropdown
-  const yearSel = document.getElementById('pay-filter-year');
-  if (yearSel && yearSel.options.length <= 1) {
-    const years = [...new Set(allPaymentJobs
-      .filter(j => j.scheduled_date)
-      .map(j => j.scheduled_date.slice(0, 4)))].sort().reverse();
-    years.forEach(y => {
-      const opt = document.createElement('option');
-      opt.value = y; opt.textContent = y;
-      yearSel.appendChild(opt);
+  // Populate pay date dropdown
+  const pdSel = document.getElementById('pay-filter-paydate');
+  if (pdSel && pdSel.options.length <= 1) {
+    const dates = [...new Set(allPaymentJobs.filter(j => j.cleaner_pay_date).map(j => j.cleaner_pay_date))].sort();
+    dates.forEach(d => {
+      const o = document.createElement('option'); o.value = d;
+      o.textContent = 'Pay date: ' + formatDate(d);
+      pdSel.appendChild(o);
     });
   }
 
   let filtered = [...allPaymentJobs];
-
-  if (cleanerFilter) filtered = filtered.filter(j => j.job_assignments?.[0]?.profiles?.id === cleanerFilter);
-  if (monthFilter)   filtered = filtered.filter(j => j.scheduled_date && new Date(j.scheduled_date + 'T12:00:00').getMonth() + 1 === parseInt(monthFilter));
-  if (yearFilter)    filtered = filtered.filter(j => j.scheduled_date?.startsWith(yearFilter));
+  if (cleanerFilter) filtered = filtered.filter(j => j._cleaner_id === cleanerFilter);
+  if (paydateFilter) filtered = filtered.filter(j => j.cleaner_pay_date === paydateFilter);
   if (statusFilter === 'unpaid') filtered = filtered.filter(j => !j.cleaner_paid_at);
   if (statusFilter === 'paid')   filtered = filtered.filter(j =>  j.cleaner_paid_at);
 
-  // Summary stats
-  const totalOwed   = filtered.filter(j => !j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
-  const totalPaid   = filtered.filter(j =>  j.cleaner_paid_at).reduce((s, j) => s + (j.payout_cents || 0), 0);
-  const statsEl = document.getElementById('payment-stats-row');
-  if (statsEl) {
-    statsEl.innerHTML = `
-      <div class="stat-card flagged">
-        <div class="stat-label">Owed to cleaners</div>
-        <div class="stat-value">$${Math.round(totalOwed / 100)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Paid out</div>
-        <div class="stat-value">$${Math.round(totalPaid / 100)}</div>
-      </div>
-      <div class="stat-card gold">
-        <div class="stat-label">Jobs shown</div>
-        <div class="stat-value">${filtered.length}</div>
-      </div>`;
-  }
+  // Stats
+  const totalOwed = filtered.filter(j => !j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
+  const totalPaid = filtered.filter(j =>  j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
+  document.getElementById('payment-stats-row').innerHTML = `
+    <div class="stat-card flagged">
+      <div class="stat-label">Outstanding</div>
+      <div class="stat-value">$${Math.round(totalOwed/100)}</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-label">Paid out</div>
+      <div class="stat-value" style="color:var(--success)">$${Math.round(totalPaid/100)}</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">Jobs shown</div>
+      <div class="stat-value">${filtered.length}</div>
+    </div>`;
 
   const wrap = document.getElementById('payments-table-wrap');
   if (!filtered.length) {
-    wrap.innerHTML = '<div class="empty-state">💰<p>No completed jobs match your filters.</p></div>';
+    wrap.innerHTML = '<div class="empty-state" style="padding:48px">💰<p>No jobs match your filters.</p></div>';
     return;
   }
 
-  wrap.innerHTML = `
-    <table>
-      <thead><tr>
-        <th>Date</th><th>Property</th><th>Cleaner</th><th>Payout</th>
-        <th>Pay date</th><th>Status</th><th>Actions</th>
-      </tr></thead>
-      <tbody>${filtered.map(job => {
-        const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
-        const isPaid  = !!job.cleaner_paid_at;
-        return `<tr>
-          <td>${formatDate(job.scheduled_date)}</td>
-          <td>${job.properties?.name || '—'}</td>
-          <td>${cleaner}</td>
-          <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
-          <td style="font-size:12px;color:var(--text-muted)">${job.cleaner_pay_date ? formatDate(job.cleaner_pay_date) : '—'}</td>
-          <td>
-            ${isPaid
-              ? `<span class="badge badge-accepted">✓ Paid ${job.cleaner_paid_at ? new Date(job.cleaner_paid_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : ''}</span>`
-              : `<span class="badge badge-flagged">Unpaid</span>`}
-          </td>
-          <td>
-            ${!isPaid
-              ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPaid('${job.id}')">Mark paid</button>`
-              : `<button class="btn btn-outline btn-sm" onclick="unmarkPaid('${job.id}')">Undo</button>`}
-          </td>
-        </tr>`;
-      }).join('')}
-      </tbody>
-    </table>`;
+  // Group by cleaner → then by pay date
+  const byCleanerDate = {};
+  filtered.forEach(j => {
+    const key = j._cleaner_id + '|' + (j.cleaner_pay_date || 'no-date');
+    if (!byCleanerDate[key]) byCleanerDate[key] = { cleaner: j._cleaner_name, cleanerId: j._cleaner_id, payDate: j.cleaner_pay_date, jobs: [] };
+    byCleanerDate[key].jobs.push(j);
+  });
+
+  // Sort groups: unpaid first, then by pay date
+  const groups = Object.values(byCleanerDate).sort((a, b) => {
+    const aUnpaid = a.jobs.some(j => !j.cleaner_paid_at);
+    const bUnpaid = b.jobs.some(j => !j.cleaner_paid_at);
+    if (aUnpaid !== bUnpaid) return aUnpaid ? -1 : 1;
+    return (a.payDate||'').localeCompare(b.payDate||'');
+  });
+
+  wrap.innerHTML = groups.map(group => {
+    const unpaidJobs = group.jobs.filter(j => !j.cleaner_paid_at);
+    const paidJobs   = group.jobs.filter(j =>  j.cleaner_paid_at);
+    const unpaidTotal = unpaidJobs.reduce((s,j) => s + j._payout_cents, 0);
+    const paidTotal   = paidJobs.reduce((s,j)   => s + j._payout_cents, 0);
+    const allPaid     = unpaidJobs.length === 0;
+    const jobIds      = unpaidJobs.map(j => j.id);
+
+    return `
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:14px;margin-bottom:20px;overflow:hidden">
+      <!-- Group header -->
+      <div style="padding:16px 20px;background:${allPaid ? 'var(--success-bg)' : 'var(--cream)'};border-bottom:1px solid var(--cream-dark);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:16px;font-weight:500;color:var(--navy)">${group.cleaner}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+            Pay date: <strong>${group.payDate ? formatDate(group.payDate) : '—'}</strong>
+            · ${group.jobs.length} job${group.jobs.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          ${!allPaid ? `
+            <div style="text-align:right">
+              <div style="font-size:22px;font-weight:500;color:var(--navy)">$${Math.round(unpaidTotal/100)}</div>
+              <div style="font-size:11px;color:var(--text-muted)">due</div>
+            </div>
+            <button class="btn" style="background:var(--success);color:white;white-space:nowrap"
+              onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
+              ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
+            </button>
+          ` : `
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="color:var(--success);font-weight:500">✓ Paid $${Math.round(paidTotal/100)}</span>
+              <button class="btn btn-outline btn-sm" onclick="unmarkCleanerPaid(${JSON.stringify(paidJobs.map(j=>j.id)).replace(/"/g,'&quot;')})">Undo</button>
+            </div>
+          `}
+        </div>
+      </div>
+      <!-- Job rows -->
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Date</th>
+          <th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Property</th>
+          <th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Payout</th>
+          <th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Status</th>
+        </tr></thead>
+        <tbody>
+          ${group.jobs.map(job => `
+            <tr style="cursor:pointer;border-bottom:1px solid var(--cream-dark)" onclick="openEditJobModal('${job.id}')" title="Click to edit">
+              <td style="padding:13px 20px;font-size:14px">${formatDate(job.scheduled_date)}</td>
+              <td style="padding:13px 20px;font-size:14px">${job.properties?.name || '—'}</td>
+              <td style="padding:13px 20px;font-size:14px;font-weight:500;color:var(--navy)">$${Math.round(job._payout_cents/100)}</td>
+              <td style="padding:13px 20px">
+                ${job.cleaner_paid_at
+                  ? `<span class="badge badge-accepted">✓ Paid ${new Date(job.cleaner_paid_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`
+                  : `<span class="badge badge-flagged">Unpaid</span>`}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+async function markCleanerPaid(cleanerId, payDate, jobIds) {
+  const ids = typeof jobIds === 'string' ? JSON.parse(jobIds) : jobIds;
+  const now = new Date().toISOString();
+  let success = 0;
+  for (const id of ids) {
+    const { error } = await db.from('jobs').update({ cleaner_paid_at: now }).eq('id', id);
+    if (!error) success++;
+  }
+  showToast(`${success} job${success !== 1 ? 's' : ''} marked paid ✓`);
+  allPaymentJobs = [];
+  await renderPayments();
+}
+
+async function unmarkCleanerPaid(jobIds) {
+  const ids = typeof jobIds === 'string' ? JSON.parse(jobIds) : jobIds;
+  for (const id of ids) {
+    await db.from('jobs').update({ cleaner_paid_at: null }).eq('id', id);
+  }
+  showToast('Payment undone ✓');
+  allPaymentJobs = [];
+  await renderPayments();
 }
 
 async function unmarkPaid(jobId) {
