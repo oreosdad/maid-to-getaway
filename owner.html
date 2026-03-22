@@ -1056,10 +1056,32 @@ async function saveProperty() {
   }
 
   closeModal('modal-property');
-  showToast(isEdit ? 'Property updated ✓' : 'Property added ✓');
   newPropPhotos = [];
+
+  const airbnb = data.airbnb_ical_url;
+  const vrbo   = data.vrbo_ical_url;
+  if (airbnb || vrbo) {
+    showToast((isEdit ? 'Property updated' : 'Property added') + ' — syncing calendar…');
+    await triggerIcalSync();
+  } else {
+    showToast(isEdit ? 'Property updated ✓' : 'Property added ✓');
+  }
+
   await loadData();
   renderProperties();
+}
+
+async function triggerIcalSync() {
+  try {
+    const res  = await fetch('/.netlify/functions/sync-ical?secret=MaidSync2026!');
+    const data = await res.json();
+    const msg  = data.created > 0
+      ? `✓ Calendar synced — ${data.created} new job${data.created !== 1 ? 's' : ''} added`
+      : '✓ Calendar synced — no new jobs found';
+    showToast(msg);
+  } catch (e) {
+    showToast('Saved ✓ (calendar sync will run on next hourly cycle)');
+  }
 }
 
 async function removeProperty(propId, propName) {
