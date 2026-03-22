@@ -459,9 +459,6 @@
       <a class="nav-item" id="nav-properties" onclick="showPage('properties', this)">
         <span class="nav-icon">🏠</span> Properties
       </a>
-      <a class="nav-item" id="nav-cleaners" onclick="showPage('cleaners', this)">
-        <span class="nav-icon">👤</span> Cleaners
-      </a>
       <a class="nav-item" id="nav-payments" onclick="showPage('payments', this)">
         <span class="nav-icon">💰</span> Payments
       </a>
@@ -557,13 +554,21 @@
       </div>
     </div>
 
-    <div class="page" id="page-cleaners">
+    <!-- USERS PAGE (unified — cleaners, owners, admins) -->
+    <div class="page" id="page-users">
       <div class="page-header">
-        <h2>Cleaners</h2>
-        <button class="btn" onclick="openNewCleanerModal()">+ Add cleaner</button>
+        <h2>Users</h2>
+        <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+      </div>
+      <!-- Role tabs -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="filter-btn active" id="user-tab-all"     onclick="setUserTab('all',this)">All</button>
+        <button class="filter-btn" id="user-tab-cleaner"        onclick="setUserTab('cleaner',this)">🧹 Cleaners</button>
+        <button class="filter-btn" id="user-tab-owner"          onclick="setUserTab('owner',this)">🏠 Owners</button>
+        <button class="filter-btn" id="user-tab-admin"          onclick="setUserTab('admin',this)">⚙️ Admins</button>
       </div>
       <div class="card">
-        <div id="cleaners-table-wrap"><div class="loading-inline">Loading…</div></div>
+        <div id="users-table-wrap"><div class="loading-inline">Loading users…</div></div>
       </div>
     </div>
 
@@ -642,27 +647,61 @@
       </div>
     </div>
 
-    <!-- USERS PAGE -->
-    <div class="page" id="page-users">
-      <div class="page-header">
-        <h2>Users</h2>
-        <button class="btn" onclick="openNewUserModal()">+ Add user</button>
+  </main>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit user</span>
+      <button class="modal-close" onclick="closeModal('modal-edit-user')">✕</button>
+    </div>
+    <input type="hidden" id="edit-user-id"/>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Full name</label>
+        <input type="text" id="edit-user-name" placeholder="Jane Smith"/>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">All users</span>
-          <div class="filter-row">
-            <button class="filter-btn active" onclick="filterUsers('all',this)">All</button>
-            <button class="filter-btn" onclick="filterUsers('admin',this)">Admins</button>
-            <button class="filter-btn" onclick="filterUsers('cleaner',this)">Cleaners</button>
-            <button class="filter-btn" onclick="filterUsers('owner',this)">Owners</button>
-          </div>
-        </div>
-        <div id="users-table-wrap"><div class="loading-inline">Loading users…</div></div>
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="tel" id="edit-user-phone" placeholder="(816) 555-0100"/>
       </div>
     </div>
-
-  </main>
+    <div class="form-group">
+      <label>Email <span style="color:var(--text-muted);font-weight:400">(read-only)</span></label>
+      <input type="email" id="edit-user-email" disabled style="opacity:0.6"/>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="edit-user-role">
+        <option value="cleaner">🧹 Cleaner</option>
+        <option value="owner">🏠 Owner</option>
+        <option value="admin">⚙️ Admin</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-user-active"/>
+          Active account
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="edit-user-owner-op"/>
+          Owner/operator (excludes from payments)
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-outline" style="color:var(--error);border-color:var(--error)" onclick="deleteUserFromModal()">Delete user</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="closeModal('modal-edit-user')">Cancel</button>
+        <button class="btn" onclick="saveEditUser()">Save changes</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- New User Modal -->
@@ -1181,7 +1220,6 @@ function showPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
   el.classList.add('active');
   if (name === 'properties') renderProperties();
-  if (name === 'cleaners')   renderCleaners();
   if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
   if (name === 'users')      { loadUsers(); }
@@ -2347,7 +2385,14 @@ function clearReportFilters() {
 
 // ── USER MANAGEMENT ──
 let allUsers = [];
-let userRoleFilter = 'all';
+let userTabFilter = 'all';
+
+function setUserTab(role, btn) {
+  userTabFilter = role;
+  document.querySelectorAll('[id^="user-tab-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsers();
+}
 
 async function loadUsers() {
   const { data } = await db.from('profiles').select('*').order('full_name');
@@ -2355,42 +2400,42 @@ async function loadUsers() {
   renderUsers();
 }
 
-function filterUsers(role, btn) {
-  userRoleFilter = role;
-  document.querySelectorAll('#page-users .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderUsers();
-}
-
 function renderUsers() {
   const wrap = document.getElementById('users-table-wrap');
   let users = [...allUsers];
-  if (userRoleFilter !== 'all') users = users.filter(u => u.role === userRoleFilter);
+  if (userTabFilter !== 'all') users = users.filter(u => u.role === userTabFilter);
 
   if (!users.length) {
     wrap.innerHTML = '<div class="empty-state">👥<p>No users found.</p></div>';
     return;
   }
 
-  const roleColors = { admin:'#1A56A4', cleaner:'#1E7B4B', owner:'#A07D1C' };
-  const roleBg     = { admin:'#E8F0FB', cleaner:'var(--success-bg)', owner:'var(--gold-light)' };
+  const roleBadge = r => {
+    const map = { admin:'#E8F0FB:#1A56A4:⚙️ Admin', cleaner:'var(--success-bg):var(--success):🧹 Cleaner', owner:'var(--gold-light):var(--gold-dark):🏠 Owner' };
+    const [bg, color, label] = (map[r] || 'var(--cream):var(--text-muted):'+r).split(':');
+    return `<span style="background:${bg};color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${label}</span>`;
+  };
 
   wrap.innerHTML = `<table>
-    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Owner/Operator</th><th>Actions</th></tr></thead>
-    <tbody>${users.map(u => `<tr>
-      <td><strong>${u.full_name}</strong></td>
-      <td style="font-size:13px">${u.email}</td>
-      <td><span style="background:${u.role==='admin'?'#E8F0FB':u.role==='owner'?'var(--gold-light)':'var(--success-bg)'};color:${u.role==='admin'?'#1A56A4':u.role==='owner'?'var(--gold-dark)':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${u.role}</span></td>
-      <td><span class="badge ${u.is_active?'badge-accepted':'badge-declined'}">${u.is_active?'Active':'Inactive'}</span></td>
-      <td style="font-size:13px;color:var(--text-muted)">${u.is_owner_operator?'✓ Owner/operator':'—'}</td>
-      <td>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset password</button>
-          <button class="btn btn-outline btn-sm" onclick="toggleUserActive('${u.id}',${u.is_active})">${u.is_active?'Deactivate':'Activate'}</button>
-          <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteUser('${u.id}','${u.full_name}')">Delete</button>
-        </div>
-      </td>
-    </tr>`).join('')}
+    <thead><tr>
+      <th>Name</th><th>Email</th><th>Phone</th><th>Role</th>
+      <th>Status</th><th>Owner/Operator</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${users.map(u => `
+      <tr style="cursor:pointer" onclick="openEditUserModal('${u.id}')">
+        <td><strong>${u.full_name || '—'}</strong></td>
+        <td style="font-size:13px">${u.email || '—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${u.phone || '—'}</td>
+        <td>${roleBadge(u.role)}</td>
+        <td><span class="badge ${u.is_active ? 'badge-accepted' : 'badge-declined'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td style="font-size:13px;color:var(--text-muted)">${u.is_owner_operator ? '✓ Owner/operator' : '—'}</td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="openEditUserModal('${u.id}')">Edit</button>
+            <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}','${u.email}')">Reset pwd</button>
+          </div>
+        </td>
+      </tr>`).join('')}
     </tbody>
   </table>`;
 }
@@ -2409,32 +2454,62 @@ async function saveNewUser() {
   if (!name)  { showToast('Please enter a name'); return; }
   if (!email) { showToast('Please enter an email'); return; }
 
-  // Sign up the user with a temp password
   const { data, error } = await db.auth.signUp({
-    email,
-    password: 'ChangeMe123!',
-    options: {
-      data: { full_name: name, role }
-    }
+    email, password: 'ChangeMe123!',
+    options: { data: { full_name: name, role } }
   });
-
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update profile with phone, role, name (trigger may have created it)
   if (data?.user?.id) {
     await db.from('profiles').upsert({
-      id: data.user.id,
-      email,
-      full_name: name,
-      phone,
-      role,
-      is_active: true,
-      is_owner_operator: false
+      id: data.user.id, email, full_name: name, phone,
+      role, is_active: true, is_owner_operator: false
     }, { onConflict: 'id' });
   }
-
   closeModal('modal-new-user');
-  showToast(`✓ User created — they'll need to confirm their email (${email})`);
+  showToast('User created ✓ — they need to confirm their email');
+  loadUsers();
+}
+
+function openEditUserModal(userId) {
+  const u = allUsers.find(u => u.id === userId);
+  if (!u) return;
+  document.getElementById('edit-user-id').value            = u.id;
+  document.getElementById('edit-user-name').value          = u.full_name || '';
+  document.getElementById('edit-user-email').value         = u.email || '';
+  document.getElementById('edit-user-phone').value         = u.phone || '';
+  document.getElementById('edit-user-role').value          = u.role || 'cleaner';
+  document.getElementById('edit-user-active').checked      = !!u.is_active;
+  document.getElementById('edit-user-owner-op').checked    = !!u.is_owner_operator;
+  document.getElementById('modal-edit-user').classList.add('open');
+}
+
+async function saveEditUser() {
+  const id    = document.getElementById('edit-user-id').value;
+  const name  = document.getElementById('edit-user-name').value.trim();
+  const phone = document.getElementById('edit-user-phone').value.trim() || null;
+  const role  = document.getElementById('edit-user-role').value;
+  const isActive   = document.getElementById('edit-user-active').checked;
+  const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
+  if (!name) { showToast('Please enter a name'); return; }
+
+  const { error } = await db.from('profiles').update({
+    full_name: name, phone, role,
+    is_active: isActive, is_owner_operator: isOwnerOp
+  }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-user');
+  showToast('User updated ✓');
+  loadUsers();
+}
+
+async function deleteUserFromModal() {
+  const id   = document.getElementById('edit-user-id').value;
+  const name = document.getElementById('edit-user-name').value;
+  if (!confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
+  await db.from('profiles').delete().eq('id', id);
+  closeModal('modal-edit-user');
+  showToast('User deleted');
   loadUsers();
 }
 
@@ -2443,26 +2518,7 @@ async function resetUserPassword(userId, userEmail) {
   const { error } = await db.auth.resetPasswordForEmail(userEmail, {
     redirectTo: window.location.origin + '/login.html'
   });
-  if (error) {
-    showToast('Email not configured — reset manually in Supabase');
-  } else {
-    showToast(`Password reset email sent to ${userEmail} ✓`);
-  }
-}
-
-async function toggleUserActive(userId, isActive) {
-  const { error } = await db.from('profiles').update({ is_active: !isActive }).eq('id', userId);
-  if (error) { showToast('Error: ' + error.message); return; }
-  showToast(isActive ? 'User deactivated' : 'User activated ✓');
-  loadUsers();
-}
-
-async function deleteUser(userId, userName) {
-  if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
-  const { error } = await db.from('profiles').delete().eq('id', userId);
-  if (error) { showToast('Error: ' + error.message); return; }
-  showToast('User deleted');
-  loadUsers();
+  showToast(error ? 'Could not send — reset manually in Supabase' : `Reset email sent to ${userEmail} ✓`);
 }
 
 // ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
