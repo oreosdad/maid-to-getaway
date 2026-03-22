@@ -669,8 +669,9 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Email <span style="color:var(--text-muted);font-weight:400">(read-only)</span></label>
-      <input type="email" id="edit-user-email" disabled style="opacity:0.6"/>
+      <label>Email</label>
+      <input type="email" id="edit-user-email" placeholder="jane@example.com"/>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Changing email updates their login address immediately.</p>
     </div>
     <div class="form-group">
       <label>Role</label>
@@ -2485,21 +2486,53 @@ function openEditUserModal(userId) {
 }
 
 async function saveEditUser() {
-  const id    = document.getElementById('edit-user-id').value;
-  const name  = document.getElementById('edit-user-name').value.trim();
-  const phone = document.getElementById('edit-user-phone').value.trim() || null;
-  const role  = document.getElementById('edit-user-role').value;
+  const id       = document.getElementById('edit-user-id').value;
+  const name     = document.getElementById('edit-user-name').value.trim();
+  const newEmail = document.getElementById('edit-user-email').value.trim();
+  const phone    = document.getElementById('edit-user-phone').value.trim() || null;
+  const role     = document.getElementById('edit-user-role').value;
   const isActive   = document.getElementById('edit-user-active').checked;
   const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
-  if (!name) { showToast('Please enter a name'); return; }
+  if (!name)     { showToast('Please enter a name'); return; }
+  if (!newEmail) { showToast('Please enter an email'); return; }
 
+  const originalUser = allUsers.find(u => u.id === id);
+  const emailChanged = originalUser && originalUser.email !== newEmail;
+
+  // If email changed, call Netlify function to update auth.users
+  if (emailChanged) {
+    try {
+      const res = await fetch('/.netlify/functions/update-user-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'MaidSync2026!'
+        },
+        body: JSON.stringify({ userId: id, newEmail })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast('Email update failed: ' + (data.error || 'unknown error'));
+        return;
+      }
+    } catch (e) {
+      showToast('Email update failed: ' + e.message);
+      return;
+    }
+  }
+
+  // Update profile
   const { error } = await db.from('profiles').update({
-    full_name: name, phone, role,
-    is_active: isActive, is_owner_operator: isOwnerOp
+    full_name: name,
+    email: newEmail,
+    phone, role,
+    is_active: isActive,
+    is_owner_operator: isOwnerOp
   }).eq('id', id);
+
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-user');
-  showToast('User updated ✓');
+  showToast(emailChanged ? 'User updated ✓ — email changed' : 'User updated ✓');
   loadUsers();
 }
 
