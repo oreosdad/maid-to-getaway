@@ -730,7 +730,7 @@
       <input type="text" id="new-user-name" placeholder="Jane Smith"/>
     </div>
     <div class="form-group">
-      <label>Email address</label>
+      <label>Email address <span style="font-weight:400;color:var(--text-muted)">(optional — can add later)</span></label>
       <input type="email" id="new-user-email" placeholder="jane@example.com"/>
     </div>
     <div class="form-group">
@@ -745,7 +745,7 @@
         <option value="admin">Admin</option>
       </select>
     </div>
-    <p style="font-size:12px;color:var(--text-muted);margin-top:-8px">Temporary password: <strong>ChangeMe123!</strong> — user should change on first login.</p>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:-8px">If email is provided, temporary password is <strong>ChangeMe123!</strong>. Without an email, the user is added for tracking only and cannot log in until an email is assigned.</p>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-new-user')">Cancel</button>
       <button class="btn" onclick="saveNewUser()">Create user</button>
@@ -2562,23 +2562,34 @@ async function saveNewUser() {
   const email = document.getElementById('new-user-email').value.trim();
   const phone = document.getElementById('new-user-phone').value.trim() || null;
   const role  = document.getElementById('new-user-role').value;
-  if (!name)  { showToast('Please enter a name'); return; }
-  if (!email) { showToast('Please enter an email'); return; }
+  if (!name) { showToast('Please enter a name'); return; }
 
-  const { data, error } = await db.auth.signUp({
-    email, password: 'ChangeMe123!',
-    options: { data: { full_name: name, role } }
-  });
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  if (data?.user?.id) {
-    await db.from('profiles').upsert({
-      id: data.user.id, email, full_name: name, phone,
-      role, is_active: true, is_owner_operator: false
-    }, { onConflict: 'id' });
+  if (email) {
+    // Full account creation with login access
+    const { data, error } = await db.auth.signUp({
+      email, password: 'ChangeMe123!',
+      options: { data: { full_name: name, role } }
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    if (data?.user?.id) {
+      await db.from('profiles').upsert({
+        id: data.user.id, email, full_name: name, phone,
+        role, is_active: true, is_owner_operator: false
+      }, { onConflict: 'id' });
+    }
+    closeModal('modal-new-user');
+    showToast('User created ✓ — temp password: ChangeMe123!');
+  } else {
+    // Tracking-only profile, no auth account
+    const { error } = await db.from('profiles').insert({
+      full_name: name, phone, role,
+      is_active: true, is_owner_operator: false,
+      email: null
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    closeModal('modal-new-user');
+    showToast('User added for tracking ✓ — add an email later to give login access');
   }
-  closeModal('modal-new-user');
-  showToast('User created ✓ — they need to confirm their email');
   loadUsers();
 }
 
