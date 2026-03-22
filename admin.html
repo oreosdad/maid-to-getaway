@@ -1640,8 +1640,11 @@ async function markComplete(jobId) {
     cleaner_pay_date: payDate
   }).eq('id', jobId);
   if (error) { showToast('Error updating job'); return; }
+  // Update in memory immediately so it disappears from active view without a reload
+  allJobs = allJobs.map(j => j.id === jobId ? { ...j, status: 'completed', cleaner_pay_date: payDate } : j);
+  renderJobStats();
+  applyJobFilters();
   showToast('Job marked complete ✓' + (payDate ? ' — pay date: ' + formatDate(payDate) : ''));
-  await loadJobs();
 }
 
 async function unmarkComplete(jobId) {
