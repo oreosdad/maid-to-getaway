@@ -798,13 +798,19 @@
     <div class="form-row">
       <div class="form-group">
         <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="job-pet-fee"/>
+          <input type="checkbox" id="job-pet-fee" onchange="document.getElementById('new-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
           🐶 Pet fee
         </label>
       </div>
       <div class="form-group">
         <label>Pet fee amount ($)</label>
         <input type="number" id="job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('job-pet-fee').checked=true"/>
+      </div>
+      <div class="form-group" id="new-pet-fee-collected-row" style="display:none">
+        <label class="checkbox-label">
+          <input type="checkbox" id="job-pet-fee-collected"/>
+          🐶 Pet fee collected from owner
+        </label>
       </div>
     </div>
     <div class="form-row">
@@ -1030,13 +1036,19 @@
     <div class="form-row">
       <div class="form-group">
         <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="edit-job-pet-fee"/>
+          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
           🐶 Pet fee
         </label>
       </div>
       <div class="form-group">
         <label>Pet fee amount ($)</label>
         <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
+          <input type="checkbox" id="edit-job-pet-fee-collected"/>
+          🐶 Pet fee collected from owner
+        </label>
       </div>
     </div>
     <div class="form-row">
@@ -1237,7 +1249,7 @@ function showPage(name, el) {
 async function loadJobs() {
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id))')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id)), pet_fee_collected')
     .order('scheduled_date', { ascending: true })
     .limit(500);
   if (error) { showToast('Error loading jobs'); return; }
@@ -1509,7 +1521,7 @@ function renderJobsTable(jobs) {
           <td>
             <div style="display:flex;gap:3px;align-items:center;flex-wrap:nowrap">
               ${job.is_short_window ? '<span style="background:linear-gradient(135deg,#C0392B,#E74C3C);color:white;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(192,57,43,0.4)">⚑ SHORT</span>' : ''}
-              ${job.pet_fee_required ? `<span style="background:#FBF3D5;color:#A07D1C;border-radius:4px;padding:3px 8px;font-size:16px;font-weight:500;white-space:nowrap">🐶${job.pet_fee_cents ? ' $'+Math.round(job.pet_fee_cents/100) : ''}</span>` : ''}
+              ${job.pet_fee_required ? `<span style="background:${job.pet_fee_collected ? '#EAF7F0' : '#FDEEEE'};color:${job.pet_fee_collected ? '#1E7B4B' : '#C0392B'};border-radius:4px;padding:3px 8px;font-size:16px;font-weight:500;white-space:nowrap" title="${job.pet_fee_collected ? 'Pet fee collected' : 'Pet fee NOT yet collected'}">🐶${job.pet_fee_cents ? ' $'+Math.round(job.pet_fee_cents/100) : ''}</span>` : ''}
               ${job.additional_cleaning_cents ? '<span style="background:#EAF7F0;color:#1E7B4B;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500;white-space:nowrap">+$' + Math.round(job.additional_cleaning_cents/100) + '</span>' : ''}
               ${!job.is_short_window && !job.pet_fee_required && !job.additional_cleaning_cents ? '<span style="color:#B0A896;font-size:13px">—</span>' : ''}
             </div>
@@ -1554,6 +1566,8 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
+  document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
+  document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1607,6 +1621,7 @@ async function saveEditJob() {
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
+    pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
@@ -1775,6 +1790,7 @@ async function saveJob() {
     status:           cleanerId ? 'assigned' : 'unassigned',
     is_short_window:  isShortWindow,
     pet_fee_required: document.getElementById('job-pet-fee').checked,
+    pet_fee_collected: document.getElementById('job-pet-fee-collected') ? document.getElementById('job-pet-fee-collected').checked : false,
     pet_fee_cents:    document.getElementById('job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('job-notes').value || null,
     source:           'manual',
