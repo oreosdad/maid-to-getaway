@@ -1401,6 +1401,10 @@ function renderJobStats() {
     const d = new Date(j.scheduled_date + 'T12:00:00');
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
+  // MTD = only completed jobs from 1st through today
+  const mtdCompletedJobs = thisMonthJobs.filter(j =>
+    j.status === 'completed' && j.scheduled_date <= todayStr
+  );
 
   const unassigned2wk = allJobs.filter(j => !j.deleted_at && j.status === 'unassigned' && j.scheduled_date >= todayStr && j.scheduled_date <= in2wk);
   const todayJobs = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
@@ -1413,10 +1417,10 @@ function renderJobStats() {
   document.getElementById('stat-completed').textContent   = completedThisWeek.length;
   document.getElementById('stat-flagged').textContent     = flagged.length;
 
-  const mtdPayout = thisMonthJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
+  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
   document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
 
-  const mtdCharge = thisMonthJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+  const mtdCharge = mtdCompletedJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
   const mtdProfit = mtdCharge - mtdPayout;
   document.getElementById('stat-revenue-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
   document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
@@ -1639,6 +1643,11 @@ async function saveEditJob() {
     guest_checkin:    checkin,
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
     is_short_window:  isShortWindow,
+    // Auto-flag pet fee if completing a VRBO job or one with "pet" in summary
+    ...(status === 'completed' && !document.getElementById('edit-job-pet-fee').checked && (() => {
+      const j = allJobs.find(j => j.id === document.getElementById('edit-job-id').value);
+      return (j?.source === 'vrbo' || (j?.ical_summary||'').toLowerCase().includes('pet')) ? { pet_fee_required: true } : {};
+    })()),
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
@@ -1668,10 +1677,16 @@ async function saveEditJob() {
 async function markComplete(jobId) {
   const job = allJobs.find(j => j.id === jobId);
   const payDate = job ? calcPayDate(job.scheduled_date) : null;
+  // Auto-flag pet fee if VRBO or "pet" mentioned in booking summary
+  const autoPetFee = job && (
+    job.source === 'vrbo' ||
+    (job.ical_summary || '').toLowerCase().includes('pet')
+  ) && !job.pet_fee_required;
   const { error } = await db.from('jobs').update({
     status: 'completed',
     completed_at: new Date().toISOString(),
-    cleaner_pay_date: payDate
+    cleaner_pay_date: payDate,
+    ...(autoPetFee ? { pet_fee_required: true } : {})
   }).eq('id', jobId);
   if (error) { showToast('Error updating job'); return; }
   // Update in memory immediately so it disappears from active view without a reload
@@ -2398,27 +2413,31 @@ async function loadPendingFees() {
     .select('*, properties(name, owner_id), job_assignments(profiles(full_name))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0');
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo');
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
   // Filter to only jobs with something outstanding
-  pendingFeesData = (data || []).filter(j =>
-    (j.pet_fee_required && !j.pet_fee_collected) ||
-    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
-  );
+  pendingFeesData = (data || []).filter(j => {
+    const hasPetFee = j.pet_fee_required && !j.pet_fee_collected;
+    const hasExtraClean = j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected;
+    const isVrboUnchecked = j.source === 'vrbo' && !j.pet_fee_collected && j.status === 'completed';
+    return hasPetFee || hasExtraClean || isVrboUnchecked;
+  });
 
   // Update badge
   const badge = document.getElementById('pending-fees-badge');
   if (pendingFeesData.length) {
     badge.style.display = 'inline-flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
     badge.textContent = pendingFeesData.length;
   } else {
     badge.style.display = 'none';
   }
 
   if (!pendingFeesData.length) {
-    wrap.innerHTML = '<div class="empty-state">2705<p>No outstanding fees. All caught up!</p></div>';
+    wrap.innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:8px">✅</div><p>No outstanding fees. All caught up!</p></div>';
     return;
   }
 
