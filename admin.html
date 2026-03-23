@@ -465,6 +465,10 @@
       <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
         <span class="nav-icon">📋</span> Maintenance
       </a>
+      <a class="nav-item" id="nav-pending-fees" onclick="showPage('pending-fees', this)">
+        <span class="nav-icon">⚠️</span> Pending Fees
+        <span id="pending-fees-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
+      </a>
       <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
         <span class="nav-icon">👥</span> Users
       </a>
@@ -505,6 +509,10 @@
         <div class="stat-card">
           <div class="stat-label">Cleaner payout MTD</div>
           <div class="stat-value" id="stat-payout">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Revenue MTD</div>
+          <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="border-color:#C49A2A">
           <div class="stat-label">Profit MTD</div>
@@ -605,6 +613,15 @@
       </div>
       <div class="stats-row" id="payment-stats-row" style="margin-bottom:20px"></div>
       <div id="payments-table-wrap"></div>
+    </div>
+
+    <!-- PENDING FEES PAGE -->
+    <div class="page" id="page-pending-fees">
+      <div class="page-header">
+        <h2>Pending Fees</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadPendingFees()">↻ Refresh</button>
+      </div>
+      <div id="pending-fees-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
     <!-- REPORTS PAGE -->
@@ -1243,6 +1260,7 @@ function showPage(name, el) {
   if (name === 'payments')   { allPaymentJobs = []; renderPayments(); }
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
   if (name === 'users')      { loadUsers(); }
+  if (name === 'pending-fees') { loadPendingFees(); }
 }
 
 // ── JOBS ──
@@ -1400,6 +1418,7 @@ function renderJobStats() {
 
   const mtdCharge = thisMonthJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
   const mtdProfit = mtdCharge - mtdPayout;
+  document.getElementById('stat-revenue-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
   document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
 }
 
@@ -2364,6 +2383,125 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── PENDING FEES ──
+let pendingFeesData = [];
+
+async function loadPendingFees() {
+  const wrap = document.getElementById('pending-fees-content');
+  wrap.innerHTML = '<div class="loading-inline">Loading…</div>';
+
+  // Load all completed jobs with outstanding pet fees or additional cleaning fees
+  const { data, error } = await db
+    .from('jobs')
+    .select('*, properties(name, owner_id), job_assignments(profiles(full_name))')
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0');
+
+  if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
+
+  // Filter to only jobs with something outstanding
+  pendingFeesData = (data || []).filter(j =>
+    (j.pet_fee_required && !j.pet_fee_collected) ||
+    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
+  );
+
+  // Update badge
+  const badge = document.getElementById('pending-fees-badge');
+  if (pendingFeesData.length) {
+    badge.style.display = 'inline-flex';
+    badge.textContent = pendingFeesData.length;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (!pendingFeesData.length) {
+    wrap.innerHTML = '<div class="empty-state">2705<p>No outstanding fees. All caught up!</p></div>';
+    return;
+  }
+
+  const totalOutstanding = pendingFeesData.reduce((s, j) => {
+    let amt = 0;
+    if (j.pet_fee_required && !j.pet_fee_collected) amt += (j.pet_fee_cents || 0);
+    if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) amt += j.additional_cleaning_cents;
+    return s + amt;
+  }, 0);
+
+  wrap.innerHTML = `
+    <div class="stats-row" style="margin-bottom:24px">
+      <div class="stat-card flagged">
+        <div class="stat-label">Outstanding fees</div>
+        <div class="stat-value">${pendingFeesData.length}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Total owed</div>
+        <div class="stat-value">$${Math.round(totalOutstanding/100)}</div>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr>
+          <th>Date</th>
+          <th>Property</th>
+          <th>Cleaner</th>
+          <th>Fee type</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${pendingFeesData.map(job => {
+            const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
+            const rows = [];
+            if (job.pet_fee_required && !job.pet_fee_collected) {
+              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+                <td>${formatDate(job.scheduled_date)}</td>
+                <td>${job.properties?.name || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
+                <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
+                <td onclick="event.stopPropagation()">
+                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </td>
+              </tr>`);
+            }
+            if (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected) {
+              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+                <td>${formatDate(job.scheduled_date)}</td>
+                <td>${job.properties?.name || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+                <td><span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span></td>
+                <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
+                <td onclick="event.stopPropagation()">
+                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </td>
+              </tr>`);
+            }
+            return rows.join('');
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function markPetFeeCollected(jobId) {
+  const { error } = await db.from('jobs').update({ pet_fee_collected: true }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  // Update in memory
+  allJobs = allJobs.map(j => j.id === jobId ? { ...j, pet_fee_collected: true } : j);
+  showToast('Pet fee marked as collected ✓');
+  await loadPendingFees();
+}
+
+async function markExtraCleanCollected(jobId) {
+  const { error } = await db.from('jobs').update({ additional_cleaning_collected: true }).eq('id', jobId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: true } : j);
+  showToast('Extra cleaning fee marked as collected ✓');
+  await loadPendingFees();
 }
 
 // ── SIGN OUT ──
