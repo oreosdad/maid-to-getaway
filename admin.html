@@ -582,6 +582,33 @@
     </div>
 
     <!-- USERS PAGE (unified — cleaners, owners, admins) -->
+    <!-- FINANCIALS PAGE -->
+    <div class="page" id="page-financials">
+      <div class="page-header">
+        <h2>Financials</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="fin-period" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+            <option value="mtd">This Month</option>
+            <option value="last_month">Last Month</option>
+            <option value="ytd">Year to Date</option>
+            <option value="q1">Q1 2026</option>
+            <option value="q2">Q2 2026</option>
+            <option value="all">All Time</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="exportFinancials()">↓ Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
+        <button id="fin-tab-pl" onclick="setFinTab('pl')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">P&L</button>
+        <button id="fin-tab-expenses" onclick="setFinTab('expenses')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">Expenses</button>
+      </div>
+
+      <div id="fin-panel-pl"></div>
+      <div id="fin-panel-expenses" style="display:none"></div>
+    </div>
+
     <div class="page" id="page-users">
       <div class="page-header">
         <h2>Users</h2>
@@ -1258,9 +1285,12 @@ async function init() {
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
   checkSyncErrors();
-  // Load owner profiles for property assignment dropdown
-  const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
-  window._ownerProfiles = owners || [];
+  // Load owner profiles — check both role column and notification_prefs.roles array
+  const { data: allProfiles } = await db.from('profiles').select('id, full_name, email, role, notification_prefs').order('full_name');
+  window._ownerProfiles = (allProfiles || []).filter(p => {
+    const roles = p.notification_prefs?.roles || [];
+    return p.role === 'owner' || roles.includes('owner');
+  });
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1869,7 +1899,7 @@ async function saveJob() {
 
 // ── PROPERTIES ──
 async function loadProperties() {
-  const { data } = await db.from('properties').select('*').order('name');
+  const { data } = await db.from('properties').select('*, property_owners(profile_id, profiles(full_name, email))').order('name');
   properties = data || [];
 }
 
@@ -1881,7 +1911,7 @@ function renderProperties() {
   }
   wrap.innerHTML = `
     <table>
-      <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Notes</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Owners</th><th>Notes</th><th>Actions</th></tr></thead>
       <tbody>${properties.map(p => `
         <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
@@ -1891,6 +1921,7 @@ function renderProperties() {
           <td>${p.default_charge_cents ? '$' + Math.round(p.default_charge_cents / 100) : '—'}</td>
           <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${(p.property_owners||[]).map(o=>o.profiles?.full_name).filter(Boolean).join(', ') || '—'}</td>
           <td style="color:var(--text-muted);font-size:13px;max-width:200px"><span title="${p.notes || ''}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default">${p.notes || '—'}</span></td>
           <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
@@ -1915,10 +1946,17 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
 
-  // Populate owner dropdown
-  const ownerSel = document.getElementById('edit-prop-owner');
-  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
-    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
+  // Populate owner checkboxes
+  const currentOwners = (p.property_owners || []).map(o => o.profile_id);
+  const ownerWrap = document.getElementById('edit-prop-owners-wrap');
+  ownerWrap.innerHTML = (window._ownerProfiles || []).length
+    ? (window._ownerProfiles || []).map(o => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:14px">
+          <input type="checkbox" value="${o.id}" ${currentOwners.includes(o.id) ? 'checked' : ''}
+            style="width:16px;height:16px;accent-color:var(--navy)"/>
+          ${o.full_name}${o.email ? ' <span style="color:var(--text-muted);font-size:12px">('+o.email+')</span>' : ''}
+        </label>`).join('')
+    : '<span style="font-size:13px;color:var(--text-muted)">No owner profiles found</span>';
 
   document.getElementById('modal-edit-property').classList.add('open');
 }
@@ -1942,12 +1980,18 @@ async function saveEditProperty() {
     default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
     default_payout_cents:   document.getElementById('edit-prop-payout').value ? Math.round(parseFloat(document.getElementById('edit-prop-payout').value) * 100) : null,
     notes:                  document.getElementById('edit-prop-notes').value.trim() || null,
-    owner_id:               document.getElementById('edit-prop-owner').value || null
   }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
-  closeModal('modal-edit-property');
 
+  // Update property_owners — delete existing then insert selected
+  const selectedOwners = [...document.querySelectorAll('#edit-prop-owners-wrap input[type=checkbox]:checked')].map(cb => cb.value);
+  await db.from('property_owners').delete().eq('property_id', id);
+  if (selectedOwners.length) {
+    await db.from('property_owners').insert(selectedOwners.map(pid => ({ property_id: id, profile_id: pid })));
+  }
+
+  closeModal('modal-edit-property');
   if (airbnb || vrbo) {
     showToast('Property updated — syncing calendar…');
     await triggerIcalSync();
@@ -2656,7 +2700,7 @@ async function renderPL() {
   const { start, end } = getFinDateRange();
 
   // Load completed jobs in range for revenue
-  const { data: jobs } = await db
+  const { data: jobs, error: jobsErr } = await db
     .from('jobs')
     .select('charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, source')
     .eq('status', 'completed')
@@ -2664,12 +2708,16 @@ async function renderPL() {
     .gte('scheduled_date', start)
     .lte('scheduled_date', end);
 
+  if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error loading jobs: ${jobsErr.message}</div>`; return; }
+
   // Load expenses in range
-  const { data: expenses } = await db
+  const { data: expenses, error: expErr } = await db
     .from('expenses')
     .select('*')
     .gte('date', start)
     .lte('date', end);
+
+  if (expErr) { panel.innerHTML = `<div class="empty-state">⚠️ Expenses table not found.<br><br>Run this SQL in Supabase first:<br><code>CREATE TABLE expenses (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), date DATE NOT NULL, category TEXT NOT NULL, amount_cents INTEGER NOT NULL, description TEXT, vendor TEXT, created_by UUID, created_at TIMESTAMPTZ DEFAULT now());</code></div>`; return; }
 
   const jobList     = jobs     || [];
   const expenseList = expenses || [];
@@ -2767,13 +2815,14 @@ async function renderExpenses() {
   panel.innerHTML = '<div class="loading-inline">Loading…</div>';
   const { start, end } = getFinDateRange();
 
-  const { data: expenses } = await db
+  const { data: expenses, error: expErr } = await db
     .from('expenses')
     .select('*')
     .gte('date', start)
     .lte('date', end)
     .order('date', { ascending: false });
 
+  if (expErr) { panel.innerHTML = `<div class="empty-state">⚠️ Expenses table not found. Run the CREATE TABLE SQL in Supabase first.</div>`; return; }
   finExpenses = expenses || [];
   const total = finExpenses.reduce((s, e) => s + e.amount_cents, 0);
 
@@ -2933,6 +2982,12 @@ async function renderAdminReports() {
   if (statusFilter)   filtered = filtered.filter(r => r.status === statusFilter);
   if (propertyFilter) filtered = filtered.filter(r => r.property_id === propertyFilter);
 
+  // Ensure properties are available for claim request dropdowns
+  if (!window._allProperties) {
+    const { data: allProps } = await db.from('properties').select('id, name').eq('is_active', true).order('name');
+    window._allProperties = allProps || [];
+  }
+
   const wrap = document.getElementById('admin-reports-wrap');
   if (!filtered.length) {
     wrap.innerHTML = '<div class="empty-state">📋<p>No reports match your filters.</p></div>';
@@ -2964,6 +3019,17 @@ async function renderAdminReports() {
         </div>
       </div>
       <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
+      ${r.notes && r.notes.includes('PROPERTY CLAIM REQUEST') ? `
+        <div style="background:#EEF4FF;border:1px solid #C7D9F8;border-radius:var(--radius);padding:14px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:500;color:#1A56A4;margin-bottom:10px">🏠 Assign a property to this owner</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="claim-prop-select-${r.id}" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1.5px solid #C7D9F8;font-family:'DM Sans',sans-serif;font-size:13px;background:white">
+              <option value="">Select property to assign…</option>
+              ${(window._allProperties||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+            <button class="btn btn-sm" style="background:#1A56A4;color:white" onclick="assignPropertyToOwner('${r.id}','${r.submitted_by}')">Assign property</button>
+          </div>
+        </div>` : ''}
       ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
       <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
@@ -2978,6 +3044,23 @@ async function renderAdminReports() {
 
   // Load comments for all reports
   filtered.forEach(r => loadReportComments(r.id, `admin-comments-${r.id}`));
+}
+
+async function assignPropertyToOwner(reportId, ownerId) {
+  const sel = document.getElementById(`claim-prop-select-${reportId}`);
+  const propId = sel?.value;
+  if (!propId) { showToast('Please select a property'); return; }
+
+  // Assign the property to the owner
+  const { error: propErr } = await db.from('properties').update({ owner_id: ownerId }).eq('id', propId);
+  if (propErr) { showToast('Error assigning property: ' + propErr.message); return; }
+
+  // Resolve the maintenance request
+  await db.from('maintenance_requests').update({ status: 'resolved' }).eq('id', reportId);
+
+  showToast('Property assigned and request closed ✓');
+  allAdminReports = [];
+  await renderAdminReports();
 }
 
 async function updateReportStatus(reportId, status) {
