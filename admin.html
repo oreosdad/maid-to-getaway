@@ -872,8 +872,17 @@
       <div class="form-group" id="new-pet-fee-collected-row" style="display:none">
         <label class="checkbox-label">
           <input type="checkbox" id="job-pet-fee-collected"/>
-          🐶 Pet fee collected from owner
+          🐶 Pet fee collected
         </label>
+      </div>
+      <div class="form-group" id="edit-collect-from-row" style="display:none">
+        <label>Collect pet fee from</label>
+        <select id="edit-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+          <option value="guest">Guest directly</option>
+          <option value="owner">Owner</option>
+          <option value="airbnb">Airbnb</option>
+          <option value="vrbo">VRBO</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
@@ -1099,7 +1108,7 @@
     <div class="form-row">
       <div class="form-group">
         <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
+          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none';document.getElementById('edit-collect-from-row').style.display=(this.checked&&!document.getElementById('edit-job-pet-fee-collected').checked)?'block':'none'"/>
           🐶 Pet fee
         </label>
       </div>
@@ -1110,8 +1119,17 @@
       <div class="form-group">
         <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
           <input type="checkbox" id="edit-job-pet-fee-collected"/>
-          🐶 Pet fee collected from owner
+          🐶 Pet fee collected
         </label>
+      </div>
+      <div class="form-group" id="edit-collect-from-row" style="display:none">
+        <label>Collect pet fee from</label>
+        <select id="edit-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+          <option value="guest">Guest directly</option>
+          <option value="owner">Owner</option>
+          <option value="airbnb">Airbnb</option>
+          <option value="vrbo">VRBO</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
@@ -1218,6 +1236,53 @@
     </div>
   </div>
 </div>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-overlay" id="modal-add-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Add Expense</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-expense')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="exp-date"/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+          <option value="supplies">Supplies</option>
+          <option value="insurance">Insurance</option>
+          <option value="software">Software</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="exp-description" placeholder="e.g. Cleaning supplies from Target"/>
+      </div>
+      <div class="form-group">
+        <label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+        <input type="text" id="exp-vendor" placeholder="e.g. Target, Amazon"/>
+      </div>
+      <div class="form-group">
+        <label>Receipt <span style="color:var(--text-muted);font-weight:400">(optional · screenshot only · max 1MB)</span></label>
+        <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px" onchange="checkReceiptSize(this)"/>
+        <div id="exp-receipt-warning" style="display:none;color:var(--error);font-size:12px;margin-top:4px">⚠️ File must be under 1MB. Please use a screenshot.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-expense')">Cancel</button>
+      <button class="btn" onclick="saveExpense()">Save expense</button>
+    </div>
+  </div>
+</div>
+
 
 <div class="toast" id="toast"></div>
 
@@ -1642,6 +1707,8 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
   document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
   document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
+  document.getElementById('edit-collect-from-row').style.display = (job.pet_fee_required && !job.pet_fee_collected) ? 'block' : 'none';
+  document.getElementById('edit-collect-from').value = job.collect_from || 'guest';
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1701,6 +1768,7 @@ async function saveEditJob() {
     })()),
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
+    collect_from: document.getElementById('edit-collect-from')?.value || null,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
@@ -2601,7 +2669,10 @@ async function loadPendingFees() {
                 <td>${formatDate(job.scheduled_date)}</td>
                 <td>${job.properties?.name || '—'}</td>
                 <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
+                <td>
+                  <span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span>
+                  ${job.collect_from ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
+                </td>
                 <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
                 <td onclick="event.stopPropagation()">
                   <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
@@ -2861,15 +2932,38 @@ function openAddExpenseModal() {
   document.getElementById('exp-vendor').value = '';
 }
 
+function checkReceiptSize(input) {
+  const warning = document.getElementById('exp-receipt-warning');
+  if (input.files[0] && input.files[0].size > 1048576) {
+    warning.style.display = 'block';
+    input.value = '';
+  } else {
+    warning.style.display = 'none';
+  }
+}
+
 async function saveExpense() {
   const date     = document.getElementById('exp-date').value;
   const category = document.getElementById('exp-category').value;
   const amount   = parseFloat(document.getElementById('exp-amount').value);
   const desc     = document.getElementById('exp-description').value.trim();
   const vendor   = document.getElementById('exp-vendor').value.trim();
+  const receipt  = document.getElementById('exp-receipt').files[0];
 
   if (!date || !category || !amount || amount <= 0) {
     showToast('Please fill in date, category, and amount'); return;
+  }
+  if (receipt && receipt.size > 1048576) {
+    showToast('Receipt must be under 1MB'); return;
+  }
+
+  let receipt_url = null;
+  if (receipt) {
+    const fileName = `receipts/${Date.now()}-${receipt.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+    const { data: uploadData, error: uploadErr } = await db.storage.from('expenses').upload(fileName, receipt);
+    if (uploadErr) { showToast('Receipt upload failed: ' + uploadErr.message); return; }
+    const { data: urlData } = db.storage.from('expenses').getPublicUrl(fileName);
+    receipt_url = urlData?.publicUrl || null;
   }
 
   const { error } = await db.from('expenses').insert({
@@ -2877,6 +2971,7 @@ async function saveExpense() {
     amount_cents: Math.round(amount * 100),
     description: desc || null,
     vendor: vendor || null,
+    receipt_url,
     created_by: (await db.auth.getUser()).data.user?.id
   });
 
