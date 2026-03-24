@@ -189,6 +189,10 @@
       <a class="nav-item active" id="nav-financials" onclick="showPage('financials',this)"><span class="nav-icon">💰</span> Financials</a>
       <a class="nav-item" id="nav-schedule" onclick="showPage('schedule',this)"><span class="nav-icon">📅</span> Schedule</a>
       <a class="nav-item" id="nav-properties" onclick="showPage('properties',this)"><span class="nav-icon">🏠</span> Properties</a>
+      <a class="nav-item" id="nav-pending-fees" onclick="showPage('pending-fees',this)">
+        <span class="nav-icon">⚠️</span> Pending Fees
+        <span id="owner-fees-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
+      </a>
       <a class="nav-item" id="nav-maintenance" onclick="showPage('maintenance',this)">
         <span class="nav-icon">🔧</span> Maintenance
         <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
@@ -279,6 +283,13 @@
     </div>
 
     <!-- MAINTENANCE -->
+    <div class="page" id="page-pending-fees">
+      <div class="page-header">
+        <h2>Pending Fees</h2>
+      </div>
+      <div id="owner-pending-fees-content"><div style="color:var(--text-muted);padding:40px;text-align:center">Loading…</div></div>
+    </div>
+
     <div class="page" id="page-maintenance">
       <div class="page-header">
         <h2>Maintenance & Reports</h2>
@@ -513,7 +524,15 @@ async function init() {
 db.auth.onAuthStateChange(e => { if (e==='SIGNED_OUT') window.location.replace('login.html?signout=1'); });
 
 async function loadData() {
-  const { data: props } = await db.from('properties').select('*').eq('owner_id', currentUser.id).order('name');
+  // Load properties via property_owners join table
+  const { data: ownerLinks } = await db.from('property_owners').select('property_id').eq('profile_id', currentUser.id);
+  const ownerPropIds = (ownerLinks || []).map(l => l.property_id);
+
+  let props = [];
+  if (ownerPropIds.length) {
+    const { data: propData } = await db.from('properties').select('*').in('id', ownerPropIds).order('name');
+    props = propData || [];
+  }
   ownerProps = props || [];
 
   // Populate dropdowns
@@ -561,6 +580,100 @@ function showPage(name, el) {
   if (name==='schedule')    renderCalendar();
   if (name==='properties')  renderProperties();
   if (name==='maintenance') renderMaintenance();
+  if (name==='pending-fees') renderOwnerPendingFees();
+}
+
+// ── OWNER PENDING FEES ──
+async function renderOwnerPendingFees() {
+  const wrap = document.getElementById('owner-pending-fees-content');
+  wrap.innerHTML = '<div style="color:var(--text-muted);padding:40px;text-align:center">Loading…</div>';
+
+  // Get owner's property IDs
+  const { data: ownerLinks } = await db.from('property_owners').select('property_id').eq('profile_id', currentUser.id);
+  const propIds = (ownerLinks || []).map(l => l.property_id);
+
+  if (!propIds.length) {
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">No properties assigned to your account.</div>';
+    return;
+  }
+
+  // Load jobs with outstanding fees where collect_from = 'owner'
+  const { data: jobs } = await db
+    .from('jobs')
+    .select('*, properties(name)')
+    .in('property_id', propIds)
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0');
+
+  const fees = (jobs || []).filter(j =>
+    (j.pet_fee_required && !j.pet_fee_collected && j.collect_from === 'owner') ||
+    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected && j.collect_from === 'owner')
+  );
+
+  // Update badge
+  const badge = document.getElementById('owner-fees-badge');
+  if (fees.length) {
+    badge.style.display = 'inline-flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+    badge.textContent = fees.length;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (!fees.length) {
+    wrap.innerHTML = '<div style="padding:60px;text-align:center"><div style="font-size:36px;margin-bottom:12px">✅</div><div style="color:var(--text-muted)">No outstanding fees. All caught up!</div></div>';
+    return;
+  }
+
+  const total = fees.reduce((s, j) => {
+    let amt = 0;
+    if (j.pet_fee_required && !j.pet_fee_collected) amt += j.pet_fee_cents || 0;
+    if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) amt += j.additional_cleaning_cents;
+    return s + amt;
+  }, 0);
+
+  wrap.innerHTML = `
+    <div style="background:#FDEEEE;border:1px solid #F5C6C6;border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--error)">You have ${fees.length} outstanding fee${fees.length !== 1 ? 's' : ''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Please remit payment to your property manager</div>
+      </div>
+      <div style="font-size:24px;font-weight:500;color:var(--navy)">$${Math.round(total/100)}</div>
+    </div>
+    <div style="background:var(--white);border:1px solid var(--cream-dark);border-radius:14px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:12px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Date</th>
+          <th style="text-align:left;padding:12px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Property</th>
+          <th style="text-align:left;padding:12px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Fee type</th>
+          <th style="text-align:left;padding:12px 20px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);background:var(--cream);border-bottom:1px solid var(--cream-dark)">Amount</th>
+        </tr></thead>
+        <tbody>
+          ${fees.map(job => {
+            const rows = [];
+            if (job.pet_fee_required && !job.pet_fee_collected && job.collect_from === 'owner') {
+              rows.push(`<tr style="border-bottom:1px solid var(--cream-dark)">
+                <td style="padding:14px 20px;font-size:14px">${formatDate(job.scheduled_date)}</td>
+                <td style="padding:14px 20px;font-size:14px">${job.properties?.name || '—'}</td>
+                <td style="padding:14px 20px"><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
+                <td style="padding:14px 20px;font-size:14px;font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'TBD'}</td>
+              </tr>`);
+            }
+            if (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected && job.collect_from === 'owner') {
+              rows.push(`<tr style="border-bottom:1px solid var(--cream-dark)">
+                <td style="padding:14px 20px;font-size:14px">${formatDate(job.scheduled_date)}</td>
+                <td style="padding:14px 20px;font-size:14px">${job.properties?.name || '—'}</td>
+                <td style="padding:14px 20px"><span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra cleaning</span></td>
+                <td style="padding:14px 20px;font-size:14px;font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
+              </tr>`);
+            }
+            return rows.join('');
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 // ── HELPERS ──
@@ -1095,7 +1208,7 @@ async function triggerIcalSync() {
 
 async function removeProperty(propId, propName) {
   if (!confirm(`Remove "${propName}" from your account? This will not delete the property from the system, just remove it from your view. Admin will be notified.`)) return;
-  const { error } = await db.from('properties').update({ owner_id: null }).eq('id', propId);
+  const { error } = await db.from('property_owners').delete().eq('property_id', propId).eq('profile_id', currentUser.id);
   if (error) { showToast('Error: '+error.message); return; }
   await db.from('maintenance_requests').insert({
     property_id: propId,
@@ -1150,7 +1263,7 @@ async function submitClaimRequest() {
 }
 
 async function claimProperty(propId, propName) {
-  const { error } = await db.from('properties').update({ owner_id: currentUser.id }).eq('id', propId);
+  const { error } = await db.from('property_owners').upsert({ property_id: propId, profile_id: currentUser.id });
   if (error) { showToast('Error: '+error.message); return; }
   await db.from('maintenance_requests').insert({
     property_id: propId, submitted_by: currentUser.id, category: 'other',
