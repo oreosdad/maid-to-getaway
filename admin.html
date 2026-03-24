@@ -989,11 +989,12 @@
 
 <!-- Edit Property Modal -->
 <div class="modal-overlay" id="modal-edit-property">
-  <div class="modal">
+  <div class="modal" style="max-width:560px">
     <div class="modal-header">
       <span class="modal-title">Edit property</span>
       <button class="modal-close" onclick="closeModal('modal-edit-property')">✕</button>
     </div>
+    <div class="modal-body">
     <input type="hidden" id="edit-prop-id"/>
     <div class="form-group">
       <label>Property name</label>
@@ -1032,10 +1033,10 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Assign owner</label>
-      <select id="edit-prop-owner">
-        <option value="">No owner assigned</option>
-      </select>
+      <label>Owners</label>
+      <div id="edit-prop-owners-wrap" style="border:1.5px solid var(--cream-dark);border-radius:8px;padding:10px 14px;background:var(--cream);max-height:160px;overflow-y:auto">
+        <span style="font-size:13px;color:var(--text-muted)">Loading…</span>
+      </div>
     </div>
     <div class="form-group">
       <label>Notes</label>
@@ -1781,12 +1782,16 @@ async function saveEditJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update assignment if cleaner changed
+  // Update assignment — delete all existing then insert new one
+  await db.from('job_assignments').delete().eq('job_id', id);
   if (cleanerId) {
-    await db.from('job_assignments')
-      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
-  } else {
-    await db.from('job_assignments').delete().eq('job_id', id);
+    const payout = document.getElementById('edit-job-payout').value;
+    await db.from('job_assignments').insert({
+      job_id: id,
+      cleaner_id: cleanerId,
+      response: 'accepted',
+      payout_cents: payout ? Math.round(parseFloat(payout) * 100) : null
+    });
   }
 
   closeModal('modal-edit-job');
@@ -1978,10 +1983,13 @@ function renderProperties() {
     wrap.innerHTML = '<div class="empty-state">🏠<p>No properties yet. Add your first property.</p></div>';
     return;
   }
+  const activeProps   = properties.filter(p => p.is_active !== false);
+  const archivedProps = properties.filter(p => p.is_active === false);
+
   wrap.innerHTML = `
     <table>
       <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Owners</th><th>Notes</th><th>Actions</th></tr></thead>
-      <tbody>${properties.map(p => `
+      <tbody>${activeProps.map(p => `
         <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
           <td>${p.address}</td>
@@ -1998,7 +2006,24 @@ function renderProperties() {
           </td>
         </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+    ${archivedProps.length ? `
+    <div style="margin-top:24px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:12px">Archived properties (${archivedProps.length})</div>
+      <table>
+        <tbody>${archivedProps.map(p => `
+          <tr style="opacity:0.6">
+            <td><strong>${p.name}</strong></td>
+            <td>${p.address || '—'}</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+            <td onclick="event.stopPropagation()" style="display:flex;gap:6px">
+              <button class="btn btn-outline btn-sm" onclick="restoreProperty('${p.id}')">↩ Restore</button>
+              <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="permanentDeleteProperty('${p.id}')">Delete forever</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}`;
 }
 
 function openEditPropertyModal(id) {
@@ -3001,6 +3026,53 @@ function exportFinancials() {
   a.download = `expenses-${start}-${end}.csv`; a.click();
 }
 
+
+async function archiveProperty(id) {
+  if (!id) return;
+  const prop = properties.find(p => p.id === id);
+  if (!confirm(`Archive "${prop?.name}"? Existing jobs stay. Future unassigned jobs can be bulk deleted.`)) return;
+
+  // Check for future unassigned jobs
+  const today = new Date().toISOString().split('T')[0];
+  const { data: futureJobs } = await db.from('jobs')
+    .select('id, scheduled_date')
+    .eq('property_id', id)
+    .eq('status', 'unassigned')
+    .is('deleted_at', null)
+    .gte('scheduled_date', today);
+
+  if (futureJobs && futureJobs.length > 0) {
+    const deleteFuture = confirm(`There are ${futureJobs.length} unassigned future job(s) for this property. Delete them too?`);
+    if (deleteFuture) {
+      await db.from('jobs').update({ deleted_at: new Date().toISOString(), deleted_reason: 'Property archived' })
+        .in('id', futureJobs.map(j => j.id));
+    }
+  }
+
+  const { error } = await db.from('properties').update({ is_active: false }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-property');
+  showToast('Property archived ✓');
+  await loadProperties();
+  renderProperties();
+}
+
+async function restoreProperty(id) {
+  const { error } = await db.from('properties').update({ is_active: true }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Property restored ✓');
+  await loadProperties();
+  renderProperties();
+}
+
+async function permanentDeleteProperty(id) {
+  if (!confirm('Permanently delete this property? This cannot be undone.')) return;
+  const { error } = await db.from('properties').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Property deleted ✓');
+  await loadProperties();
+  renderProperties();
+}
 // ── SIGN OUT ──
 async function signOut() {
   await db.auth.signOut();
