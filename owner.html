@@ -788,7 +788,16 @@ function renderFinancials() {
     </div>`;
 
   let alerts = '';
-  if (mtdUnpaidTotal>0) alerts += `<div class="alert-banner alert-danger"><span>💰 <strong>$${Math.round(mtdUnpaidTotal/100)}</strong> unpaid this month</span><button class="btn btn-sm" style="background:var(--error);color:white" onclick="setFinFilter('unpaid')">View →</button></div>`;
+  // Also count pending pet fees owed by owner
+  const ownerPetFees = ownerJobs.filter(j => j.pet_fee_required && !j.pet_fee_collected && j.collect_from === 'owner');
+  const ownerPetFeeTotal = ownerPetFees.reduce((s,j) => s + (j.pet_fee_cents||0), 0);
+  const totalOwed = mtdUnpaidTotal + ownerPetFeeTotal;
+  if (totalOwed > 0) {
+    let msg = [];
+    if (mtdUnpaidTotal > 0) msg.push(`$${Math.round(mtdUnpaidTotal/100)} unpaid this month`);
+    if (ownerPetFeeTotal > 0) msg.push(`$${Math.round(ownerPetFeeTotal/100)} in pet fees`);
+    alerts += `<div class="alert-banner alert-danger"><span>💰 <strong>${msg.join(' · ')}</strong></span><button class="btn btn-sm" style="background:var(--error);color:white" onclick="setFinFilter('unpaid')">View →</button></div>`;
+  }
   if (openReports.length) alerts += `<div class="alert-banner alert-warning"><span>🔧 <strong>${openReports.length}</strong> open report${openReports.length!==1?'s':''}</span><button class="btn btn-sm" style="background:var(--gold);color:white" onclick="showPage('maintenance',document.getElementById('nav-maintenance'))">View →</button></div>`;
   document.getElementById('fin-alerts').innerHTML = alerts;
 
