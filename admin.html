@@ -482,6 +482,9 @@
         <span class="nav-icon">⚠️</span> Pending Fees
         <span id="pending-fees-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
+      <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
+        <span class="nav-icon">📊</span> Financials
+      </a>
       <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
         <span class="nav-icon">👥</span> Users
       </a>
@@ -1278,6 +1281,7 @@ function showPage(name, el) {
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
   if (name === 'users')      { loadUsers(); }
   if (name === 'pending-fees') { loadPendingFees(); }
+  if (name === 'financials')    { renderFinancials(); }
 }
 
 // ── JOBS ──
@@ -2596,6 +2600,260 @@ async function markExtraCleanCollected(jobId) {
   allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: true } : j);
   showToast('Extra cleaning fee marked as collected ✓');
   await loadPendingFees();
+}
+
+
+// ── FINANCIALS ──
+let finTab = 'pl';
+let finExpenses = [];
+
+function setFinTab(tab) {
+  finTab = tab;
+  document.getElementById('fin-tab-pl').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='pl'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='pl'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
+  document.getElementById('fin-tab-expenses').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='expenses'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='expenses'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
+  document.getElementById('fin-panel-pl').style.display       = tab === 'pl'       ? 'block' : 'none';
+  document.getElementById('fin-panel-expenses').style.display = tab === 'expenses' ? 'block' : 'none';
+  renderFinancials();
+}
+
+function getFinDateRange() {
+  const period = document.getElementById('fin-period')?.value || 'mtd';
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  let start, end;
+  if (period === 'mtd') {
+    start = new Date(y, m, 1);
+    end   = new Date(now);
+  } else if (period === 'last_month') {
+    start = new Date(y, m - 1, 1);
+    end   = new Date(y, m, 0);
+  } else if (period === 'ytd') {
+    start = new Date(y, 0, 1);
+    end   = new Date(now);
+  } else if (period === 'q1') {
+    start = new Date(y, 0, 1); end = new Date(y, 2, 31);
+  } else if (period === 'q2') {
+    start = new Date(y, 3, 1); end = new Date(y, 5, 30);
+  } else {
+    start = new Date('2026-02-01');
+    end   = new Date(now);
+  }
+  return {
+    start: start.toISOString().split('T')[0],
+    end:   end.toISOString().split('T')[0]
+  };
+}
+
+async function renderFinancials() {
+  if (finTab === 'pl') await renderPL();
+  else await renderExpenses();
+}
+
+async function renderPL() {
+  const panel = document.getElementById('fin-panel-pl');
+  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
+  const { start, end } = getFinDateRange();
+
+  // Load completed jobs in range for revenue
+  const { data: jobs } = await db
+    .from('jobs')
+    .select('charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, source')
+    .eq('status', 'completed')
+    .is('deleted_at', null)
+    .gte('scheduled_date', start)
+    .lte('scheduled_date', end);
+
+  // Load expenses in range
+  const { data: expenses } = await db
+    .from('expenses')
+    .select('*')
+    .gte('date', start)
+    .lte('date', end);
+
+  const jobList     = jobs     || [];
+  const expenseList = expenses || [];
+
+  // Revenue = charge_cents + additional_cleaning_cents on completed jobs
+  const revenue = jobList.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+
+  // Contractors = cleaner payouts from jobs (already tracked)
+  const contractors = jobList.reduce((s, j) => s + (j.payout_cents || 0), 0);
+
+  // Other expense categories
+  const supplies  = expenseList.filter(e => e.category === 'supplies') .reduce((s, e) => s + e.amount_cents, 0);
+  const insurance = expenseList.filter(e => e.category === 'insurance').reduce((s, e) => s + e.amount_cents, 0);
+  const software  = expenseList.filter(e => e.category === 'software') .reduce((s, e) => s + e.amount_cents, 0);
+  const other     = expenseList.filter(e => e.category === 'other')    .reduce((s, e) => s + e.amount_cents, 0);
+
+  const totalExpenses = contractors + supplies + insurance + software + other;
+  const netProfit = revenue - totalExpenses;
+  const margin = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0;
+
+  const fmt = (cents) => '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
+
+  panel.innerHTML = `
+    <!-- Summary cards -->
+    <div class="stats-row" style="margin-bottom:28px">
+      <div class="stat-card">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div>
+      </div>
+      <div class="stat-card flagged">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value">${fmt(totalExpenses)}</div>
+      </div>
+      <div class="stat-card" style="border-color:#C49A2A">
+        <div class="stat-label">Net Profit</div>
+        <div class="stat-value" style="color:${netProfit >= 0 ? 'var(--success)' : 'var(--error)'}">${fmt(netProfit)}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Margin</div>
+        <div class="stat-value" style="color:#A07D1C">${margin}%</div>
+      </div>
+    </div>
+
+    <!-- P&L Statement -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Profit & Loss — ${periodLabel}</span>
+      </div>
+      <div style="padding:0 24px 24px">
+        <!-- Revenue section -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Revenue</div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)">
+            <span style="font-size:14px;color:var(--text);padding-left:16px">Cleaning revenue (${jobList.length} jobs)</span>
+            <span style="font-size:14px;font-weight:500">${fmt(revenue)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)">
+            <span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span>
+            <span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span>
+          </div>
+        </div>
+
+        <!-- Expenses section -->
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Expenses</div>
+          ${[
+            ['Contractors (cleaner payouts)', contractors],
+            ['Supplies', supplies],
+            ['Insurance', insurance],
+            ['Software', software],
+            ['Other', other],
+          ].map(([label, amt]) => `
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)">
+              <span style="font-size:14px;color:var(--text);padding-left:16px">${label}</span>
+              <span style="font-size:14px;${amt > 0 ? 'color:var(--error)' : 'color:var(--text-muted)'}">${amt > 0 ? '(' + fmt(amt) + ')' : '—'}</span>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)">
+            <span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span>
+            <span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExpenses)})</span>
+          </div>
+        </div>
+
+        <!-- Net profit -->
+        <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit >= 0 ? 'var(--success-bg)' : '#FDEEEE'};border-radius:var(--radius)">
+          <span style="font-size:16px;font-weight:600;color:var(--navy)">Net Profit</span>
+          <span style="font-size:16px;font-weight:600;color:${netProfit >= 0 ? 'var(--success)' : 'var(--error)'}">${fmt(netProfit)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function renderExpenses() {
+  const panel = document.getElementById('fin-panel-expenses');
+  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
+  const { start, end } = getFinDateRange();
+
+  const { data: expenses } = await db
+    .from('expenses')
+    .select('*')
+    .gte('date', start)
+    .lte('date', end)
+    .order('date', { ascending: false });
+
+  finExpenses = expenses || [];
+  const total = finExpenses.reduce((s, e) => s + e.amount_cents, 0);
+
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:14px;color:var(--text-muted)">${finExpenses.length} expense${finExpenses.length !== 1 ? 's' : ''} · Total: <strong style="color:var(--navy)">$${(total/100).toFixed(2)}</strong></div>
+      <button class="btn" onclick="openAddExpenseModal()">+ Add expense</button>
+    </div>
+    <div class="card">
+      ${!finExpenses.length ? '<div class="empty-state" style="padding:40px">📋<p>No expenses logged for this period.</p></div>' : `
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${finExpenses.map(e => `
+            <tr>
+              <td>${formatDate(e.date)}</td>
+              <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
+              <td style="font-size:13px">${e.description || '—'}</td>
+              <td style="font-size:13px;color:var(--text-muted)">${e.vendor || '—'}</td>
+              <td style="font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
+              <td><button class="btn btn-outline btn-sm" onclick="deleteExpense('${e.id}')">Delete</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function openAddExpenseModal() {
+  document.getElementById('modal-add-expense').classList.add('open');
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-category').value = 'supplies';
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-description').value = '';
+  document.getElementById('exp-vendor').value = '';
+}
+
+async function saveExpense() {
+  const date     = document.getElementById('exp-date').value;
+  const category = document.getElementById('exp-category').value;
+  const amount   = parseFloat(document.getElementById('exp-amount').value);
+  const desc     = document.getElementById('exp-description').value.trim();
+  const vendor   = document.getElementById('exp-vendor').value.trim();
+
+  if (!date || !category || !amount || amount <= 0) {
+    showToast('Please fill in date, category, and amount'); return;
+  }
+
+  const { error } = await db.from('expenses').insert({
+    date, category,
+    amount_cents: Math.round(amount * 100),
+    description: desc || null,
+    vendor: vendor || null,
+    created_by: (await db.auth.getUser()).data.user?.id
+  });
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-add-expense');
+  showToast('Expense added ✓');
+  await renderExpenses();
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  await db.from('expenses').delete().eq('id', id);
+  showToast('Expense deleted');
+  await renderExpenses();
+}
+
+function exportFinancials() {
+  const { start, end } = getFinDateRange();
+  const rows = [['Date','Category','Description','Vendor','Amount']];
+  finExpenses.forEach(e => {
+    rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `expenses-${start}-${end}.csv`; a.click();
 }
 
 // ── SIGN OUT ──
