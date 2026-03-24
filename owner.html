@@ -1133,10 +1133,16 @@ async function submitClaimRequest() {
   const address = document.getElementById('claim-address-input').value.trim();
   const notes   = document.getElementById('claim-notes-input').value.trim();
   if (!address) { showToast('Please enter a property address or name'); return; }
+
+  // Get any property_id to satisfy NOT NULL constraint — use first available property
+  const { data: anyProp } = await db.from('properties').select('id').limit(1).single();
+  if (!anyProp) { showToast('Error: No properties found'); return; }
+
   const { error } = await db.from('maintenance_requests').insert({
     submitted_by: currentUser.id,
+    property_id: anyProp.id,
     category: 'other',
-    notes: `Owner ${currentProfile.full_name} is requesting to claim a property.\nAddress/name: ${address}${notes ? '\nDetails: ' + notes : ''}\nPlease add it to their account.`
+    notes: `🏠 PROPERTY CLAIM REQUEST\nOwner: ${currentProfile.full_name}\nAddress/name: ${address}${notes ? '\nDetails: ' + notes : ''}\nPlease add this property to their account.`
   });
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-claim-property');
