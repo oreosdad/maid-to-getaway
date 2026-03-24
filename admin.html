@@ -444,6 +444,18 @@
 <!-- Shown while checking auth -->
 <div id="auth-loading">Checking your session…</div>
 
+<!-- Sync error banner - shown across top of app -->
+<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:#C0392B;color:white;padding:12px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:18px">⚠️</span>
+    <span id="sync-error-banner-text">iCal sync error — check Maintenance Requests for details</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button onclick="showPage('reports',document.getElementById('nav-reports'))" style="background:white;color:#C0392B;border:none;border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">View details</button>
+    <button onclick="dismissSyncBanner()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+  </div>
+</div>
+
 <!-- Hidden until auth confirmed -->
 <div id="app">
 
@@ -464,6 +476,7 @@
       </a>
       <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
         <span class="nav-icon">📋</span> Maintenance
+        <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
       <a class="nav-item" id="nav-pending-fees" onclick="showPage('pending-fees', this)">
         <span class="nav-icon">⚠️</span> Pending Fees
@@ -1241,6 +1254,7 @@ async function init() {
 
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
+  checkSyncErrors();
   // Load owner profiles for property assignment dropdown
   const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
   window._ownerProfiles = owners || [];
@@ -1978,6 +1992,40 @@ async function saveProperty() {
   renderProperties();
 }
 
+async function checkSyncErrors() {
+  const { data } = await db
+    .from('maintenance_requests')
+    .select('id, notes, created_at')
+    .eq('category', 'other')
+    .eq('status', 'open')
+    .ilike('notes', 'iCal sync errors%')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const banner = document.getElementById('sync-error-banner');
+  if (data && data.length > 0) {
+    const latest = data[0];
+    const when = new Date(latest.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
+    document.getElementById('sync-error-banner-text').textContent = `⚠️ iCal sync error at ${when} — some bookings may be missing`;
+    document.getElementById('sync-error-banner').style.display = 'flex';
+    const bannerH = document.getElementById('sync-error-banner').offsetHeight + 'px';
+    document.querySelector('.sidebar').style.top = bannerH;
+    document.querySelector('.main').style.paddingTop = `calc(32px + ${bannerH})`;
+    banner.style.display = 'flex';
+    document.getElementById('app').classList.add('sync-banner-active');
+  } else {
+    banner.style.display = 'none';
+    document.getElementById('app').classList.remove('sync-banner-active');
+  }
+}
+
+function dismissSyncBanner() {
+  document.getElementById('sync-error-banner').style.display = 'none';
+  document.querySelector('.sidebar').style.top = '0';
+  document.querySelector('.main').style.paddingTop = '32px';
+  document.getElementById('app').classList.remove('sync-banner-active');
+}
+
 async function manualSync() {
   const btn = document.getElementById('sync-btn');
   btn.disabled = true;
@@ -1986,6 +2034,7 @@ async function manualSync() {
   btn.disabled = false;
   btn.textContent = '↻ Sync calendars';
   await loadJobs();
+  await checkSyncErrors();
 }
 
 async function triggerIcalSync() {
@@ -2411,6 +2460,19 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── MAINTENANCE BADGE ──
+async function updateMaintenanceBadge() {
+  const { data } = await db.from('maintenance_requests').select('id').eq('status', 'open');
+  const count = data?.length || 0;
+  const badge = document.getElementById('maint-badge');
+  if (badge) {
+    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+    badge.textContent = count > 9 ? '9+' : count;
+  }
 }
 
 // ── PENDING FEES ──
