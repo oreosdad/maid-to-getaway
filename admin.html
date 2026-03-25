@@ -307,7 +307,7 @@
     }
 
     .modal-overlay {
-      display: none;
+      display: none !important;
       position: fixed;
       top: 0;
       left: 0;
@@ -323,7 +323,7 @@
       box-sizing: border-box;
     }
 
-    .modal-overlay.open { display: flex; }
+    .modal-overlay.open { display: flex !important; }
 
     .modal {
       background: var(--white);
@@ -2598,30 +2598,13 @@ async function savePropertyChecklist() {
 
 // ── MODALS ──
 function closeModal(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('open');
-  el.style.display = 'none';
+  document.getElementById(id).classList.remove('open');
 }
 function openModal(id) {
-  const el = document.getElementById(id);
-  el.classList.add('open');
-  el.style.display = 'flex';
-  el.style.position = 'fixed';
-  el.style.top = '0';
-  el.style.left = '0';
-  el.style.right = '0';
-  el.style.bottom = '0';
-  el.style.width = '100vw';
-  el.style.height = '100vh';
-  el.style.zIndex = '9999';
-  el.style.alignItems = 'center';
-  el.style.justifyContent = 'center';
-  el.style.background = 'rgba(28,43,58,0.5)';
-  el.style.boxSizing = 'border-box';
-  el.style.padding = '24px';
+  document.getElementById(id).classList.add('open');
 }
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
 });
 
 // ── TOAST ──
