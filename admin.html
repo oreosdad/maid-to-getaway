@@ -1741,7 +1741,7 @@ function openEditJobModal(id) {
     payDateEl.textContent = pd ? 'Pay date: ' + formatDate(pd) : '';
   }
 
-  document.getElementById('modal-edit-job').classList.add('open');
+  openModal('modal-edit-job');
 }
 
 async function saveEditJob() {
@@ -1847,7 +1847,7 @@ function openDeleteJobModal(jobId) {
   document.getElementById('delete-job-id').value = jobId;
   document.getElementById('delete-job-reason').value = '';
   closeModal('modal-edit-job');
-  document.getElementById('modal-delete-job').classList.add('open');
+  openModal('modal-delete-job');
 }
 
 async function confirmDeleteJob() {
@@ -1928,7 +1928,7 @@ function openNewJobModal() {
   document.getElementById('job-pet-fee').checked = false;
   document.getElementById('job-pet-fee-cents').value = '';
   
-  document.getElementById('modal-job').classList.add('open');
+  openModal('modal-job');
 }
 
 async function saveJob() {
@@ -2058,7 +2058,7 @@ function openEditPropertyModal(id) {
         </label>`).join('')
     : '<span style="font-size:13px;color:var(--text-muted)">No owner profiles found</span>';
 
-  document.getElementById('modal-edit-property').classList.add('open');
+  openModal('modal-edit-property');
 }
 
 async function saveEditProperty() {
@@ -2104,7 +2104,7 @@ async function saveEditProperty() {
 
 function openNewPropertyModal() {
   ['prop-name','prop-address','prop-airbnb','prop-vrbo','prop-notes','prop-checkout-time','prop-checkin-time','prop-charge','prop-payout'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('modal-property').classList.add('open');
+  openModal('modal-property');
 }
 
 async function saveProperty() {
@@ -2230,7 +2230,7 @@ function renderCleaners() {
 
 function openNewCleanerModal() {
   ['cleaner-name','cleaner-email','cleaner-phone'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('modal-cleaner').classList.add('open');
+  openModal('modal-cleaner');
 }
 
 async function saveCleaner() {
@@ -2268,7 +2268,7 @@ function openEditCleanerModal(id) {
   document.getElementById('edit-cleaner-email').value = c.email;
   document.getElementById('edit-cleaner-phone').value = c.phone || '';
   document.getElementById('edit-cleaner-is-owner-operator').checked = c.is_owner_operator || false;
-  document.getElementById('modal-edit-cleaner').classList.add('open');
+  openModal('modal-edit-cleaner');
 }
 
 async function saveEditCleaner() {
@@ -2528,7 +2528,7 @@ async function openPropertyChecklist(propId, propName) {
 
   renderMasterChecklist();
   renderPropChecklist();
-  document.getElementById('modal-prop-checklist').classList.add('open');
+  openModal('modal-prop-checklist');
 }
 
 function renderMasterChecklist() {
@@ -2597,7 +2597,29 @@ async function savePropertyChecklist() {
 }
 
 // ── MODALS ──
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('open');
+  el.style.display = 'none';
+}
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add('open');
+  el.style.display = 'flex';
+  el.style.position = 'fixed';
+  el.style.top = '0';
+  el.style.left = '0';
+  el.style.right = '0';
+  el.style.bottom = '0';
+  el.style.width = '100vw';
+  el.style.height = '100vh';
+  el.style.zIndex = '9999';
+  el.style.alignItems = 'center';
+  el.style.justifyContent = 'center';
+  el.style.background = 'rgba(28,43,58,0.5)';
+  el.style.boxSizing = 'border-box';
+  el.style.padding = '24px';
+}
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 });
@@ -2956,7 +2978,7 @@ async function renderExpenses() {
 }
 
 function openAddExpenseModal() {
-  document.getElementById('modal-add-expense').classList.add('open');
+  openModal('modal-add-expense');
   document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('exp-category').value = 'supplies';
   document.getElementById('exp-amount').value = '';
@@ -3383,7 +3405,7 @@ function openNewUserModal() {
   document.getElementById('new-role-admin').checked   = false;
   document.getElementById('new-role-cleaner').checked = true;
   document.getElementById('new-role-owner').checked   = false;
-  document.getElementById('modal-new-user').classList.add('open');
+  openModal('modal-new-user');
 }
 
 async function saveNewUser() {
@@ -3456,7 +3478,7 @@ function openEditUserModal(userId) {
     leftBtn.textContent = 'Archive user';
     leftBtn.onclick = archiveUserFromModal;
   }
-  document.getElementById('modal-edit-user').classList.add('open');
+  openModal('modal-edit-user');
 }
 
 async function saveEditUser() {
