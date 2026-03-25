@@ -690,7 +690,7 @@
           <option value="">All statuses</option>
           <option value="open" selected>Open</option>
           <option 
-          <option value="resolved">Closed</option>
+          <option value="resolved">Archived</option>
         </select>
         <select id="report-filter-property" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
           <option value="">All properties</option>
@@ -1069,8 +1069,20 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Assigned cleaner</label>
-      <select id="edit-job-cleaner"></select>
+      <label>Cleaners</label>
+      <div id="edit-job-cleaners-wrap">
+        <!-- Cleaner 1 -->
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <select id="edit-job-cleaner" style="flex:1"></select>
+          <input type="number" id="edit-job-payout-1" oninput="updateTotalPayout()" placeholder="Payout $" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
+        </div>
+        <!-- Cleaner 2 (split) -->
+        <div style="display:none;gap:8px;align-items:center" id="edit-job-cleaner2-row">
+          <select id="edit-job-cleaner2" style="flex:1"></select>
+          <input type="number" id="edit-job-payout-2" oninput="updateTotalPayout()" placeholder="Payout $" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
+        </div>
+        <button type="button" id="edit-job-split-btn" onclick="toggleSplitCleaner()" style="margin-top:8px;font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;font-family:'DM Sans',sans-serif">+ Add second cleaner</button>
+      </div>
     </div>
     <div class="form-group">
       <label>Status</label>
@@ -1700,7 +1712,19 @@ function openEditJobModal(id) {
     properties.map(p => `<option value="${p.id}" ${p.id === job.property_id ? 'selected' : ''}>${p.name}</option>`).join('');
 
   // Populate cleaner dropdown
-  document.getElementById('edit-job-cleaner').innerHTML = buildAssigneeOptions(job.job_assignments?.[0]?.cleaner_id || '');
+  // Populate cleaner slots from job_assignments
+  const assignments = job.job_assignments || [];
+  const cleaner1 = assignments[0] || null;
+  const cleaner2 = assignments[1] || null;
+  document.getElementById('edit-job-cleaner').innerHTML  = buildAssigneeOptions(cleaner1?.cleaner_id || '');
+  document.getElementById('edit-job-cleaner2').innerHTML = buildAssigneeOptions(cleaner2?.cleaner_id || '');
+  document.getElementById('edit-job-payout-1').value = cleaner1?.payout_cents ? Math.round(cleaner1.payout_cents/100) : (job.payout_cents ? Math.round(job.payout_cents/100) : '');
+  document.getElementById('edit-job-payout-2').value = cleaner2?.payout_cents ? Math.round(cleaner2.payout_cents/100) : '';
+  // Show/hide second cleaner row
+  const hasSecond = !!cleaner2?.cleaner_id;
+  document.getElementById('edit-job-cleaner2-row').style.display = hasSecond ? 'flex' : 'none';
+  document.getElementById('edit-job-split-btn').textContent = hasSecond ? '✕ Remove second cleaner' : '+ Add second cleaner';
+  updateTotalPayout();
 
   document.getElementById('edit-job-id').value          = job.id;
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
@@ -2946,6 +2970,49 @@ async function saveW9() {
   loadUsers();
 }
 
+
+function toggleSplitCleaner() {
+  const row = document.getElementById('edit-job-cleaner2-row');
+  const btn = document.getElementById('edit-job-split-btn');
+  const showing = row.style.display !== 'none';
+  row.style.display = showing ? 'none' : 'flex';
+  btn.textContent = showing ? '+ Add second cleaner' : '✕ Remove second cleaner';
+  if (showing) {
+    document.getElementById('edit-job-cleaner2').value = '';
+    document.getElementById('edit-job-payout-2').value = '';
+  }
+  updateTotalPayout();
+}
+
+function updateTotalPayout() {
+  const p1 = parseFloat(document.getElementById('edit-job-payout-1').value) || 0;
+  const p2 = parseFloat(document.getElementById('edit-job-payout-2').value) || 0;
+  document.getElementById('edit-job-payout').value = (p1 + p2) || '';
+}
+
+
+function editReportNotes(reportId, currentNotes) {
+  document.getElementById('report-notes-view-'+reportId).style.display = 'none';
+  document.getElementById('report-notes-edit-'+reportId).style.display = 'block';
+  document.getElementById('report-notes-input-'+reportId).value = currentNotes;
+  document.getElementById('report-notes-input-'+reportId).focus();
+}
+
+function cancelEditReportNotes(reportId) {
+  document.getElementById('report-notes-view-'+reportId).style.display = 'block';
+  document.getElementById('report-notes-edit-'+reportId).style.display = 'none';
+}
+
+async function saveReportNotes(reportId) {
+  const notes = document.getElementById('report-notes-input-'+reportId).value.trim();
+  const { error } = await db.from('maintenance_requests').update({ notes }).eq('id', reportId);
+  if (error) { showToast('Error: '+error.message); return; }
+  allAdminReports = allAdminReports.map(r => r.id === reportId ? { ...r, notes } : r);
+  document.getElementById('report-notes-view-'+reportId).querySelector('p').textContent = notes;
+  cancelEditReportNotes(reportId);
+  showToast('Notes updated ✓');
+}
+
 // ── SIGN OUT ──
 async function signOut() {
   await db.auth.signOut();
@@ -3048,12 +3115,22 @@ async function renderAdminReports() {
         <div style="display:flex;gap:8px;align-items:center">
           <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
             <option value="open" ${r.status==='open'?'selected':''}>Open</option>
-            <option value="resolved" ${r.status==='resolved'?'selected':''}>Closed</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>Archive</option>
           </select>
+          <button class="btn btn-outline btn-sm" onclick="editReportNotes('${r.id}', \`${(r.notes||'').replace(/`/g,'\\`')}\`)">Edit</button>
           <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteAdminReport('${r.id}')">Delete</button>
         </div>
       </div>
-      <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
+      <div id="report-notes-view-${r.id}">
+        <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5;white-space:pre-wrap">${r.notes}</p>
+      </div>
+      <div id="report-notes-edit-${r.id}" style="display:none;margin-bottom:10px">
+        <textarea id="report-notes-input-${r.id}" style="width:100%;padding:10px;font-family:'DM Sans',sans-serif;font-size:14px;border:1.5px solid var(--navy);border-radius:8px;background:var(--cream);resize:vertical;min-height:80px">${r.notes||''}</textarea>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-sm" onclick="saveReportNotes('${r.id}')">Save</button>
+          <button class="btn btn-outline btn-sm" onclick="cancelEditReportNotes('${r.id}')">Cancel</button>
+        </div>
+      </div>
       ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
       <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
