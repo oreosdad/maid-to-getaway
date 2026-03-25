@@ -309,12 +309,18 @@
     .modal-overlay {
       display: none;
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
       background: rgba(28,43,58,0.5);
-      z-index: 200;
+      z-index: 1000;
       align-items: center;
       justify-content: center;
       padding: 24px;
+      box-sizing: border-box;
     }
 
     .modal-overlay.open { display: flex; }
@@ -445,7 +451,7 @@
 <div id="auth-loading">Checking your session…</div>
 
 <!-- Sync error banner - shown across top of app -->
-<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:#C0392B;color:white;padding:12px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
+<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#C0392B;color:white;padding:12px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
   <div style="display:flex;align-items:center;gap:10px">
     <span style="font-size:18px">⚠️</span>
     <span id="sync-error-banner-text">iCal sync error — check Maintenance Requests for details</span>
