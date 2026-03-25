@@ -307,23 +307,17 @@
     }
 
     .modal-overlay {
-      display: none !important;
+      display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
+      inset: 0;
       background: rgba(28,43,58,0.5);
-      z-index: 1000;
+      z-index: 200;
       align-items: center;
       justify-content: center;
       padding: 24px;
-      box-sizing: border-box;
     }
 
-    .modal-overlay.open { display: flex !important; }
+    .modal-overlay.open { display: flex; }
 
     .modal {
       background: var(--white);
@@ -450,18 +444,6 @@
 <!-- Shown while checking auth -->
 <div id="auth-loading">Checking your session…</div>
 
-<!-- Sync error banner - shown across top of app -->
-<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#C0392B;color:white;padding:12px 24px;display:none;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
-  <div style="display:flex;align-items:center;gap:10px">
-    <span style="font-size:18px">⚠️</span>
-    <span id="sync-error-banner-text">iCal sync error — check Maintenance Requests for details</span>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <button onclick="showPage('reports',document.getElementById('nav-reports'))" style="background:white;color:#C0392B;border:none;border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">View details</button>
-    <button onclick="dismissSyncBanner()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
-  </div>
-</div>
-
 <!-- Hidden until auth confirmed -->
 <div id="app">
 
@@ -482,7 +464,6 @@
       </a>
       <a class="nav-item" id="nav-reports" onclick="showPage('reports', this)">
         <span class="nav-icon">📋</span> Maintenance
-        <span id="maint-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
       <a class="nav-item" id="nav-pending-fees" onclick="showPage('pending-fees', this)">
         <span class="nav-icon">⚠️</span> Pending Fees
@@ -505,10 +486,7 @@
     <div class="page active" id="page-jobs">
       <div class="page-header">
         <h2>Jobs</h2>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline" id="sync-btn" onclick="manualSync()">↻ Sync calendars</button>
-          <button class="btn" onclick="openNewJobModal()">+ New job</button>
-        </div>
+        <button class="btn" onclick="openNewJobModal()">+ New job</button>
       </div>
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
@@ -605,13 +583,10 @@
           <button class="btn btn-sm" onclick="openAddExpenseModal()">+ Add expense</button>
         </div>
       </div>
-
-      <!-- Sub-tabs -->
       <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
         <button id="fin-tab-pl" onclick="setFinTab('pl')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">P&L</button>
         <button id="fin-tab-expenses" onclick="setFinTab('expenses')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">Expenses</button>
       </div>
-
       <div id="fin-panel-pl"></div>
       <div id="fin-panel-expenses" style="display:none"></div>
     </div>
@@ -879,17 +854,8 @@
       <div class="form-group" id="new-pet-fee-collected-row" style="display:none">
         <label class="checkbox-label">
           <input type="checkbox" id="job-pet-fee-collected"/>
-          🐶 Pet fee collected
+          🐶 Pet fee collected from owner
         </label>
-      </div>
-      <div class="form-group" id="edit-collect-from-row" style="display:none">
-        <label>Collect pet fee from</label>
-        <select id="edit-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-          <option value="guest">Guest directly</option>
-          <option value="owner">Owner</option>
-          <option value="airbnb">Airbnb</option>
-          <option value="vrbo">VRBO</option>
-        </select>
       </div>
     </div>
     <div class="form-row">
@@ -995,12 +961,11 @@
 
 <!-- Edit Property Modal -->
 <div class="modal-overlay" id="modal-edit-property">
-  <div class="modal" style="max-width:560px">
+  <div class="modal">
     <div class="modal-header">
       <span class="modal-title">Edit property</span>
       <button class="modal-close" onclick="closeModal('modal-edit-property')">✕</button>
     </div>
-    <div class="modal-body">
     <input type="hidden" id="edit-prop-id"/>
     <div class="form-group">
       <label>Property name</label>
@@ -1116,7 +1081,7 @@
     <div class="form-row">
       <div class="form-group">
         <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none';document.getElementById('edit-collect-from-row').style.display=(this.checked&&!document.getElementById('edit-job-pet-fee-collected').checked)?'block':'none'"/>
+          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
           🐶 Pet fee
         </label>
       </div>
@@ -1127,17 +1092,8 @@
       <div class="form-group">
         <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
           <input type="checkbox" id="edit-job-pet-fee-collected"/>
-          🐶 Pet fee collected
+          🐶 Pet fee collected from owner
         </label>
-      </div>
-      <div class="form-group" id="edit-collect-from-row" style="display:none">
-        <label>Collect pet fee from</label>
-        <select id="edit-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-          <option value="guest">Guest directly</option>
-          <option value="owner">Owner</option>
-          <option value="airbnb">Airbnb</option>
-          <option value="vrbo">VRBO</option>
-        </select>
       </div>
     </div>
     <div class="form-row">
@@ -1281,7 +1237,7 @@
       <div class="form-group">
         <label>Receipt <span style="color:var(--text-muted);font-weight:400">(optional · screenshot only · max 1MB)</span></label>
         <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px" onchange="checkReceiptSize(this)"/>
-        <div id="exp-receipt-warning" style="display:none;color:var(--error);font-size:12px;margin-top:4px">⚠️ File must be under 1MB. Please use a screenshot.</div>
+        <div id="exp-receipt-warning" style="display:none;color:var(--error);font-size:12px;margin-top:4px">⚠️ File must be under 1MB.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1291,10 +1247,9 @@
   </div>
 </div>
 
-
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJ'
@@ -1357,13 +1312,11 @@ async function init() {
 
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
+  loadPendingFees();
   checkSyncErrors();
-  // Load owner profiles — check both role column and notification_prefs.roles array
-  const { data: allProfiles } = await db.from('profiles').select('id, full_name, email, role, notification_prefs').order('full_name');
-  window._ownerProfiles = (allProfiles || []).filter(p => {
-    const roles = p.notification_prefs?.roles || [];
-    return p.role === 'owner' || roles.includes('owner');
-  });
+  // Load owner profiles for property assignment dropdown
+  const { data: allProfs } = await db.from('profiles').select('id, full_name, email, role, notification_prefs').order('full_name');
+  window._ownerProfiles = (allProfs||[]).filter(p => { const roles = p.notification_prefs?.roles||[]; return p.role==='owner'||roles.includes('owner'); });
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1715,8 +1668,6 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
   document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
   document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
-  document.getElementById('edit-collect-from-row').style.display = (job.pet_fee_required && !job.pet_fee_collected) ? 'block' : 'none';
-  document.getElementById('edit-collect-from').value = job.collect_from || 'guest';
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1741,7 +1692,7 @@ function openEditJobModal(id) {
     payDateEl.textContent = pd ? 'Pay date: ' + formatDate(pd) : '';
   }
 
-  openModal('modal-edit-job');
+  document.getElementById('modal-edit-job').classList.add('open');
 }
 
 async function saveEditJob() {
@@ -1776,7 +1727,6 @@ async function saveEditJob() {
     })()),
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
-    collect_from: document.getElementById('edit-collect-from')?.value || null,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
@@ -1788,16 +1738,12 @@ async function saveEditJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update assignment — delete all existing then insert new one
-  await db.from('job_assignments').delete().eq('job_id', id);
+  // Update assignment if cleaner changed
   if (cleanerId) {
-    const payout = document.getElementById('edit-job-payout').value;
-    await db.from('job_assignments').insert({
-      job_id: id,
-      cleaner_id: cleanerId,
-      response: 'accepted',
-      payout_cents: payout ? Math.round(parseFloat(payout) * 100) : null
-    });
+    await db.from('job_assignments')
+      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
+  } else {
+    await db.from('job_assignments').delete().eq('job_id', id);
   }
 
   closeModal('modal-edit-job');
@@ -1847,7 +1793,7 @@ function openDeleteJobModal(jobId) {
   document.getElementById('delete-job-id').value = jobId;
   document.getElementById('delete-job-reason').value = '';
   closeModal('modal-edit-job');
-  openModal('modal-delete-job');
+  document.getElementById('modal-delete-job').classList.add('open');
 }
 
 async function confirmDeleteJob() {
@@ -1928,7 +1874,7 @@ function openNewJobModal() {
   document.getElementById('job-pet-fee').checked = false;
   document.getElementById('job-pet-fee-cents').value = '';
   
-  openModal('modal-job');
+  document.getElementById('modal-job').classList.add('open');
 }
 
 async function saveJob() {
@@ -1989,13 +1935,10 @@ function renderProperties() {
     wrap.innerHTML = '<div class="empty-state">🏠<p>No properties yet. Add your first property.</p></div>';
     return;
   }
-  const activeProps   = properties.filter(p => p.is_active !== false);
-  const archivedProps = properties.filter(p => p.is_active === false);
-
   wrap.innerHTML = `
     <table>
       <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Owners</th><th>Notes</th><th>Actions</th></tr></thead>
-      <tbody>${activeProps.map(p => `
+      <tbody>${properties.map(p => `
         <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
           <td>${p.address}</td>
@@ -2012,24 +1955,7 @@ function renderProperties() {
           </td>
         </tr>`).join('')}
       </tbody>
-    </table>
-    ${archivedProps.length ? `
-    <div style="margin-top:24px">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:12px">Archived properties (${archivedProps.length})</div>
-      <table>
-        <tbody>${archivedProps.map(p => `
-          <tr style="opacity:0.6">
-            <td><strong>${p.name}</strong></td>
-            <td>${p.address || '—'}</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
-            <td onclick="event.stopPropagation()" style="display:flex;gap:6px">
-              <button class="btn btn-outline btn-sm" onclick="restoreProperty('${p.id}')">↩ Restore</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="permanentDeleteProperty('${p.id}')">Delete forever</button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>` : ''}`;
+    </table>`;
 }
 
 function openEditPropertyModal(id) {
@@ -2046,19 +1972,12 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
 
-  // Populate owner checkboxes
-  const currentOwners = (p.property_owners || []).map(o => o.profile_id);
-  const ownerWrap = document.getElementById('edit-prop-owners-wrap');
-  ownerWrap.innerHTML = (window._ownerProfiles || []).length
-    ? (window._ownerProfiles || []).map(o => `
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:14px">
-          <input type="checkbox" value="${o.id}" ${currentOwners.includes(o.id) ? 'checked' : ''}
-            style="width:16px;height:16px;accent-color:var(--navy)"/>
-          ${o.full_name}${o.email ? ' <span style="color:var(--text-muted);font-size:12px">('+o.email+')</span>' : ''}
-        </label>`).join('')
-    : '<span style="font-size:13px;color:var(--text-muted)">No owner profiles found</span>';
+  // Populate owner dropdown
+  const ownerSel = document.getElementById('edit-prop-owner');
+  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
+    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
 
-  openModal('modal-edit-property');
+  document.getElementById('modal-edit-property').classList.add('open');
 }
 
 async function saveEditProperty() {
@@ -2082,16 +2001,15 @@ async function saveEditProperty() {
     notes:                  document.getElementById('edit-prop-notes').value.trim() || null,
   }).eq('id', id);
 
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  // Update property_owners — delete existing then insert selected
   const selectedOwners = [...document.querySelectorAll('#edit-prop-owners-wrap input[type=checkbox]:checked')].map(cb => cb.value);
   await db.from('property_owners').delete().eq('property_id', id);
   if (selectedOwners.length) {
     await db.from('property_owners').insert(selectedOwners.map(pid => ({ property_id: id, profile_id: pid })));
   }
 
+  if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-property');
+
   if (airbnb || vrbo) {
     showToast('Property updated — syncing calendar…');
     await triggerIcalSync();
@@ -2104,7 +2022,7 @@ async function saveEditProperty() {
 
 function openNewPropertyModal() {
   ['prop-name','prop-address','prop-airbnb','prop-vrbo','prop-notes','prop-checkout-time','prop-checkin-time','prop-charge','prop-payout'].forEach(id => document.getElementById(id).value = '');
-  openModal('modal-property');
+  document.getElementById('modal-property').classList.add('open');
 }
 
 async function saveProperty() {
@@ -2138,51 +2056,6 @@ async function saveProperty() {
   }
   await loadProperties();
   renderProperties();
-}
-
-async function checkSyncErrors() {
-  const { data } = await db
-    .from('maintenance_requests')
-    .select('id, notes, created_at')
-    .eq('category', 'other')
-    .eq('status', 'open')
-    .ilike('notes', 'iCal sync errors%')
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  const banner = document.getElementById('sync-error-banner');
-  if (data && data.length > 0) {
-    const latest = data[0];
-    const when = new Date(latest.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
-    document.getElementById('sync-error-banner-text').textContent = `⚠️ iCal sync error at ${when} — some bookings may be missing`;
-    document.getElementById('sync-error-banner').style.display = 'flex';
-    const bannerH = document.getElementById('sync-error-banner').offsetHeight + 'px';
-    document.querySelector('.sidebar').style.top = bannerH;
-    document.querySelector('.main').style.paddingTop = `calc(32px + ${bannerH})`;
-    banner.style.display = 'flex';
-    document.getElementById('app').classList.add('sync-banner-active');
-  } else {
-    banner.style.display = 'none';
-    document.getElementById('app').classList.remove('sync-banner-active');
-  }
-}
-
-function dismissSyncBanner() {
-  document.getElementById('sync-error-banner').style.display = 'none';
-  document.querySelector('.sidebar').style.top = '0';
-  document.querySelector('.main').style.paddingTop = '32px';
-  document.getElementById('app').classList.remove('sync-banner-active');
-}
-
-async function manualSync() {
-  const btn = document.getElementById('sync-btn');
-  btn.disabled = true;
-  btn.textContent = '↻ Syncing…';
-  await triggerIcalSync();
-  btn.disabled = false;
-  btn.textContent = '↻ Sync calendars';
-  await loadJobs();
-  await checkSyncErrors();
 }
 
 async function triggerIcalSync() {
@@ -2230,7 +2103,7 @@ function renderCleaners() {
 
 function openNewCleanerModal() {
   ['cleaner-name','cleaner-email','cleaner-phone'].forEach(id => document.getElementById(id).value = '');
-  openModal('modal-cleaner');
+  document.getElementById('modal-cleaner').classList.add('open');
 }
 
 async function saveCleaner() {
@@ -2268,7 +2141,7 @@ function openEditCleanerModal(id) {
   document.getElementById('edit-cleaner-email').value = c.email;
   document.getElementById('edit-cleaner-phone').value = c.phone || '';
   document.getElementById('edit-cleaner-is-owner-operator').checked = c.is_owner_operator || false;
-  openModal('modal-edit-cleaner');
+  document.getElementById('modal-edit-cleaner').classList.add('open');
 }
 
 async function saveEditCleaner() {
@@ -2528,7 +2401,7 @@ async function openPropertyChecklist(propId, propName) {
 
   renderMasterChecklist();
   renderPropChecklist();
-  openModal('modal-prop-checklist');
+  document.getElementById('modal-prop-checklist').classList.add('open');
 }
 
 function renderMasterChecklist() {
@@ -2597,14 +2470,9 @@ async function savePropertyChecklist() {
 }
 
 // ── MODALS ──
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 });
 
 // ── TOAST ──
@@ -2613,19 +2481,6 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ── MAINTENANCE BADGE ──
-async function updateMaintenanceBadge() {
-  const { data } = await db.from('maintenance_requests').select('id').eq('status', 'open');
-  const count = data?.length || 0;
-  const badge = document.getElementById('maint-badge');
-  if (badge) {
-    badge.style.display = count > 0 ? 'inline-flex' : 'none';
-    badge.style.alignItems = 'center';
-    badge.style.justifyContent = 'center';
-    badge.textContent = count > 9 ? '9+' : count;
-  }
 }
 
 // ── PENDING FEES ──
@@ -2706,10 +2561,7 @@ async function loadPendingFees() {
                 <td>${formatDate(job.scheduled_date)}</td>
                 <td>${job.properties?.name || '—'}</td>
                 <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td>
-                  <span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span>
-                  ${job.collect_from ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
-                </td>
+                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
                 <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
                 <td onclick="event.stopPropagation()">
                   <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
@@ -2774,27 +2626,13 @@ function getFinDateRange() {
   const y = now.getFullYear();
   const m = now.getMonth();
   let start, end;
-  if (period === 'mtd') {
-    start = new Date(y, m, 1);
-    end   = new Date(now);
-  } else if (period === 'last_month') {
-    start = new Date(y, m - 1, 1);
-    end   = new Date(y, m, 0);
-  } else if (period === 'ytd') {
-    start = new Date(y, 0, 1);
-    end   = new Date(now);
-  } else if (period === 'q1') {
-    start = new Date(y, 0, 1); end = new Date(y, 2, 31);
-  } else if (period === 'q2') {
-    start = new Date(y, 3, 1); end = new Date(y, 5, 30);
-  } else {
-    start = new Date('2026-02-01');
-    end   = new Date(now);
-  }
-  return {
-    start: start.toISOString().split('T')[0],
-    end:   end.toISOString().split('T')[0]
-  };
+  if (period === 'mtd') { start = new Date(y, m, 1); end = new Date(now); }
+  else if (period === 'last_month') { start = new Date(y, m - 1, 1); end = new Date(y, m, 0); }
+  else if (period === 'ytd') { start = new Date(y, 0, 1); end = new Date(now); }
+  else if (period === 'q1') { start = new Date(y, 0, 1); end = new Date(y, 2, 31); }
+  else if (period === 'q2') { start = new Date(y, 3, 1); end = new Date(y, 5, 30); }
+  else { start = new Date('2026-02-01'); end = new Date(now); }
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 async function renderFinancials() {
@@ -2806,113 +2644,46 @@ async function renderPL() {
   const panel = document.getElementById('fin-panel-pl');
   panel.innerHTML = '<div class="loading-inline">Loading…</div>';
   const { start, end } = getFinDateRange();
-
-  // Load completed jobs in range for revenue
-  const { data: jobs, error: jobsErr } = await db
-    .from('jobs')
-    .select('charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, source')
-    .eq('status', 'completed')
-    .is('deleted_at', null)
-    .gte('scheduled_date', start)
-    .lte('scheduled_date', end);
-
-  if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error loading jobs: ${jobsErr.message}</div>`; return; }
-
-  // Load expenses in range
-  const { data: expenses, error: expErr } = await db
-    .from('expenses')
-    .select('*')
-    .gte('date', start)
-    .lte('date', end);
-
-  if (expErr) { panel.innerHTML = `<div class="empty-state">⚠️ Expenses table not found.<br><br>Run this SQL in Supabase first:<br><code>CREATE TABLE expenses (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), date DATE NOT NULL, category TEXT NOT NULL, amount_cents INTEGER NOT NULL, description TEXT, vendor TEXT, created_by UUID, created_at TIMESTAMPTZ DEFAULT now());</code></div>`; return; }
-
-  const jobList     = jobs     || [];
-  const expenseList = expenses || [];
-
-  // Revenue = charge_cents + additional_cleaning_cents on completed jobs
-  const revenue = jobList.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
-
-  // Contractors = cleaner payouts from jobs (already tracked)
-  const contractors = jobList.reduce((s, j) => s + (j.payout_cents || 0), 0);
-
-  // Other expense categories
-  const supplies  = expenseList.filter(e => e.category === 'supplies') .reduce((s, e) => s + e.amount_cents, 0);
-  const insurance = expenseList.filter(e => e.category === 'insurance').reduce((s, e) => s + e.amount_cents, 0);
-  const software  = expenseList.filter(e => e.category === 'software') .reduce((s, e) => s + e.amount_cents, 0);
-  const other     = expenseList.filter(e => e.category === 'other')    .reduce((s, e) => s + e.amount_cents, 0);
-
-  const totalExpenses = contractors + supplies + insurance + software + other;
-  const netProfit = revenue - totalExpenses;
-  const margin = revenue > 0 ? Math.round((netProfit / revenue) * 100) : 0;
-
-  const fmt = (cents) => '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const { data: jobs, error: jobsErr } = await db.from('jobs').select('charge_cents, additional_cleaning_cents, payout_cents, scheduled_date').eq('status', 'completed').is('deleted_at', null).gte('scheduled_date', start).lte('scheduled_date', end);
+  if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error: ${jobsErr.message}</div>`; return; }
+  const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end);
+  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Run the expenses table SQL in Supabase first.</div>'; return; }
+  const jobList = jobs || [];
+  const expList = expenses || [];
+  const revenue = jobList.reduce((s,j) => s + (j.charge_cents||0) + (j.additional_cleaning_cents||0), 0);
+  const contractors = jobList.reduce((s,j) => s + (j.payout_cents||0), 0);
+  const supplies  = expList.filter(e => e.category==='supplies').reduce((s,e) => s+e.amount_cents, 0);
+  const insurance = expList.filter(e => e.category==='insurance').reduce((s,e) => s+e.amount_cents, 0);
+  const software  = expList.filter(e => e.category==='software').reduce((s,e) => s+e.amount_cents, 0);
+  const other     = expList.filter(e => e.category==='other').reduce((s,e) => s+e.amount_cents, 0);
+  const totalExp  = contractors + supplies + insurance + software + other;
+  const netProfit = revenue - totalExp;
+  const margin    = revenue > 0 ? Math.round((netProfit/revenue)*100) : 0;
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
-
   panel.innerHTML = `
-    <!-- Summary cards -->
     <div class="stats-row" style="margin-bottom:28px">
-      <div class="stat-card">
-        <div class="stat-label">Revenue</div>
-        <div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div>
-      </div>
-      <div class="stat-card flagged">
-        <div class="stat-label">Total Expenses</div>
-        <div class="stat-value">${fmt(totalExpenses)}</div>
-      </div>
-      <div class="stat-card" style="border-color:#C49A2A">
-        <div class="stat-label">Net Profit</div>
-        <div class="stat-value" style="color:${netProfit >= 0 ? 'var(--success)' : 'var(--error)'}">${fmt(netProfit)}</div>
-      </div>
-      <div class="stat-card gold">
-        <div class="stat-label">Margin</div>
-        <div class="stat-value" style="color:#A07D1C">${margin}%</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
+      <div class="stat-card flagged"><div class="stat-label">Total Expenses</div><div class="stat-value">${fmt(totalExp)}</div></div>
+      <div class="stat-card" style="border-color:#C49A2A"><div class="stat-label">Net Profit</div><div class="stat-value" style="color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</div></div>
+      <div class="stat-card gold"><div class="stat-label">Margin</div><div class="stat-value" style="color:#A07D1C">${margin}%</div></div>
     </div>
-
-    <!-- P&L Statement -->
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Profit & Loss — ${periodLabel}</span>
-      </div>
+      <div class="card-header"><span class="card-title">Profit & Loss — ${periodLabel}</span></div>
       <div style="padding:0 24px 24px">
-        <!-- Revenue section -->
         <div style="margin-bottom:20px">
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Revenue</div>
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)">
-            <span style="font-size:14px;color:var(--text);padding-left:16px">Cleaning revenue (${jobList.length} jobs)</span>
-            <span style="font-size:14px;font-weight:500">${fmt(revenue)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)">
-            <span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span>
-            <span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span>
-          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)"><span style="font-size:14px;padding-left:16px">Cleaning revenue (${jobList.length} jobs)</span><span style="font-size:14px;font-weight:500">${fmt(revenue)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span><span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span></div>
         </div>
-
-        <!-- Expenses section -->
         <div style="margin-bottom:20px">
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Expenses</div>
-          ${[
-            ['Contractors (cleaner payouts)', contractors],
-            ['Supplies', supplies],
-            ['Insurance', insurance],
-            ['Software', software],
-            ['Other', other],
-          ].map(([label, amt]) => `
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)">
-              <span style="font-size:14px;color:var(--text);padding-left:16px">${label}</span>
-              <span style="font-size:14px;${amt > 0 ? 'color:var(--error)' : 'color:var(--text-muted)'}">${amt > 0 ? '(' + fmt(amt) + ')' : '—'}</span>
-            </div>`).join('')}
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)">
-            <span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span>
-            <span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExpenses)})</span>
-          </div>
+          ${[['Contractors (cleaner payouts)',contractors],['Supplies',supplies],['Insurance',insurance],['Software',software],['Other',other]].map(([l,a])=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)"><span style="font-size:14px;padding-left:16px">${l}</span><span style="font-size:14px;${a>0?'color:var(--error)':'color:var(--text-muted)'}">${a>0?'('+fmt(a)+')':'—'}</span></div>`).join('')}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span><span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExp)})</span></div>
         </div>
-
-        <!-- Net profit -->
-        <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit >= 0 ? 'var(--success-bg)' : '#FDEEEE'};border-radius:var(--radius)">
+        <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit>=0?'var(--success-bg)':'#FDEEEE'};border-radius:var(--radius)">
           <span style="font-size:16px;font-weight:600;color:var(--navy)">Net Profit</span>
-          <span style="font-size:16px;font-weight:600;color:${netProfit >= 0 ? 'var(--success)' : 'var(--error)'}">${fmt(netProfit)}</span>
+          <span style="font-size:16px;font-weight:600;color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</span>
         </div>
       </div>
     </div>`;
@@ -2922,46 +2693,30 @@ async function renderExpenses() {
   const panel = document.getElementById('fin-panel-expenses');
   panel.innerHTML = '<div class="loading-inline">Loading…</div>';
   const { start, end } = getFinDateRange();
-
-  const { data: expenses, error: expErr } = await db
-    .from('expenses')
-    .select('*')
-    .gte('date', start)
-    .lte('date', end)
-    .order('date', { ascending: false });
-
-  if (expErr) { panel.innerHTML = `<div class="empty-state">⚠️ Expenses table not found. Run the CREATE TABLE SQL in Supabase first.</div>`; return; }
+  const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end).order('date', { ascending: false });
+  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Run the expenses table SQL in Supabase first.</div>'; return; }
   finExpenses = expenses || [];
-  const total = finExpenses.reduce((s, e) => s + e.amount_cents, 0);
-
+  const total = finExpenses.reduce((s,e) => s+e.amount_cents, 0);
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:14px;color:var(--text-muted)">${finExpenses.length} expense${finExpenses.length !== 1 ? 's' : ''} · Total: <strong style="color:var(--navy)">$${(total/100).toFixed(2)}</strong></div>
-      <button class="btn" onclick="openAddExpenseModal()">+ Add expense</button>
+      <div style="font-size:14px;color:var(--text-muted)">${finExpenses.length} expense${finExpenses.length!==1?'s':''} · Total: <strong style="color:var(--navy)">$${(total/100).toFixed(2)}</strong></div>
     </div>
     <div class="card">
       ${!finExpenses.length ? '<div class="empty-state" style="padding:40px">📋<p>No expenses logged for this period.</p></div>' : `
-      <table>
-        <thead><tr>
-          <th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th>
-        </tr></thead>
-        <tbody>
-          ${finExpenses.map(e => `
-            <tr>
-              <td>${formatDate(e.date)}</td>
-              <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
-              <td style="font-size:13px">${e.description || '—'}</td>
-              <td style="font-size:13px;color:var(--text-muted)">${e.vendor || '—'}</td>
-              <td style="font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
-              <td><button class="btn btn-outline btn-sm" onclick="deleteExpense('${e.id}')">Delete</button></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>`}
+      <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th></tr></thead>
+      <tbody>${finExpenses.map(e=>`<tr>
+        <td>${formatDate(e.date)}</td>
+        <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
+        <td style="font-size:13px">${e.description||'—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${e.vendor||'—'}</td>
+        <td style="font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="deleteExpense('${e.id}')">Delete</button></td>
+      </tr>`).join('')}</tbody></table>`}
     </div>`;
 }
 
 function openAddExpenseModal() {
-  openModal('modal-add-expense');
+  document.getElementById('modal-add-expense').classList.add('open');
   document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('exp-category').value = 'supplies';
   document.getElementById('exp-amount').value = '';
@@ -2971,48 +2726,19 @@ function openAddExpenseModal() {
 
 function checkReceiptSize(input) {
   const warning = document.getElementById('exp-receipt-warning');
-  if (input.files[0] && input.files[0].size > 1048576) {
-    warning.style.display = 'block';
-    input.value = '';
-  } else {
-    warning.style.display = 'none';
-  }
+  if (input.files[0] && input.files[0].size > 1048576) { warning.style.display = 'block'; input.value = ''; }
+  else warning.style.display = 'none';
 }
 
 async function saveExpense() {
-  const date     = document.getElementById('exp-date').value;
+  const date = document.getElementById('exp-date').value;
   const category = document.getElementById('exp-category').value;
-  const amount   = parseFloat(document.getElementById('exp-amount').value);
-  const desc     = document.getElementById('exp-description').value.trim();
-  const vendor   = document.getElementById('exp-vendor').value.trim();
-  const receipt  = document.getElementById('exp-receipt').files[0];
-
-  if (!date || !category || !amount || amount <= 0) {
-    showToast('Please fill in date, category, and amount'); return;
-  }
-  if (receipt && receipt.size > 1048576) {
-    showToast('Receipt must be under 1MB'); return;
-  }
-
-  let receipt_url = null;
-  if (receipt) {
-    const fileName = `receipts/${Date.now()}-${receipt.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-    const { data: uploadData, error: uploadErr } = await db.storage.from('expenses').upload(fileName, receipt);
-    if (uploadErr) { showToast('Receipt upload failed: ' + uploadErr.message); return; }
-    const { data: urlData } = db.storage.from('expenses').getPublicUrl(fileName);
-    receipt_url = urlData?.publicUrl || null;
-  }
-
-  const { error } = await db.from('expenses').insert({
-    date, category,
-    amount_cents: Math.round(amount * 100),
-    description: desc || null,
-    vendor: vendor || null,
-    receipt_url,
-    created_by: (await db.auth.getUser()).data.user?.id
-  });
-
-  if (error) { showToast('Error: ' + error.message); return; }
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const desc = document.getElementById('exp-description').value.trim();
+  const vendor = document.getElementById('exp-vendor').value.trim();
+  if (!date || !category || !amount || amount <= 0) { showToast('Please fill in date, category, and amount'); return; }
+  const { error } = await db.from('expenses').insert({ date, category, amount_cents: Math.round(amount*100), description: desc||null, vendor: vendor||null });
+  if (error) { showToast('Error: '+error.message); return; }
   closeModal('modal-add-expense');
   showToast('Expense added ✓');
   await renderExpenses();
@@ -3028,62 +2754,65 @@ async function deleteExpense(id) {
 function exportFinancials() {
   const { start, end } = getFinDateRange();
   const rows = [['Date','Category','Description','Vendor','Amount']];
-  finExpenses.forEach(e => {
-    rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]);
-  });
+  finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = `expenses-${start}-${end}.csv`; a.click();
 }
 
-
+// ── ARCHIVE PROPERTY ──
 async function archiveProperty(id) {
   if (!id) return;
   const prop = properties.find(p => p.id === id);
   if (!confirm(`Archive "${prop?.name}"? Existing jobs stay. Future unassigned jobs can be bulk deleted.`)) return;
-
-  // Check for future unassigned jobs
   const today = new Date().toISOString().split('T')[0];
-  const { data: futureJobs } = await db.from('jobs')
-    .select('id, scheduled_date')
-    .eq('property_id', id)
-    .eq('status', 'unassigned')
-    .is('deleted_at', null)
-    .gte('scheduled_date', today);
-
+  const { data: futureJobs } = await db.from('jobs').select('id').eq('property_id', id).eq('status', 'unassigned').is('deleted_at', null).gte('scheduled_date', today);
   if (futureJobs && futureJobs.length > 0) {
-    const deleteFuture = confirm(`There are ${futureJobs.length} unassigned future job(s) for this property. Delete them too?`);
+    const deleteFuture = confirm(`There are ${futureJobs.length} unassigned future job(s). Delete them too?`);
     if (deleteFuture) {
-      await db.from('jobs').update({ deleted_at: new Date().toISOString(), deleted_reason: 'Property archived' })
-        .in('id', futureJobs.map(j => j.id));
+      await db.from('jobs').update({ deleted_at: new Date().toISOString(), deleted_reason: 'Property archived' }).in('id', futureJobs.map(j => j.id));
     }
   }
-
   const { error } = await db.from('properties').update({ is_active: false }).eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
+  if (error) { showToast('Error: '+error.message); return; }
   closeModal('modal-edit-property');
   showToast('Property archived ✓');
-  await loadProperties();
-  renderProperties();
+  await loadProperties(); renderProperties();
 }
 
 async function restoreProperty(id) {
   const { error } = await db.from('properties').update({ is_active: true }).eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
+  if (error) { showToast('Error: '+error.message); return; }
   showToast('Property restored ✓');
-  await loadProperties();
-  renderProperties();
+  await loadProperties(); renderProperties();
 }
 
 async function permanentDeleteProperty(id) {
   if (!confirm('Permanently delete this property? This cannot be undone.')) return;
   const { error } = await db.from('properties').delete().eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
+  if (error) { showToast('Error: '+error.message); return; }
   showToast('Property deleted ✓');
-  await loadProperties();
-  renderProperties();
+  await loadProperties(); renderProperties();
 }
+
+// ── SYNC ERROR CHECK ──
+async function checkSyncErrors() {
+  const { data } = await db.from('maintenance_requests').select('id, notes, created_at').eq('status', 'open').ilike('notes', '%iCal sync errors%').order('created_at', { ascending: false }).limit(1);
+  const banner = document.getElementById('sync-error-banner');
+  if (data && data.length > 0) {
+    const when = new Date(data[0].created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sync-error-banner-text').textContent = `⚠️ iCal sync error at ${when} — some bookings may be missing`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function dismissSyncBanner() {
+  document.getElementById('sync-error-banner').style.display = 'none';
+}
+
 // ── SIGN OUT ──
 async function signOut() {
   await db.auth.signOut();
@@ -3161,12 +2890,6 @@ async function renderAdminReports() {
   if (statusFilter)   filtered = filtered.filter(r => r.status === statusFilter);
   if (propertyFilter) filtered = filtered.filter(r => r.property_id === propertyFilter);
 
-  // Ensure properties are available for claim request dropdowns
-  if (!window._allProperties) {
-    const { data: allProps } = await db.from('properties').select('id, name').eq('is_active', true).order('name');
-    window._allProperties = allProps || [];
-  }
-
   const wrap = document.getElementById('admin-reports-wrap');
   if (!filtered.length) {
     wrap.innerHTML = '<div class="empty-state">📋<p>No reports match your filters.</p></div>';
@@ -3198,17 +2921,6 @@ async function renderAdminReports() {
         </div>
       </div>
       <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
-      ${r.notes && r.notes.includes('PROPERTY CLAIM REQUEST') ? `
-        <div style="background:#EEF4FF;border:1px solid #C7D9F8;border-radius:var(--radius);padding:14px;margin-bottom:12px">
-          <div style="font-size:13px;font-weight:500;color:#1A56A4;margin-bottom:10px">🏠 Assign a property to this owner</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="claim-prop-select-${r.id}" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1.5px solid #C7D9F8;font-family:'DM Sans',sans-serif;font-size:13px;background:white">
-              <option value="">Select property to assign…</option>
-              ${(window._allProperties||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-            </select>
-            <button class="btn btn-sm" style="background:#1A56A4;color:white" onclick="assignPropertyToOwner('${r.id}','${r.submitted_by}')">Assign property</button>
-          </div>
-        </div>` : ''}
       ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
       <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
@@ -3223,23 +2935,6 @@ async function renderAdminReports() {
 
   // Load comments for all reports
   filtered.forEach(r => loadReportComments(r.id, `admin-comments-${r.id}`));
-}
-
-async function assignPropertyToOwner(reportId, ownerId) {
-  const sel = document.getElementById(`claim-prop-select-${reportId}`);
-  const propId = sel?.value;
-  if (!propId) { showToast('Please select a property'); return; }
-
-  // Assign the property to the owner
-  const { error: propErr } = await db.from('properties').update({ owner_id: ownerId }).eq('id', propId);
-  if (propErr) { showToast('Error assigning property: ' + propErr.message); return; }
-
-  // Resolve the maintenance request
-  await db.from('maintenance_requests').update({ status: 'resolved' }).eq('id', reportId);
-
-  showToast('Property assigned and request closed ✓');
-  allAdminReports = [];
-  await renderAdminReports();
 }
 
 async function updateReportStatus(reportId, status) {
@@ -3388,7 +3083,7 @@ function openNewUserModal() {
   document.getElementById('new-role-admin').checked   = false;
   document.getElementById('new-role-cleaner').checked = true;
   document.getElementById('new-role-owner').checked   = false;
-  openModal('modal-new-user');
+  document.getElementById('modal-new-user').classList.add('open');
 }
 
 async function saveNewUser() {
@@ -3461,7 +3156,7 @@ function openEditUserModal(userId) {
     leftBtn.textContent = 'Archive user';
     leftBtn.onclick = archiveUserFromModal;
   }
-  openModal('modal-edit-user');
+  document.getElementById('modal-edit-user').classList.add('open');
 }
 
 async function saveEditUser() {
