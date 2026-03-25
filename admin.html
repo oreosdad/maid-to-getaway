@@ -442,6 +442,18 @@
 <body>
 
 <!-- Shown while checking auth -->
+<!-- Sync error banner -->
+<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#C0392B;color:white;padding:12px 24px;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:18px">⚠️</span>
+    <span id="sync-error-banner-text">iCal sync error — check Maintenance Requests for details</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button onclick="showPage('reports',document.getElementById('nav-reports'))" style="background:white;color:#C0392B;border:none;border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">View details</button>
+    <button onclick="dismissSyncBanner()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+  </div>
+</div>
+
 <div id="auth-loading">Checking your session…</div>
 
 <!-- Hidden until auth confirmed -->
@@ -486,7 +498,10 @@
     <div class="page active" id="page-jobs">
       <div class="page-header">
         <h2>Jobs</h2>
-        <button class="btn" onclick="openNewJobModal()">+ New job</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" id="sync-btn" onclick="manualSync()">↻ Sync calendars</button>
+          <button class="btn" onclick="openNewJobModal()">+ New job</button>
+        </div>
       </div>
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
@@ -1081,7 +1096,7 @@
     <div class="form-row">
       <div class="form-group">
         <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
+          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none';document.getElementById('edit-collect-from-row').style.display=(this.checked&&!document.getElementById('edit-job-pet-fee-collected').checked)?'block':'none'"/>
           🐶 Pet fee
         </label>
       </div>
@@ -1668,6 +1683,8 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
   document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
   document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
+  document.getElementById('edit-collect-from-row').style.display = (job.pet_fee_required && !job.pet_fee_collected) ? 'block' : 'none';
+  document.getElementById('edit-collect-from').value = job.collect_from || 'guest';
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1727,6 +1744,7 @@ async function saveEditJob() {
     })()),
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
+    collect_from: document.getElementById('edit-collect-from')?.value || null,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
@@ -2056,6 +2074,16 @@ async function saveProperty() {
   }
   await loadProperties();
   renderProperties();
+}
+
+async function manualSync() {
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true;
+  btn.textContent = '↻ Syncing…';
+  await triggerIcalSync();
+  btn.disabled = false;
+  btn.textContent = '↻ Sync calendars';
+  await loadJobs();
 }
 
 async function triggerIcalSync() {
@@ -2561,7 +2589,10 @@ async function loadPendingFees() {
                 <td>${formatDate(job.scheduled_date)}</td>
                 <td>${job.properties?.name || '—'}</td>
                 <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
+                <td>
+                  <span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span>
+                  ${job.collect_from ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
+                </td>
                 <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
                 <td onclick="event.stopPropagation()">
                   <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
