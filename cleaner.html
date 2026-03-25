@@ -1372,13 +1372,31 @@ document.addEventListener('click', e => {
 // ── PHOTO UPLOAD ──
 async function uploadPhotos(files, jobId, type) {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  let uploaded = 0;
   for (const file of Array.from(files)) {
-    const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
-    const { error } = await db.storage.from('job-photos').upload(path, file);
-    if (error) { console.error('Upload error:', error); continue; }
-    const { data: { publicUrl } } = db.storage.from('job-photos').getPublicUrl(path);
-    await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
+    // Sanitize filename
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `jobs/${jobId}/${type}/${Date.now()}-${safeName}`;
+    const { error } = await db.storage.from('job photos').upload(path, file);
+    if (error) { 
+      console.error('Upload error:', error.message);
+      showToast('Photo upload failed: ' + error.message);
+      continue; 
+    }
+    const { data: urlData } = db.storage.from('job photos').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl;
+    if (publicUrl) {
+      await db.from('photos').insert({ 
+        job_id: jobId, 
+        uploaded_by: currentUser.id, 
+        storage_path: publicUrl, 
+        photo_type: type, 
+        expires_at: expiresAt 
+      });
+      uploaded++;
+    }
   }
+  if (uploaded > 0) showToast(`${uploaded} photo${uploaded > 1 ? 's' : ''} uploaded ✓`);
 }
 
 function previewPhotos(input, previewId) {
