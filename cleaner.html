@@ -1195,10 +1195,30 @@ async function submitMaintenance() {
   const category   = document.getElementById('maint-category').value;
   const notes      = document.getElementById('maint-notes').value.trim();
   if (!notes) { showToast('Please describe the issue'); return; }
-  const { error } = await db.from('maintenance_requests').insert({ property_id: propertyId, submitted_by: currentUser.id, category, notes });
+
+  // Upload photos to storage and collect URLs
+  const files = document.getElementById('maint-photos').files;
+  const photoUrls = [];
+  for (const file of Array.from(files)) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `maintenance/${Date.now()}-${safeName}`;
+    const { error: upErr } = await db.storage.from('job photos').upload(path, file);
+    if (!upErr) {
+      const { data: urlData } = db.storage.from('job photos').getPublicUrl(path);
+      if (urlData?.publicUrl) photoUrls.push(urlData.publicUrl);
+    }
+  }
+
+  const { error } = await db.from('maintenance_requests').insert({
+    property_id: propertyId,
+    submitted_by: currentUser.id,
+    category,
+    notes,
+    photo_urls: photoUrls
+  });
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-maintenance');
-  showToast('Issue reported ✓ Admin has been notified');
+  showToast('Issue reported ✓' + (photoUrls.length ? ` with ${photoUrls.length} photo${photoUrls.length>1?'s':''}` : ''));
   renderReportHistory();
 }
 
@@ -1214,13 +1234,41 @@ async function submitEvidence() {
   const jobId = document.getElementById('evidence-job').value;
   const notes = document.getElementById('evidence-notes').value.trim();
   if (!notes) { showToast('Please describe the situation'); return; }
+
+  // Get property_id from job
+  const { data: jobData } = await db.from('jobs').select('property_id, notes').eq('id', jobId).single();
+  if (!jobData) { showToast('Job not found'); return; }
+
+  // Upload photos first and collect URLs
   const files = document.getElementById('evidence-photos-standalone').files;
-  if (files.length > 0) await uploadPhotos(files, jobId, 'evidence');
-  const { data: existing } = await db.from('jobs').select('notes').eq('id', jobId).single();
-  const newNote = (existing?.notes ? existing.notes + '\n' : '') + 'Excessive cleaning reported: ' + notes;
+  const photoUrls = [];
+  for (const file of Array.from(files)) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `jobs/${jobId}/evidence/${Date.now()}-${safeName}`;
+    const { error } = await db.storage.from('job photos').upload(path, file);
+    if (!error) {
+      const { data: urlData } = db.storage.from('job photos').getPublicUrl(path);
+      if (urlData?.publicUrl) photoUrls.push(urlData.publicUrl);
+    }
+  }
+
+  // Create maintenance request for this excessive clean
+  const { error: mrErr } = await db.from('maintenance_requests').insert({
+    property_id: jobData.property_id,
+    job_id: jobId,
+    submitted_by: currentUser.id,
+    category: 'evidence',
+    notes: 'Excessive cleaning: ' + notes,
+    photo_urls: photoUrls,
+    additional_cleaning_cents: null
+  });
+
+  // Also update job notes
+  const newNote = (jobData.notes ? jobData.notes + '\n' : '') + 'Excessive cleaning reported: ' + notes;
   await db.from('jobs').update({ notes: newNote }).eq('id', jobId);
+
   closeModal('modal-evidence');
-  showToast('Evidence submitted ✓');
+  showToast('Evidence submitted ✓' + (photoUrls.length ? ` with ${photoUrls.length} photo${photoUrls.length>1?'s':''}` : ''));
   renderReportHistory();
 }
 
@@ -1240,6 +1288,7 @@ async function renderReportHistory() {
         </div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${r.category} · ${timeAgo(r.created_at)}</div>
         <div id="cleaner-report-notes-view-${r.id}" style="font-size:13px;margin-bottom:8px">${r.notes}</div>
+        ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${r.photo_urls.map(url=>`<div style="width:60px;height:60px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover"/></div>`).join('')}</div>` : ''}
         <div id="cleaner-report-notes-edit-${r.id}" style="display:none;margin-bottom:8px">
           <textarea id="cleaner-report-input-${r.id}" style="width:100%;padding:8px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--navy);border-radius:8px;background:var(--cream);resize:vertical;min-height:70px">${r.notes||''}</textarea>
           <div style="display:flex;gap:8px;margin-top:6px">
