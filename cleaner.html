@@ -200,7 +200,7 @@
     <div class="tab" onclick="switchTab('open-jobs', this)">Open Jobs</div>
     <div class="tab" onclick="switchTab('my-earnings', this)">Earnings</div>
     <div class="tab" onclick="switchTab('properties', this)">Properties</div>
-    <div class="tab" onclick="switchTab('report', this)">Report</div>
+    <div class="tab" onclick="switchTab('report', this)">Maintenance</div>
     <div class="tab" onclick="switchTab('settings', this)">Settings</div>
   </div>
 
@@ -441,7 +441,7 @@
 <div class="modal-overlay" id="modal-maintenance">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Report Property Issue</div>
+    <div class="modal-title">Maintenance Request</div>
     <div class="form-group">
       <label>Property</label>
       <select id="maint-property"></select>
@@ -472,7 +472,7 @@
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-outline btn-full" onclick="closeModal('modal-maintenance')">Cancel</button>
-      <button class="btn btn-navy btn-full" onclick="submitMaintenance()">Submit report</button>
+      <button class="btn btn-navy btn-full" onclick="submitMaintenance()">Submit request</button>
     </div>
   </div>
 </div>
@@ -1236,12 +1236,41 @@ async function renderReportHistory() {
       <div class="job-card-body">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <strong style="font-size:14px">${r.properties?.name || '—'}</strong>
-          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status}</span>
+          <span style="font-size:11px;background:${r.status==='resolved'?'var(--success-bg)':'var(--gold-light)'};color:${r.status==='resolved'?'var(--success)':'var(--gold-dark)'};padding:2px 8px;border-radius:10px">${r.status==='resolved' ? 'Archived' : 'Open'}</span>
         </div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${r.category} · ${timeAgo(r.created_at)}</div>
-        <div style="font-size:13px">${r.notes}</div>
+        <div id="cleaner-report-notes-view-${r.id}" style="font-size:13px;margin-bottom:8px">${r.notes}</div>
+        <div id="cleaner-report-notes-edit-${r.id}" style="display:none;margin-bottom:8px">
+          <textarea id="cleaner-report-input-${r.id}" style="width:100%;padding:8px;font-family:'DM Sans',sans-serif;font-size:13px;border:1.5px solid var(--navy);border-radius:8px;background:var(--cream);resize:vertical;min-height:70px">${r.notes||''}</textarea>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="btn btn-sm" onclick="saveCleanerReportNotes('${r.id}')">Save</button>
+            <button class="btn btn-outline btn-sm" onclick="cancelCleanerEditReport('${r.id}')">Cancel</button>
+          </div>
+        </div>
+        ${r.status !== 'resolved' ? `<button class="btn btn-outline btn-sm" onclick="editCleanerReport('${r.id}')">Edit</button>` : ''}
       </div>
     </div>`).join('');
+}
+
+
+function editCleanerReport(reportId, currentNotes) {
+  document.getElementById('cleaner-report-notes-view-'+reportId).style.display = 'none';
+  document.getElementById('cleaner-report-notes-edit-'+reportId).style.display = 'block';
+  document.getElementById('cleaner-report-input-'+reportId).value = currentNotes;
+}
+
+function cancelCleanerEditReport(reportId) {
+  document.getElementById('cleaner-report-notes-view-'+reportId).style.display = 'block';
+  document.getElementById('cleaner-report-notes-edit-'+reportId).style.display = 'none';
+}
+
+async function saveCleanerReportNotes(reportId) {
+  const notes = document.getElementById('cleaner-report-input-'+reportId).value.trim();
+  const { error } = await db.from('maintenance_requests').update({ notes }).eq('id', reportId);
+  if (error) { showToast('Error: '+error.message); return; }
+  document.getElementById('cleaner-report-notes-view-'+reportId).textContent = notes;
+  cancelCleanerEditReport(reportId);
+  showToast('Updated ✓');
 }
 
 // ── SETTINGS ──
@@ -1345,9 +1374,9 @@ async function uploadPhotos(files, jobId, type) {
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   for (const file of Array.from(files)) {
     const path = `jobs/${jobId}/${type}/${Date.now()}-${file.name}`;
-    const { error } = await db.storage.from('job photos').upload(path, file);
+    const { error } = await db.storage.from('job-photos').upload(path, file);
     if (error) { console.error('Upload error:', error); continue; }
-    const { data: { publicUrl } } = db.storage.from('job photos').getPublicUrl(path);
+    const { data: { publicUrl } } = db.storage.from('job-photos').getPublicUrl(path);
     await db.from('photos').insert({ job_id: jobId, uploaded_by: currentUser.id, storage_path: publicUrl, photo_type: type, expires_at: expiresAt });
   }
 }
