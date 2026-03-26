@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <clipPath id="circle-clip">
+      <circle cx="200" cy="200" r="155"/>
+    </clipPath>
+    <radialGradient id="sky-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#F0A830"/>
+      <stop offset="45%" stop-color="#F7C96A"/>
+      <stop offset="100%" stop-color="#2A8C7F"/>
+    </radialGradient>
+    <linearGradient id="key-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2A9D8F"/>
+      <stop offset="100%" stop-color="#0F4A45"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="200" r="185" fill="#0F4A45"/>
+  <!-- Inner cream background -->
+  <circle cx="200" cy="200" r="170" fill="#F5F0E8"/>
+  <!-- Teal ring separator -->
+  <circle cx="200" cy="200" r="158" fill="none" stroke="#0F4A45" stroke-width="3"/>
+
+  <!-- Key shape group, centered -->
+  <!-- Key bow (circular top) -->
+  <circle cx="200" cy="148" r="56" fill="url(#key-grad)" stroke="#0F4A45" stroke-width="2.5"/>
+  <!-- Key bow inner cutout -->
+  <circle cx="200" cy="148" r="34" fill="#F5F0E8"/>
+  <!-- Key bow inner ring accent -->
+  <circle cx="200" cy="148" r="22" fill="url(#key-grad)" opacity="0.35"/>
+
+  <!-- Key shaft -->
+  <rect x="188" y="195" width="24" height="110" rx="4" fill="url(#key-grad)" stroke="#0F4A45" stroke-width="2"/>
+
+  <!-- Key teeth -->
+  <rect x="212" y="225" width="18" height="12" rx="3" fill="url(#key-grad)" stroke="#0F4A45" stroke-width="1.5"/>
+  <rect x="212" y="248" width="14" height="12" rx="3" fill="url(#key-grad)" stroke="#0F4A45" stroke-width="1.5"/>
+  <rect x="212" y="271" width="18" height="12" rx="3" fill="url(#key-grad)" stroke="#0F4A45" stroke-width="1.5"/>
+
+  <!-- City skyline inside bow circle -->
+  <g clip-path="url(#circle-clip)" transform="translate(0,0)">
+    <!-- Sky fill inside bow -->
+    <circle cx="200" cy="148" r="33" fill="url(#sky-grad)" opacity="0.9"/>
+    <!-- Tiny skyline silhouette -->
+    <g fill="#0F4A45" opacity="0.7">
+      <!-- Buildings left to right -->
+      <rect x="172" y="155" width="7" height="18"/>
+      <rect x="181" y="148" width="6" height="25"/>
+      <rect x="189" y="152" width="8" height="21"/>
+      <rect x="198" y="144" width="5" height="29" rx="1"/>
+      <rect x="205" y="150" width="7" height="23"/>
+      <rect x="214" y="154" width="6" height="19"/>
+      <rect x="221" y="157" width="7" height="16"/>
+    </g>
+    <!-- Ground line -->
+    <line x1="168" y1="173" x2="232" y2="173" stroke="#0F4A45" stroke-width="1.5" opacity="0.5"/>
+  </g>
+
+  <!-- Gold accent dot on key bow -->
+  <circle cx="200" cy="148" r="7" fill="#F0A830"/>
+
+</svg>
