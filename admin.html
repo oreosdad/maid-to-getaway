@@ -1354,6 +1354,39 @@
 </div>
 
 
+<!-- GRANT LOGIN MODAL -->
+<div class="modal-overlay" id="modal-grant-login">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3>Grant Login Access</h3>
+      <button class="modal-close" onclick="closeModal('modal-grant-login')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="grant-login-name" style="font-size:14px;font-weight:500;color:var(--navy);margin-bottom:4px"></p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">This will create a login account linked to their existing profile and job history.</p>
+      <input type="hidden" id="grant-login-user-id"/>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="grant-login-email" placeholder="cleaner@example.com" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label>Temporary password</label>
+        <div style="position:relative">
+          <input type="password" id="grant-login-password" value="ChangeMe123!" style="width:100%;padding-right:44px"/>
+          <button type="button" onclick="togglePwVis('grant-login-password','grant-login-eye')" id="grant-login-eye"
+            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
+        </div>
+      </div>
+      <div id="grant-login-error" style="display:none;font-size:13px;color:var(--error);margin-top:4px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-grant-login')">Cancel</button>
+      <button class="btn" onclick="submitGrantLogin()">Grant access</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3062,23 +3095,43 @@ async function saveReportNotes(reportId) {
 
 
 async function grantLoginAccess(userId, userName) {
-  const email = prompt(`Enter email address for ${userName}:`);
-  if (!email || !email.includes('@')) { if (email !== null) showToast('Invalid email'); return; }
-  const pw = 'ChangeMe123!';
+  document.getElementById('grant-login-user-id').value = userId;
+  document.getElementById('grant-login-name').textContent = userName;
+  document.getElementById('grant-login-email').value = '';
+  document.getElementById('grant-login-password').value = 'ChangeMe123!';
+  document.getElementById('grant-login-error').style.display = 'none';
+  document.getElementById('modal-grant-login').classList.add('open');
+  setTimeout(() => document.getElementById('grant-login-email').focus(), 100);
+}
+
+async function submitGrantLogin() {
+  const userId   = document.getElementById('grant-login-user-id').value;
+  const userName = document.getElementById('grant-login-name').textContent;
+  const email    = document.getElementById('grant-login-email').value.trim();
+  const password = document.getElementById('grant-login-password').value.trim();
+  const errEl    = document.getElementById('grant-login-error');
+  errEl.style.display = 'none';
+
+  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email'; errEl.style.display = 'block'; return; }
+  if (!password || password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+
   const res = await fetch('/.netlify/functions/reset-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: 'MaidSync2026!', action: 'create_auth', userId, email, name: userName, newPassword: pw })
+    body: JSON.stringify({ secret: 'MaidSync2026!', action: 'create_auth', userId, email, name: userName, newPassword: password })
   });
   const data = await res.json();
   if (data.success) {
-    showToast(`Login granted for ${userName} ✓ — temp password: ChangeMe123!`);
-    if (data.warning) setTimeout(() => alert(data.warning), 500);
+    closeModal('modal-grant-login');
+    showToast(`Login granted for ${userName} ✓ — temp password: ${password}`);
+    if (data.warning) setTimeout(() => showToast('Warning: ' + data.warning), 2000);
     loadUsers();
   } else {
-    showToast('Error: ' + (data.error || 'Failed'));
+    errEl.textContent = 'Error: ' + (data.error || 'Failed');
+    errEl.style.display = 'block';
   }
 }
+
 
 // ── SIGN OUT ──
 async function signOut() {
@@ -3371,16 +3424,9 @@ async function permanentDeleteUser(userId, userName) {
     return;
   }
 
-  // Step 2: delete job_assignments
-  const { error: jaErr } = await db.from('job_assignments').delete().eq('cleaner_id', userId);
-  if (jaErr) { showToast('job_assignments error: ' + jaErr.message); return; }
-
-  // Step 3: delete profile
-  const { error: profErr } = await db.from('profiles').delete().eq('id', userId);
-  if (profErr) { showToast('Profile delete error: ' + profErr.message); return; }
-
+  // Steps 2+3 handled server-side via service role
   showToast(`${userName} permanently deleted`);
-  loadUsers();
+  await loadUsers();
 }
 
 function openNewUserModal() {
