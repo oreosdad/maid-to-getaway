@@ -3350,23 +3350,35 @@ async function restoreUser(userId, userName) {
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
 
-  // Delete from auth via service role
-  const res = await fetch('/.netlify/functions/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: 'MaidSync2026!', action: 'delete_user', userId })
-  });
-  const result = await res.json();
-  if (!result.success && !result.not_in_auth) {
-    showToast('Error: ' + (result.error || 'Could not delete'));
+  showToast('Deleting…');
+
+  // Step 1: delete from auth
+  try {
+    const res = await fetch('/.netlify/functions/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: 'MaidSync2026!', action: 'delete_user', userId })
+    });
+    const result = await res.json();
+    console.log('delete_user result:', result);
+    if (!result.success && !result.not_in_auth) {
+      showToast('Auth delete failed: ' + (result.error || 'unknown'));
+      return;
+    }
+  } catch (e) {
+    console.error('delete_user fetch error:', e);
+    showToast('Network error: ' + e.message);
     return;
   }
 
-  // Delete job_assignments first to avoid FK constraint
-  await db.from('job_assignments').delete().eq('cleaner_id', userId);
-  // Delete from profiles
-  const { error } = await db.from('profiles').delete().eq('id', userId);
-  if (error) { showToast('Error: ' + error.message); return; }
+  // Step 2: delete job_assignments
+  const { error: jaErr } = await db.from('job_assignments').delete().eq('cleaner_id', userId);
+  if (jaErr) { showToast('job_assignments error: ' + jaErr.message); return; }
+
+  // Step 3: delete profile
+  const { error: profErr } = await db.from('profiles').delete().eq('id', userId);
+  if (profErr) { showToast('Profile delete error: ' + profErr.message); return; }
+
   showToast(`${userName} permanently deleted`);
   loadUsers();
 }
