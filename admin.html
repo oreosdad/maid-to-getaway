@@ -3453,11 +3453,61 @@ async function deleteUserFromModal() {
 }
 
 async function resetUserPassword(userId, userEmail) {
-  if (!confirm(`Send password reset email to ${userEmail}?`)) return;
-  const { error } = await db.auth.resetPasswordForEmail(userEmail, {
-    redirectTo: window.location.origin + '/login.html'
+  const choice = await showResetDialog(userEmail);
+  if (!choice) return;
+
+  if (choice === 'email') {
+    const res = await fetch('/.netlify/functions/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: 'MaidSync2026!', email: userEmail })
+    });
+    const data = await res.json();
+    showToast(data.success ? `Reset email sent to ${userEmail} ✓` : 'Error: ' + (data.error || 'Could not send'));
+  } else if (choice.startsWith('set:')) {
+    const newPassword = choice.slice(4);
+    const res = await fetch('/.netlify/functions/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: 'MaidSync2026!', userId, newPassword })
+    });
+    const data = await res.json();
+    showToast(data.success ? 'Password updated ✓' : 'Error: ' + (data.error || 'Could not update'));
+  }
+}
+
+function showResetDialog(email) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,43,58,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+    overlay.innerHTML = `
+      <div style="background:white;border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.15)">
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:6px">Reset Password</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">${email}</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <button id="reset-email-btn" class="btn" style="text-align:left;padding:14px 18px">
+            📧 Send reset email to ${email}
+          </button>
+          <div style="display:flex;gap:8px">
+            <input type="password" id="reset-new-pw" placeholder="Or set new password directly…" 
+              style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
+            <button id="reset-set-btn" class="btn">Set</button>
+          </div>
+        </div>
+        <div style="margin-top:16px;text-align:right">
+          <button id="reset-cancel-btn" class="btn btn-outline">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#reset-email-btn').onclick = () => { document.body.removeChild(overlay); resolve('email'); };
+    overlay.querySelector('#reset-set-btn').onclick = () => {
+      const pw = overlay.querySelector('#reset-new-pw').value.trim();
+      if (!pw || pw.length < 6) { alert('Password must be at least 6 characters'); return; }
+      document.body.removeChild(overlay);
+      resolve('set:' + pw);
+    };
+    overlay.querySelector('#reset-cancel-btn').onclick = () => { document.body.removeChild(overlay); resolve(null); };
   });
-  showToast(error ? 'Could not send — reset manually in Supabase' : `Reset email sent to ${userEmail} ✓`);
 }
 
 // ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
