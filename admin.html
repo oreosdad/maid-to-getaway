@@ -3448,11 +3448,10 @@ async function saveEditUser() {
   const role = selectedRoles[0]; // primary role for portal routing
   const isActive   = document.getElementById('edit-user-active').checked;
   const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
-  if (!name)     { showToast('Please enter a name'); return; }
-  if (!newEmail) { showToast('Please enter an email'); return; }
+  if (!name) { showToast('Please enter a name'); return; }
 
   const originalUser = allUsers.find(u => u.id === id);
-  const emailChanged = originalUser && originalUser.email !== newEmail;
+  const emailChanged = newEmail && originalUser && originalUser.email !== newEmail;
 
   // If email changed, call Netlify function to update auth.users
   if (emailChanged) {
@@ -3479,14 +3478,15 @@ async function saveEditUser() {
   // Update profile — store multi-roles in notification_prefs.roles
   const existingPrefs = allUsers.find(u => u.id === id)?.notification_prefs || {};
   const updatedPrefs = { ...existingPrefs, roles: selectedRoles };
-  const { error } = await db.from('profiles').update({
+  const updateData = {
     full_name: name,
-    email: newEmail,
     phone, role,
     is_active: isActive,
     is_owner_operator: isOwnerOp,
     notification_prefs: updatedPrefs
-  }).eq('id', id);
+  };
+  if (newEmail) updateData.email = newEmail;
+  const { error } = await db.from('profiles').update(updateData).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-user');
