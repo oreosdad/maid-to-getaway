@@ -3362,6 +3362,8 @@ async function permanentDeleteUser(userId, userName) {
     return;
   }
 
+  // Delete job_assignments first to avoid FK constraint
+  await db.from('job_assignments').delete().eq('cleaner_id', userId);
   // Delete from profiles
   const { error } = await db.from('profiles').delete().eq('id', userId);
   if (error) { showToast('Error: ' + error.message); return; }
