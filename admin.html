@@ -3463,7 +3463,18 @@ async function resetUserPassword(userId, userEmail) {
       body: JSON.stringify({ secret: 'MaidSync2026!', email: userEmail })
     });
     const data = await res.json();
-    showToast(data.success ? `Reset email sent to ${userEmail} ✓` : 'Error: ' + (data.error || 'Could not send'));
+    if (data.success) {
+      if (data.link) {
+        // Show copyable link in case email doesn't arrive
+        const copy = confirm(`Reset email sent to ${userEmail} ✓\n\nWant to copy the direct reset link too? (useful if email doesn't arrive)`);
+        if (copy) { navigator.clipboard.writeText(data.link); showToast('Link copied to clipboard ✓'); }
+        else { showToast(`Reset email sent to ${userEmail} ✓`); }
+      } else {
+        showToast(`Reset email sent to ${userEmail} ✓`);
+      }
+    } else {
+      showToast('Error: ' + (data.error || 'Could not send'));
+    }
   } else if (choice.startsWith('set:')) {
     const newPassword = choice.slice(4);
     const res = await fetch('/.netlify/functions/reset-password', {
