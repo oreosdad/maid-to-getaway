@@ -3349,6 +3349,20 @@ async function restoreUser(userId, userName) {
 
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
+
+  // Delete from auth via service role
+  const res = await fetch('/.netlify/functions/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ secret: 'MaidSync2026!', action: 'delete_user', userId })
+  });
+  const result = await res.json();
+  if (!result.success && !result.not_in_auth) {
+    showToast('Error: ' + (result.error || 'Could not delete'));
+    return;
+  }
+
+  // Delete from profiles
   const { error } = await db.from('profiles').delete().eq('id', userId);
   if (error) { showToast('Error: ' + error.message); return; }
   showToast(`${userName} permanently deleted`);
@@ -3453,27 +3467,17 @@ async function saveEditUser() {
   const originalUser = allUsers.find(u => u.id === id);
   const emailChanged = newEmail && originalUser && originalUser.email !== newEmail;
 
-  // If email changed, call Netlify function to update auth.users
   if (emailChanged) {
-    try {
-      const res = await fetch('/.netlify/functions/update-user-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-secret': 'MaidSync2026!'
-        },
-        body: JSON.stringify({ userId: id, newEmail })
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        showToast('Email update failed: ' + (data.error || 'unknown error'));
-        return;
-      }
-    } catch (e) {
-      showToast('Email update failed: ' + e.message);
-      return;
-    }
+    const res = await fetch('/.netlify/functions/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: 'MaidSync2026!', action: 'update_email', userId: id, email: newEmail })
+    });
+    const result = await res.json();
+    if (!result.success) { showToast('Email update failed: ' + (result.error || 'unknown')); return; }
   }
+
+
 
   // Update profile — store multi-roles in notification_prefs.roles
   const existingPrefs = allUsers.find(u => u.id === id)?.notification_prefs || {};
