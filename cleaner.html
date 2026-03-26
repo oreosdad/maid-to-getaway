@@ -8,8 +8,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
-      --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
+      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #0F4A45;
+      --gold: #F0A830; --gold-dark: #C47A10; --gold-light: #FEF3DC;
       --text: #1C2B3A; --text-muted: #7A7060; --white: #FFFFFF;
       --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
       --radius: 12px;
@@ -176,7 +176,12 @@
 
 <div id="app">
   <div class="topbar">
-    <div class="topbar-brand">Maid to <em>Getaway</em></div>
+    <div class="topbar-brand" style="display:flex;align-items:center;gap:8px">
+        <div style="width:30px;height:30px;border-radius:6px;overflow:hidden;background:white;flex-shrink:0">
+          <img src="/m2g_logo.png" alt="M2G" style="width:120%;height:120%;object-fit:cover;object-position:15% center"/>
+        </div>
+        <span>Maid to <em>Getaway</em></span>
+      </div>
     <div class="topbar-right">
       <span class="cleaner-name" id="cleaner-greeting"></span>
       <div style="position:relative">
