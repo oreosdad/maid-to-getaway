@@ -8,8 +8,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #1C2B3A;
-      --gold: #C49A2A; --gold-dark: #A07D1C; --gold-light: #FBF3D5;
+      --cream: #F4EFE4; --cream-dark: #EDE6D6; --navy: #0F4A45;
+      --gold: #F0A830; --gold-dark: #C47A10; --gold-light: #FEF3DC;
       --text: #1C2B3A; --text-muted: #7A7060; --white: #FFFFFF;
       --error: #C0392B; --success: #1E7B4B; --success-bg: #EAF7F0;
       --radius: 10px; --sidebar: 220px;
@@ -182,8 +182,15 @@
 <div id="app">
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <h1>Maid to <em>Getaway</em></h1>
-      <p>Owner Portal</p>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:8px;overflow:hidden;background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <img src="/m2g_logo.png" alt="M2G" style="width:120%;height:120%;object-fit:cover;object-position:15% center"/>
+        </div>
+        <div>
+          <h1 style="margin:0">Maid to <em>Getaway</em></h1>
+          <p style="margin:0">Owner Portal</p>
+        </div>
+      </div>
     </div>
     <nav>
       <a class="nav-item active" id="nav-financials" onclick="showPage('financials',this)"><span class="nav-icon">💰</span> Financials</a>
