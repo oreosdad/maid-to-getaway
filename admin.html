@@ -3007,30 +3007,35 @@ async function deleteExpense(id) {
 function exportFinancials(format = 'csv') {
   const { start, end } = getFinDateRange();
   const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
+  const isExpensesTab = finTab === 'expenses';
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
   if (format === 'csv') {
-    const rows = [['Date','Category','Description','Vendor','Amount']];
-    finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
-    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `expenses-${start}-${end}.csv`; a.click();
+    if (isExpensesTab) {
+      const rows = [['Date','Category','Description','Vendor','Amount']];
+      finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
+      const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `expenses-${start}-${end}.csv`; a.click();
+    } else {
+      // P&L CSV
+      const plPanel = document.getElementById('fin-panel-pl');
+      const rows = [['Line Item','Amount']];
+      plPanel.querySelectorAll('div[style*="justify-content:space-between"]').forEach(row => {
+        const cells = row.querySelectorAll('span');
+        if (cells.length >= 2) rows.push([cells[0].textContent.trim(), cells[cells.length-1].textContent.trim()]);
+      });
+      const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `pl-${start}-${end}.csv`; a.click();
+    }
     return;
   }
 
-  // PDF export using print
-  const total = finExpenses.reduce((s,e) => s + e.amount_cents, 0);
-  const rows = finExpenses.map(e => `
-    <tr>
-      <td>${formatDate(e.date)}</td>
-      <td style="text-transform:capitalize">${e.category}</td>
-      <td>${e.description||'—'}</td>
-      <td>${e.vendor||'—'}</td>
-      <td style="text-align:right;font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
-    </tr>`).join('');
-
-  const html = `<!DOCTYPE html><html><head><title>Expenses — ${periodLabel}</title>
-  <style>
+  // PDF
+  const sharedStyles = `
     body { font-family: 'DM Sans', sans-serif; color: #1A2B28; padding: 40px; max-width: 800px; margin: 0 auto; }
     h1 { font-size: 24px; margin-bottom: 4px; }
     .sub { color: #6B6354; font-size: 13px; margin-bottom: 32px; }
@@ -3038,20 +3043,84 @@ function exportFinancials(format = 'csv') {
     th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #0F4A45; color: #0F4A45; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
     td { padding: 8px 12px; border-bottom: 1px solid #EDE6D4; }
     tr:last-child td { border-bottom: none; }
-    .total { margin-top: 24px; text-align: right; font-size: 15px; font-weight: 500; }
+    .total-row td { font-weight: 600; border-top: 2px solid #0F4A45; border-bottom: none; color: #0F4A45; }
+    .section-header td { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #6B6354; background: #F5F0E8; padding: 10px 12px; }
     .logo { font-size: 18px; font-weight: 700; color: #0F4A45; margin-bottom: 8px; }
-    @media print { body { padding: 20px; } }
-  </style></head><body>
-  <div class="logo">Maid to Getaway</div>
-  <h1>Expense Report</h1>
-  <div class="sub">${periodLabel} · ${start} to ${end}</div>
-  <table>
-    <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="total">Total: $${(total/100).toFixed(2)}</div>
-  <script>window.onload = () => { window.print(); }<\/script>
-  </body></html>`;
+    @media print { body { padding: 20px; } }`;
+
+  let html;
+
+  if (isExpensesTab) {
+    const total = finExpenses.reduce((s,e) => s + e.amount_cents, 0);
+    const rows = finExpenses.map(e => `
+      <tr>
+        <td>${formatDate(e.date)}</td>
+        <td style="text-transform:capitalize">${e.category}</td>
+        <td>${e.description||'—'}</td>
+        <td>${e.vendor||'—'}</td>
+        <td style="text-align:right;font-weight:500">${fmt(e.amount_cents)}</td>
+      </tr>`).join('');
+
+    html = `<!DOCTYPE html><html><head><title>Expenses — ${periodLabel}</title><style>${sharedStyles}</style></head><body>
+    <div class="logo">Maid to Getaway</div>
+    <h1>Expense Report</h1>
+    <div class="sub">${periodLabel} · ${start} to ${end}</div>
+    <table>
+      <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>${rows}
+        <tr class="total-row"><td colspan="4">Total Expenses</td><td style="text-align:right">${fmt(total)}</td></tr>
+      </tbody>
+    </table>
+    <script>window.onload = () => window.print();<\/script></body></html>`;
+
+  } else {
+    // P&L PDF — pull from the rendered panel DOM
+    const plPanel = document.getElementById('fin-panel-pl');
+    const statCards = plPanel.querySelectorAll('.stat-card');
+    let revenue = '—', expenses = '—', netProfit = '—', margin = '—';
+    statCards.forEach(c => {
+      const label = c.querySelector('.stat-label')?.textContent || '';
+      const val = c.querySelector('.stat-value')?.textContent || '';
+      if (label.includes('Revenue')) revenue = val;
+      if (label.includes('Expenses')) expenses = val;
+      if (label.includes('Profit')) netProfit = val;
+      if (label.includes('Margin')) margin = val;
+    });
+
+    // Get line items from P&L table
+    const rows = [];
+    plPanel.querySelectorAll('div[style*="justify-content:space-between"]').forEach(row => {
+      const spans = row.querySelectorAll('span');
+      if (spans.length >= 2) {
+        const label = spans[0].textContent.trim();
+        const val = spans[spans.length-1].textContent.trim();
+        if (label && val && !label.includes('undefined')) rows.push([label, val]);
+      }
+    });
+
+    const lineItems = rows.map(([l,v]) => `<tr><td>${l}</td><td style="text-align:right">${v}</td></tr>`).join('');
+
+    html = `<!DOCTYPE html><html><head><title>P&L — ${periodLabel}</title><style>${sharedStyles}
+    .summary { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; margin-bottom:32px; }
+    .summary-card { background:#F5F0E8; border-radius:8px; padding:16px; text-align:center; }
+    .summary-label { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6B6354; margin-bottom:4px; }
+    .summary-value { font-size:20px; font-weight:600; color:#0F4A45; }
+    </style></head><body>
+    <div class="logo">Maid to Getaway</div>
+    <h1>Profit & Loss</h1>
+    <div class="sub">${periodLabel} · ${start} to ${end}</div>
+    <div class="summary">
+      <div class="summary-card"><div class="summary-label">Revenue</div><div class="summary-value">${revenue}</div></div>
+      <div class="summary-card"><div class="summary-label">Expenses</div><div class="summary-value">${expenses}</div></div>
+      <div class="summary-card"><div class="summary-label">Net Profit</div><div class="summary-value">${netProfit}</div></div>
+      <div class="summary-card"><div class="summary-label">Margin</div><div class="summary-value">${margin}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Line Item</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>${lineItems}</tbody>
+    </table>
+    <script>window.onload = () => window.print();<\/script></body></html>`;
+  }
 
   const w = window.open('', '_blank');
   w.document.write(html);
