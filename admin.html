@@ -2275,7 +2275,8 @@ async function manualSync() {
 
 async function triggerIcalSync() {
   try {
-    const res  = await fetch('/.netlify/functions/sync-ical?secret=MaidSync2026!');
+    const jwt = await getAdminJWT();
+    const res  = await fetch('/.netlify/functions/sync-ical', { headers: { 'x-admin-jwt': jwt || '' } });
     const data = await res.json();
     const msg  = data.created > 0
       ? `✓ Calendar synced — ${data.created} new job${data.created !== 1 ? 's' : ''} added`
@@ -3305,12 +3306,8 @@ async function submitGrantLogin() {
   if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email'; errEl.style.display = 'block'; return; }
   if (!password || password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
 
-  const res = await fetch('/.netlify/functions/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: 'MaidSync2026!', action: 'create_auth', userId, email, name: userName, newPassword: password })
-  });
-  const data = await res.json();
+  const data = await callAdminFn({ action: 'create_auth', userId, email, name: userName, newPassword: password });
+  if (!data) return;
   if (data.success) {
     closeModal('modal-grant-login');
     showToast(`Login granted for ${userName} ✓ — temp password: ${password}`);
@@ -3354,6 +3351,23 @@ async function saveEditExpense() {
   closeModal('modal-edit-expense');
   showToast('Expense updated ✓');
   await renderFinancials();
+}
+
+
+async function getAdminJWT() {
+  const { data } = await db.auth.getSession();
+  return data?.session?.access_token || null;
+}
+
+async function callAdminFn(payload) {
+  const jwt = await getAdminJWT();
+  if (!jwt) { showToast('Not authenticated'); return null; }
+  const res = await fetch('/.netlify/functions/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, jwt })
+  });
+  return res.json();
 }
 
 // ── SIGN OUT ──
@@ -3630,12 +3644,7 @@ async function permanentDeleteUser(userId, userName) {
 
   // Step 1: delete from auth
   try {
-    const res = await fetch('/.netlify/functions/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: 'MaidSync2026!', action: 'delete_user', userId })
-    });
-    const result = await res.json();
+    const result = await callAdminFn({ action: 'delete_user', userId });
     console.log('delete_user result:', result);
     if (!result.success && !result.not_in_auth) {
       showToast('Auth delete failed: ' + (result.error || 'unknown'));
@@ -3671,12 +3680,7 @@ async function saveNewUser() {
 
   if (email) {
     // Create auth account via service role
-    const res = await fetch('/.netlify/functions/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: 'MaidSync2026!', action: 'create_user', email, name, newPassword: 'ChangeMe123!' })
-    });
-    const result = await res.json();
+    const result = await callAdminFn({ action: 'create_user', email, name, newPassword: 'ChangeMe123!' });
     if (!result.success) { showToast('Error: ' + (result.error || 'Could not create user')); return; }
     const authId = result.userId;
     await db.from('profiles').upsert({
@@ -3751,13 +3755,8 @@ async function saveEditUser() {
   const emailChanged = newEmail && originalUser && originalUser.email !== newEmail;
 
   if (emailChanged) {
-    const res = await fetch('/.netlify/functions/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: 'MaidSync2026!', action: 'update_email', userId: id, email: newEmail })
-    });
-    const result = await res.json();
-    if (!result.success) { showToast('Email update failed: ' + (result.error || 'unknown')); return; }
+    const result = await callAdminFn({ action: 'update_email', userId: id, email: newEmail });
+    if (!result?.success) { showToast('Email update failed: ' + (result?.error || 'unknown')); return; }
   }
 
 
@@ -3822,12 +3821,8 @@ async function submitResetPassword() {
   if (pw.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
   if (pw !== pw2)    { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
 
-  const res = await fetch('/.netlify/functions/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: 'MaidSync2026!', userId, newPassword: pw })
-  });
-  const data = await res.json();
+  const data = await callAdminFn({ userId, newPassword: pw });
+  if (!data) return;
   if (data.success) {
     closeModal('modal-reset-password');
     showToast(`Password updated for ${email} ✓`);
