@@ -2537,7 +2537,13 @@ async function renderPayments() {
               <div style="font-size:11px;color:var(--text-muted)">${group.isOwnerOp ? 'est. labor value' : 'due'}</div>
             </div>
             ${group.isOwnerOp
-              ? `<span style="background:var(--gold-light);color:var(--gold-dark);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500">👤 Owner/operator — not paid out</span>`
+              ? `<div style="display:flex;gap:8px;align-items:center">
+                  <span style="background:var(--gold-light);color:var(--gold-dark);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500">👤 Owner/operator</span>
+                  <button class="btn btn-outline btn-sm" style="white-space:nowrap"
+                    onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')},true)">
+                    ✓ Mark paid $0
+                  </button>
+                </div>`
               : `<button class="btn" style="background:var(--success);color:white;white-space:nowrap"
                   onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
                   ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
@@ -2576,7 +2582,7 @@ async function renderPayments() {
   }).join('');
 }
 
-async function markCleanerPaid(cleanerId, payDate, jobIds) {
+async function markCleanerPaid(cleanerId, payDate, jobIds, ownerOp = false) {
   const ids = typeof jobIds === 'string' ? JSON.parse(jobIds) : jobIds;
   const now = new Date().toISOString();
   let success = 0;
