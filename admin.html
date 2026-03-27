@@ -593,15 +593,22 @@
       <div class="page-header">
         <h2>Financials</h2>
         <div style="display:flex;gap:8px;align-items:center">
-          <select id="fin-period" onchange="renderFinancials()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <select id="fin-period" onchange="onFinPeriodChange()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
             <option value="mtd">This Month</option>
             <option value="last_month">Last Month</option>
             <option value="ytd">Year to Date</option>
             <option value="q1">Q1 2026</option>
             <option value="q2">Q2 2026</option>
             <option value="all">All Time</option>
+            <option value="custom">Custom Range…</option>
           </select>
-          <button class="btn btn-outline btn-sm" onclick="exportFinancials()">↓ Export CSV</button>
+          <div id="fin-custom-dates" style="display:none;align-items:center;gap:6px">
+            <input type="date" id="fin-custom-start" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
+            <span style="font-size:13px;color:var(--text-muted)">to</span>
+            <input type="date" id="fin-custom-end" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportFinancials('csv')">↓ CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="exportFinancials('pdf')">↓ PDF</button>
           <button class="btn btn-sm" onclick="openAddExpenseModal()">+ Add expense</button>
         </div>
       </div>
@@ -1382,6 +1389,49 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-grant-login')">Cancel</button>
       <button class="btn" onclick="submitGrantLogin()">Grant access</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- EDIT EXPENSE MODAL -->
+<div class="modal-overlay" id="modal-edit-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>Edit Expense</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-expense')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-exp-id"/>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="edit-exp-date"/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="edit-exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+          <option value="supplies">Supplies</option>
+          <option value="insurance">Insurance</option>
+          <option value="software">Software</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input type="number" id="edit-exp-amount" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="edit-exp-description"/>
+      </div>
+      <div class="form-group">
+        <label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+        <input type="text" id="edit-exp-vendor"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-expense')">Cancel</button>
+      <button class="btn" onclick="saveEditExpense()">Save changes</button>
     </div>
   </div>
 </div>
@@ -2796,6 +2846,23 @@ function setFinTab(tab) {
   renderFinancials();
 }
 
+function onFinPeriodChange() {
+  const period = document.getElementById('fin-period').value;
+  const customDates = document.getElementById('fin-custom-dates');
+  if (period === 'custom') {
+    customDates.style.display = 'flex';
+    // Default to current month if no dates set
+    const now = new Date();
+    if (!document.getElementById('fin-custom-start').value) {
+      document.getElementById('fin-custom-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('fin-custom-end').value = now.toISOString().split('T')[0];
+    }
+  } else {
+    customDates.style.display = 'none';
+    renderFinancials();
+  }
+}
+
 function getFinDateRange() {
   const period = document.getElementById('fin-period')?.value || 'mtd';
   const now = new Date();
@@ -2807,7 +2874,12 @@ function getFinDateRange() {
   else if (period === 'ytd') { start = new Date(y, 0, 1); end = new Date(now); }
   else if (period === 'q1') { start = new Date(y, 0, 1); end = new Date(y, 2, 31); }
   else if (period === 'q2') { start = new Date(y, 3, 1); end = new Date(y, 5, 30); }
-  else { start = new Date('2026-02-01'); end = new Date(now); }
+  else if (period === 'custom') {
+    const s = document.getElementById('fin-custom-start')?.value;
+    const e = document.getElementById('fin-custom-end')?.value;
+    return { start: s || '2020-01-01', end: e || now.toISOString().split('T')[0] };
+  }
+  else { start = new Date('2020-01-01'); end = new Date(now); }
   return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
@@ -2880,13 +2952,18 @@ async function renderExpenses() {
     <div class="card">
       ${!finExpenses.length ? '<div class="empty-state" style="padding:40px">📋<p>No expenses logged for this period.</p></div>' : `
       <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th></tr></thead>
-      <tbody>${finExpenses.map(e=>`<tr>
+      <tbody>${finExpenses.map(e=>`<tr id="exp-row-${e.id}">
         <td>${formatDate(e.date)}</td>
         <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
         <td style="font-size:13px">${e.description||'—'}</td>
         <td style="font-size:13px;color:var(--text-muted)">${e.vendor||'—'}</td>
         <td style="font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="deleteExpense('${e.id}')">Delete</button></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="openEditExpenseModal('${e.id}')">Edit</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="deleteExpense('${e.id}')">Delete</button>
+          </div>
+        </td>
       </tr>`).join('')}</tbody></table>`}
     </div>`;
 }
@@ -2917,24 +2994,68 @@ async function saveExpense() {
   if (error) { showToast('Error: '+error.message); return; }
   closeModal('modal-add-expense');
   showToast('Expense added ✓');
-  await renderExpenses();
+  await renderFinancials();
 }
 
 async function deleteExpense(id) {
   if (!confirm('Delete this expense?')) return;
   await db.from('expenses').delete().eq('id', id);
   showToast('Expense deleted');
-  await renderExpenses();
+  await renderFinancials();
 }
 
-function exportFinancials() {
+function exportFinancials(format = 'csv') {
   const { start, end } = getFinDateRange();
-  const rows = [['Date','Category','Description','Vendor','Amount']];
-  finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `expenses-${start}-${end}.csv`; a.click();
+  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
+
+  if (format === 'csv') {
+    const rows = [['Date','Category','Description','Vendor','Amount']];
+    finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `expenses-${start}-${end}.csv`; a.click();
+    return;
+  }
+
+  // PDF export using print
+  const total = finExpenses.reduce((s,e) => s + e.amount_cents, 0);
+  const rows = finExpenses.map(e => `
+    <tr>
+      <td>${formatDate(e.date)}</td>
+      <td style="text-transform:capitalize">${e.category}</td>
+      <td>${e.description||'—'}</td>
+      <td>${e.vendor||'—'}</td>
+      <td style="text-align:right;font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><title>Expenses — ${periodLabel}</title>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; color: #1A2B28; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .sub { color: #6B6354; font-size: 13px; margin-bottom: 32px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #0F4A45; color: #0F4A45; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+    td { padding: 8px 12px; border-bottom: 1px solid #EDE6D4; }
+    tr:last-child td { border-bottom: none; }
+    .total { margin-top: 24px; text-align: right; font-size: 15px; font-weight: 500; }
+    .logo { font-size: 18px; font-weight: 700; color: #0F4A45; margin-bottom: 8px; }
+    @media print { body { padding: 20px; } }
+  </style></head><body>
+  <div class="logo">Maid to Getaway</div>
+  <h1>Expense Report</h1>
+  <div class="sub">${periodLabel} · ${start} to ${end}</div>
+  <table>
+    <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="total">Total: $${(total/100).toFixed(2)}</div>
+  <script>window.onload = () => { window.print(); }<\/script>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── ARCHIVE PROPERTY ──
@@ -3132,6 +3253,39 @@ async function submitGrantLogin() {
   }
 }
 
+
+
+function openEditExpenseModal(expId) {
+  const exp = finExpenses.find(e => e.id === expId);
+  if (!exp) return;
+  document.getElementById('edit-exp-id').value          = exp.id;
+  document.getElementById('edit-exp-date').value        = exp.date;
+  document.getElementById('edit-exp-category').value    = exp.category;
+  document.getElementById('edit-exp-amount').value      = (exp.amount_cents / 100).toFixed(2);
+  document.getElementById('edit-exp-description').value = exp.description || '';
+  document.getElementById('edit-exp-vendor').value      = exp.vendor || '';
+  document.getElementById('modal-edit-expense').classList.add('open');
+}
+
+async function saveEditExpense() {
+  const id          = document.getElementById('edit-exp-id').value;
+  const date        = document.getElementById('edit-exp-date').value;
+  const category    = document.getElementById('edit-exp-category').value;
+  const amount      = parseFloat(document.getElementById('edit-exp-amount').value);
+  const description = document.getElementById('edit-exp-description').value.trim();
+  const vendor      = document.getElementById('edit-exp-vendor').value.trim();
+  if (!date || !category || !amount || amount <= 0) { showToast('Please fill in date, category, and amount'); return; }
+  const { error } = await db.from('expenses').update({
+    date, category,
+    amount_cents: Math.round(amount * 100),
+    description: description || null,
+    vendor: vendor || null
+  }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeModal('modal-edit-expense');
+  showToast('Expense updated ✓');
+  await renderFinancials();
+}
 
 // ── SIGN OUT ──
 async function signOut() {
