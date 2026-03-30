@@ -1074,10 +1074,12 @@
       <div class="alert-icon">⚑</div>
       <div class="alert-body">
         <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
-        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
+        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in.</div>
       </div>
     </div>
     <input type="hidden" id="edit-job-id"/>
+
+    <!-- PROPERTY & DATE -->
     <div class="form-group">
       <label>Property</label>
       <select id="edit-job-property"></select>
@@ -1097,22 +1099,6 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Cleaners</label>
-      <div id="edit-job-cleaners-wrap">
-        <!-- Cleaner 1 -->
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-          <select id="edit-job-cleaner" style="flex:1"></select>
-          <input type="number" id="edit-job-payout-1" oninput="updateTotalPayout()" placeholder="Payout $" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
-        </div>
-        <!-- Cleaner 2 (split) -->
-        <div style="display:none;gap:8px;align-items:center" id="edit-job-cleaner2-row">
-          <select id="edit-job-cleaner2" style="flex:1"></select>
-          <input type="number" id="edit-job-payout-2" oninput="updateTotalPayout()" placeholder="Payout $" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
-        </div>
-        <button type="button" id="edit-job-split-btn" onclick="toggleSplitCleaner()" style="margin-top:8px;font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;font-family:'DM Sans',sans-serif">+ Add second cleaner</button>
-      </div>
-    </div>
-    <div class="form-group">
       <label>Status</label>
       <select id="edit-job-status">
         <option value="unassigned">Unassigned</option>
@@ -1123,70 +1109,107 @@
         <option value="flagged">Flagged</option>
       </select>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Charge to owner ($)</label>
-        <input type="number" id="edit-job-charge" placeholder="e.g. 120" min="0" step="1"/>
-      </div>
-      <div class="form-group">
-        <label>Cleaner payout ($)</label>
-        <input type="number" id="edit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="checkbox-label" style="margin-top:8px">
-          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none';document.getElementById('edit-collect-from-row').style.display=(this.checked&&!document.getElementById('edit-job-pet-fee-collected').checked)?'block':'none'"/>
-          🐶 Pet fee
-        </label>
-      </div>
-      <div class="form-group">
-        <label>Pet fee amount ($)</label>
-        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
-      </div>
-      <div class="form-group">
-        <label>Cleaner cut of pet fee ($)</label>
-        <input type="number" id="edit-job-pet-fee-cleaner-pct" placeholder="e.g. 30" min="0" step="1"/>
-      </div>
-      <div class="form-group">
-        <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
-          <input type="checkbox" id="edit-job-pet-fee-collected"/>
-          🐶 Pet fee collected from owner
-        </label>
-      </div>
-      <div class="form-group" id="edit-collect-from-row" style="display:none">
-        <label>Collect pet fee from</label>
-        <select id="edit-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-          <option value="guest">Guest directly</option>
-          <option value="owner">Owner</option>
-          <option value="airbnb">Airbnb</option>
-          <option value="vrbo">VRBO</option>
-        </select>
+
+    <!-- BUCKET 1: REVENUE -->
+    <div style="background:var(--cream);border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid var(--cream-dark)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:12px">Revenue</div>
+      <div class="form-row" style="margin-bottom:0">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Charge to owner ($)</label>
+          <input type="number" id="edit-job-charge" placeholder="e.g. 120" min="0" step="1"/>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Additional cleaning fee ($)</label>
-        <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"/>
+
+    <!-- BUCKET 2: CLEANER PAY -->
+    <div style="background:#EAF7F0;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #C3E6D5">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--success);margin-bottom:12px">Cleaner Pay</div>
+      <div id="edit-job-cleaners-wrap">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <select id="edit-job-cleaner" style="flex:1"></select>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">BASE PAY ($)</span>
+            <input type="number" id="edit-job-payout-1" oninput="updateTotalPayout()" placeholder="e.g. 85" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid #C3E6D5;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+        </div>
+        <div style="display:none;gap:8px;align-items:center;margin-bottom:8px" id="edit-job-cleaner2-row">
+          <select id="edit-job-cleaner2" style="flex:1"></select>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">BASE PAY ($)</span>
+            <input type="number" id="edit-job-payout-2" oninput="updateTotalPayout()" placeholder="e.g. 85" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid #C3E6D5;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+        </div>
+        <button type="button" id="edit-job-split-btn" onclick="toggleSplitCleaner()" style="font-size:12px;color:var(--success);background:none;border:none;cursor:pointer;padding:0;font-family:'DM Sans',sans-serif">+ Add second cleaner</button>
       </div>
-      <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
-        <label>Reason</label>
-        <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…"/>
+      <input type="number" id="edit-job-payout" style="display:none"/>
+    </div>
+
+    <!-- BUCKET 3: FEES (collect from owner/guest + cleaner cut) -->
+    <div style="background:#FEF3DC;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #F7C96A">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Fees</div>
+
+      <!-- Pet fee -->
+      <div style="margin-bottom:12px">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px">
+          <label class="checkbox-label" style="margin:0">
+            <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'flex':'none';document.getElementById('edit-collect-from-row').style.display=this.checked?'block':'none'"/>
+            🐶 Pet fee
+          </label>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
+            <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
+            <input type="number" id="edit-job-pet-fee-cleaner-pct" placeholder="e.g. 30" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+        </div>
+        <div id="edit-pet-fee-collected-row" style="display:none;align-items:center;gap:12px;margin-bottom:4px">
+          <label class="checkbox-label" style="margin:0">
+            <input type="checkbox" id="edit-job-pet-fee-collected"/>
+            Collected ✓
+          </label>
+        </div>
+        <div id="edit-collect-from-row" style="display:none">
+          <label style="font-size:12px;color:var(--text-muted)">Collect from</label>
+          <select id="edit-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white;margin-top:4px">
+            <option value="guest">Guest directly</option>
+            <option value="owner">Owner</option>
+            <option value="airbnb">Airbnb</option>
+            <option value="vrbo">VRBO</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Extra clean fee -->
+      <div style="border-top:1px solid #F7C96A;padding-top:12px">
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap">📸 Extra clean</span>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
+            <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 25" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
+            <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 19" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted)">Reason</label>
+          <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…" style="width:100%;margin-top:4px"/>
+        </div>
+        <div id="edit-extra-collect-from-row" style="margin-top:8px">
+          <label style="font-size:12px;color:var(--text-muted)">Collect from</label>
+          <select id="edit-extra-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white;margin-top:4px">
+            <option value="guest">Guest directly</option>
+            <option value="owner">Owner</option>
+            <option value="airbnb">Airbnb</option>
+            <option value="vrbo">VRBO</option>
+          </select>
+        </div>
       </div>
     </div>
-    <div class="form-group" id="edit-extra-collect-from-row" style="display:none">
-      <label>Collect extra clean fee from</label>
-      <select id="edit-extra-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-        <option value="guest">Guest directly</option>
-        <option value="owner">Owner</option>
-        <option value="airbnb">Airbnb</option>
-        <option value="vrbo">VRBO</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Cleaner cut of extra clean fee ($)</label>
-      <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 19" min="0" step="1"/>
-    </div>
+
     <div class="form-group">
       <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="edit-job-notes" placeholder="Any special instructions…"></textarea>
@@ -1925,10 +1948,10 @@ function openEditJobModal(id) {
   const cleaner2 = assignments[1] || null;
   document.getElementById('edit-job-cleaner').innerHTML  = buildAssigneeOptions(cleaner1?.cleaner_id || '');
   document.getElementById('edit-job-cleaner2').innerHTML = buildAssigneeOptions(cleaner2?.cleaner_id || '');
-  // Show base payout (without fee cuts) in the payout fields
-  const base1 = cleaner1?.base_payout_cents ?? cleaner1?.payout_cents;
-  const base2 = cleaner2?.base_payout_cents ?? cleaner2?.payout_cents;
-  document.getElementById('edit-job-payout-1').value = base1 ? Math.round(base1/100) : (job.payout_cents ? Math.round(job.payout_cents/100) : '');
+  // Load BASE payout only — never load total payout into base fields
+  const base1 = cleaner1?.base_payout_cents != null ? cleaner1.base_payout_cents : cleaner1?.payout_cents;
+  const base2 = cleaner2?.base_payout_cents != null ? cleaner2.base_payout_cents : cleaner2?.payout_cents;
+  document.getElementById('edit-job-payout-1').value = base1 ? Math.round(base1/100) : '';
   document.getElementById('edit-job-payout-2').value = base2 ? Math.round(base2/100) : '';
   // Show/hide second cleaner row
   const hasSecond = !!cleaner2?.cleaner_id;
@@ -2039,26 +2062,31 @@ async function saveEditJob() {
   const payout1Base = payout1Raw ? Math.round(parseFloat(payout1Raw) * 100) : 0;
   const payout2Base = payout2Raw ? Math.round(parseFloat(payout2Raw) * 100) : 0;
 
-  // Calculate fee cuts to add on top of base payout
-  const petFeeCleanerCutRaw = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value;
-  const extraCleanerCutRaw  = document.getElementById('edit-job-extra-cleaner-pct')?.value;
-  const petFeeCents2  = document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
-  const extraCleanCents2 = document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
-  const petCut2   = petFeeCleanerCutRaw  ? Math.round(parseFloat(petFeeCleanerCutRaw) * 100)  : Math.round(petFeeCents2 * 0.75);
-  const extraCut2 = extraCleanerCutRaw   ? Math.round(parseFloat(extraCleanerCutRaw) * 100)   : Math.round(extraCleanCents2 * 0.75);
-  const totalFeeCut = petCut2 + extraCut2;
+  // BUCKET 2: Base pay (exactly what's in the fields — no modification)
+  // BUCKET 3: Fee cuts — calculated fresh, never compounds
+  const petFeeCleanerCutVal = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value;
+  const extraCleanerCutVal  = document.getElementById('edit-job-extra-cleaner-pct')?.value;
+  const petFeeCentsVal  = document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
+  const extraCleanCentsVal = document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
 
+  // Fee cut = explicit value if set, otherwise 75% default
+  const petCut   = petFeeCleanerCutVal  ? Math.round(parseFloat(petFeeCleanerCutVal) * 100)  : Math.round(petFeeCentsVal * 0.75);
+  const extraCut = extraCleanerCutVal   ? Math.round(parseFloat(extraCleanerCutVal) * 100)   : Math.round(extraCleanCentsVal * 0.75);
+  const totalFeeCut = petCut + extraCut;
+
+  // Only give fee cuts to non-owner/op cleaners
   const c1Profile = cleaners.find(c => c.id === cleanerId);
   const c2Profile = cleaners.find(c => c.id === cleanerId2);
   const c1IsOwnerOp = c1Profile?.is_owner_operator || false;
   const c2IsOwnerOp = c2Profile?.is_owner_operator || false;
   const eligibleCount = [!c1IsOwnerOp && cleanerId, !c2IsOwnerOp && cleanerId2].filter(Boolean).length;
-  const feeShare = eligibleCount > 0 ? Math.round(totalFeeCut / eligibleCount) : 0;
+  const feeSharePerCleaner = eligibleCount > 0 ? Math.round(totalFeeCut / eligibleCount) : 0;
 
-  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId ? feeShare : 0);
-  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeShare : 0);
+  // Total payout = base + fee cut (calculated fresh every save — NO compounding)
+  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId  ? feeSharePerCleaner : 0);
+  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeSharePerCleaner : 0);
 
-  // Save assignments: store base_payout_cents separately from total payout_cents
+  // Save: base_payout_cents stores base only, payout_cents stores total
   await db.from('job_assignments').delete().eq('job_id', id);
   const newAssignments = [];
   if (cleanerId)  newAssignments.push({ job_id: id, cleaner_id: cleanerId,  response: 'accepted', base_payout_cents: payout1Base || null, payout_cents: finalPayout1 || null });
