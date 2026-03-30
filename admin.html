@@ -1898,7 +1898,7 @@ function renderJobsTable(jobs) {
           <td>${job.properties?.name || '—'}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
           <td style="font-size:13px;color:var(--text-muted)">${job.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
-          <td>${job.charge_cents ? '$' + Math.round(job.charge_cents / 100) : '—'}</td>
+          <td>${job.charge_cents ? '$' + Math.round((job.charge_cents + (job.additional_cleaning_cents||0)) / 100) : '—'}</td>
           <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
           <td>
