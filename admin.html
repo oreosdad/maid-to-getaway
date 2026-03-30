@@ -2029,13 +2029,49 @@ async function saveEditJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update assignment if cleaner changed
-  if (cleanerId) {
-    await db.from('job_assignments')
-      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
-  } else {
-    await db.from('job_assignments').delete().eq('job_id', id);
-  }
+  // Update assignments — delete all, reinsert
+  const cleanerId2 = document.getElementById('edit-job-cleaner2').value || null;
+  const payout1Raw = document.getElementById('edit-job-payout-1').value;
+  const payout2Raw = document.getElementById('edit-job-payout-2').value;
+  const payout1Base = payout1Raw ? Math.round(parseFloat(payout1Raw) * 100) : 0;
+  const payout2Base = payout2Raw ? Math.round(parseFloat(payout2Raw) * 100) : 0;
+
+  // Calculate fee cuts
+  const petFeeCleanerCut = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value
+    ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cleaner-pct').value) * 100) : null;
+  const extraCleanerCut = document.getElementById('edit-job-extra-cleaner-pct')?.value
+    ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null;
+  const petFeeCents = document.getElementById('edit-job-pet-fee-cents').value
+    ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
+  const extraCleanCents = document.getElementById('edit-job-additional-cleaning').value
+    ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
+
+  // Default fee cut: 75% of fee if not explicitly set
+  const petCut   = petFeeCleanerCut != null ? petFeeCleanerCut : Math.round(petFeeCents * 0.75);
+  const extraCut = extraCleanerCut  != null ? extraCleanerCut  : Math.round(extraCleanCents * 0.75);
+
+  // Check if cleaners are owner/op so we skip fee cuts for them
+  const c1Profile = allCleaners.find(c => c.id === cleanerId);
+  const c2Profile = allCleaners.find(c => c.id === cleanerId2);
+  const c1IsOwnerOp = c1Profile?.is_owner_operator || false;
+  const c2IsOwnerOp = c2Profile?.is_owner_operator || false;
+
+  // Distribute fee cuts among non-owner/op cleaners
+  const eligibleCount = [!c1IsOwnerOp && cleanerId, !c2IsOwnerOp && cleanerId2].filter(Boolean).length;
+  const feeSharePerCleaner = eligibleCount > 0 ? Math.round((petCut + extraCut) / eligibleCount) : 0;
+
+  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId ? feeSharePerCleaner : 0);
+  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeSharePerCleaner : 0);
+
+  await db.from('job_assignments').delete().eq('job_id', id);
+  const newAssignments = [];
+  if (cleanerId)  newAssignments.push({ job_id: id, cleaner_id: cleanerId,  response: 'accepted', payout_cents: finalPayout1 || null });
+  if (cleanerId2) newAssignments.push({ job_id: id, cleaner_id: cleanerId2, response: 'accepted', payout_cents: finalPayout2 || null });
+  if (newAssignments.length) await db.from('job_assignments').insert(newAssignments);
+
+  // Update job total payout
+  const totalPayout = finalPayout1 + (cleanerId2 ? finalPayout2 : 0);
+  if (totalPayout > 0) await db.from('jobs').update({ payout_cents: totalPayout }).eq('id', id);
 
   closeModal('modal-edit-job');
   showToast('Job updated ✓');
