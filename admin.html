@@ -1145,6 +1145,10 @@
         <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
       </div>
       <div class="form-group">
+        <label>Cleaner cut of pet fee ($)</label>
+        <input type="number" id="edit-job-pet-fee-cleaner-pct" placeholder="e.g. 30" min="0" step="1"/>
+      </div>
+      <div class="form-group">
         <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
           <input type="checkbox" id="edit-job-pet-fee-collected"/>
           🐶 Pet fee collected from owner
@@ -1169,6 +1173,19 @@
         <label>Reason</label>
         <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…"/>
       </div>
+    </div>
+    <div class="form-group" id="edit-extra-collect-from-row" style="display:none">
+      <label>Collect extra clean fee from</label>
+      <select id="edit-extra-collect-from" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+        <option value="guest">Guest directly</option>
+        <option value="owner">Owner</option>
+        <option value="airbnb">Airbnb</option>
+        <option value="vrbo">VRBO</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cleaner cut of extra clean fee ($)</label>
+      <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 19" min="0" step="1"/>
     </div>
     <div class="form-group">
       <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
@@ -1893,7 +1910,7 @@ function renderJobsTable(jobs) {
 }
 
 function openEditJobModal(id) {
-  const job = allJobs.find(j => j.id === id) || allPaymentJobs.find(j => j.id === id);
+  const job = allJobs.find(j => j.id === id) || allPaymentJobs.find(j => j.id === id) || pendingFeesData.find(j => j.id === id);
   if (!job) return;
 
   // Populate property dropdown
@@ -1932,8 +1949,12 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
   document.getElementById('edit-collect-from-row').style.display = (job.pet_fee_required && !job.pet_fee_collected) ? 'block' : 'none';
   document.getElementById('edit-collect-from').value = job.collect_from || 'guest';
-  document.getElementById('edit-extra-collect-from-row').style.display = (job.additional_cleaning_cents > 0) ? 'block' : 'none';
-  document.getElementById('edit-extra-collect-from').value = job.extra_collect_from || 'owner';
+  const extraRow = document.getElementById('edit-extra-collect-from-row');
+  const extraSel = document.getElementById('edit-extra-collect-from');
+  if (extraRow) extraRow.style.display = (job.additional_cleaning_cents > 0) ? 'block' : 'none';
+  if (extraSel) extraSel.value = job.extra_collect_from || 'owner';
+  document.getElementById('edit-job-pet-fee-cleaner-pct').value = job.pet_fee_cleaner_pct != null ? Math.round(job.pet_fee_cleaner_pct / 100) : '';
+  document.getElementById('edit-job-extra-cleaner-pct').value = job.extra_cleaner_pct != null ? Math.round(job.extra_cleaner_pct / 100) : '';
   document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
@@ -1995,6 +2016,8 @@ async function saveEditJob() {
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
     collect_from: document.getElementById('edit-collect-from')?.value || null,
     extra_collect_from: document.getElementById('edit-extra-collect-from')?.value || null,
+    pet_fee_cleaner_pct: document.getElementById('edit-job-pet-fee-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cleaner-pct').value) * 100) : null,
+    extra_cleaner_pct: document.getElementById('edit-job-extra-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
@@ -2953,9 +2976,10 @@ async function markPetFeeCollected(jobId) {
   const { error } = await db.from('jobs').update({ pet_fee_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Add 75% of pet fee to non-owner/op cleaner payouts only
-  if (job?.pet_fee_cents) {
-    const cleanerBonus = Math.round(job.pet_fee_cents * 0.75);
+  // Add configured cleaner cut of pet fee to non-owner/op cleaners
+  const petCleanerCut = job?.pet_fee_cleaner_pct != null ? job.pet_fee_cleaner_pct : (job?.pet_fee_cents ? Math.round(job.pet_fee_cents * 0.75) : 0);
+  if (petCleanerCut > 0 && job?.pet_fee_cents) {
+    const cleanerBonus = petCleanerCut;
     const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
     const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
     if (eligibleAssignments.length) {
@@ -2979,9 +3003,10 @@ async function markExtraCleanCollected(jobId) {
   const { error } = await db.from('jobs').update({ additional_cleaning_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Add 75% of extra clean fee to non-owner/op cleaner payouts only
-  if (job?.additional_cleaning_cents) {
-    const cleanerBonus = Math.round(job.additional_cleaning_cents * 0.75);
+  // Add configured cleaner cut of extra clean fee to non-owner/op cleaners
+  const extraCleanerCut = job?.extra_cleaner_pct != null ? job.extra_cleaner_pct : (job?.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents * 0.75) : 0);
+  if (extraCleanerCut > 0 && job?.additional_cleaning_cents) {
+    const cleanerBonus = extraCleanerCut;
     const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
     const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
     if (eligibleAssignments.length) {
@@ -3014,7 +3039,8 @@ async function undoPetFeeCollected(jobId) {
     const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
     const eligible = (assignments||[]).filter(a => !a.profiles?.is_owner_operator);
     if (eligible.length) {
-      const share = Math.round((job.pet_fee_cents * 0.75) / eligible.length);
+      const cut = job.pet_fee_cleaner_pct != null ? job.pet_fee_cleaner_pct : Math.round(job.pet_fee_cents * 0.75);
+      const share = Math.round(cut / eligible.length);
       for (const a of eligible) {
         await db.from('job_assignments').update({ payout_cents: Math.max(0, (a.payout_cents||0) - share) }).eq('id', a.id);
       }
@@ -3038,7 +3064,8 @@ async function undoExtraCleanCollected(jobId) {
     const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
     const eligible = (assignments||[]).filter(a => !a.profiles?.is_owner_operator);
     if (eligible.length) {
-      const share = Math.round((job.additional_cleaning_cents * 0.75) / eligible.length);
+      const cut = job.extra_cleaner_pct != null ? job.extra_cleaner_pct : Math.round(job.additional_cleaning_cents * 0.75);
+      const share = Math.round(cut / eligible.length);
       for (const a of eligible) {
         await db.from('job_assignments').update({ payout_cents: Math.max(0, (a.payout_cents||0) - share) }).eq('id', a.id);
       }
