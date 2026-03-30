@@ -531,17 +531,21 @@
           <div class="stat-label">⚑ Flagged</div>
           <div class="stat-value" id="stat-flagged">—</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
           <div class="stat-label">Cleaner payout MTD</div>
           <div class="stat-value" id="stat-payout">—</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd')" title="Click to filter">
           <div class="stat-label">Revenue MTD</div>
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
-        <div class="stat-card" style="border-color:#C49A2A">
+        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
           <div class="stat-label">Profit MTD</div>
           <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
+          <div class="stat-label">Owner/op revenue MTD</div>
+          <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
         </div>
       </div>
       <div class="card">
@@ -1466,7 +1470,17 @@ function sortJobsTable(col) {
     else if (col === 'cleaner')  { av = a.job_assignments?.[0]?.profiles?.full_name || ''; bv = b.job_assignments?.[0]?.profiles?.full_name || ''; }
     else if (col === 'charge')   { av = a.charge_cents || 0; bv = b.charge_cents || 0; }
     else if (col === 'payout')   { av = a.payout_cents || 0; bv = b.payout_cents || 0; }
-    else if (col === 'profit')   { av = ((a.charge_cents||0)+(a.additional_cleaning_cents||0))-(a.payout_cents||0); bv = ((b.charge_cents||0)+(b.additional_cleaning_cents||0))-(b.payout_cents||0); }
+    else if (col === 'profit') {
+      const getProfit = j => {
+        const rev = (j.charge_cents||0) + (j.additional_cleaning_cents||0);
+        const assignments = j.job_assignments || [];
+        const pay = assignments.length
+          ? assignments.filter(a => !a.profiles?.is_owner_operator).reduce((s,a) => s+(a.payout_cents||0), 0)
+          : (j.payout_cents||0);
+        return rev - pay;
+      };
+      av = getProfit(a); bv = getProfit(b);
+    }
     else if (col === 'flags')    { av = (a.is_short_window?1:0)+(a.pet_fee_required?1:0); bv = (b.is_short_window?1:0)+(b.pet_fee_required?1:0); }
     else if (col === 'paydate')  { av = a.cleaner_pay_date || '9999'; bv = b.cleaner_pay_date || '9999'; }
     else { av = ''; bv = ''; }
@@ -1534,7 +1548,7 @@ function showPage(name, el) {
 async function loadJobs() {
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id)), pet_fee_collected')
+    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, profiles(full_name, id, is_owner_operator)), pet_fee_collected')
     .order('scheduled_date', { ascending: true })
     .limit(500);
   if (error) { showToast('Error loading jobs'); return; }
@@ -1684,13 +1698,27 @@ function renderJobStats() {
   document.getElementById('stat-completed').textContent   = completedThisWeek.length;
   document.getElementById('stat-flagged').textContent     = flagged.length;
 
-  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
+  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => {
+    const assignments = j.job_assignments || [];
+    if (!assignments.length) return sum + (j.payout_cents||0);
+    const nonOwnerOpPayout = assignments.filter(a => !a.profiles?.is_owner_operator).reduce((s,a) => s + (a.payout_cents||0), 0);
+    return sum + nonOwnerOpPayout;
+  }, 0);
   document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
 
   const mtdCharge = mtdCompletedJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
   const mtdProfit = mtdCharge - mtdPayout;
   document.getElementById('stat-revenue-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
   document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
+
+  // Owner/op MTD — revenue from jobs where all cleaners are owner/op
+  const ownerOpMtdJobs = mtdCompletedJobs.filter(j => {
+    const assignments = j.job_assignments || [];
+    if (!assignments.length) return false;
+    return assignments.every(a => a.profiles?.is_owner_operator);
+  });
+  const ownerOpMtdRevenue = ownerOpMtdJobs.reduce((s,j) => s + (j.charge_cents||0) + (j.additional_cleaning_cents||0), 0);
+  document.getElementById('stat-owner-op-mtd').textContent = ownerOpMtdRevenue > 0 ? '$' + Math.round(ownerOpMtdRevenue / 100) : '—';
 }
 
 function filterJobsFromStat(type) {
@@ -1719,6 +1747,28 @@ function filterJobsFromStat(type) {
     filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
   } else if (type === 'flagged') {
     filtered = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
+  } else if (type === 'revenue-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
+  } else if (type === 'profit-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+    filtered.sort((a,b) => {
+      const getProfit = j => ((j.charge_cents||0)+(j.additional_cleaning_cents||0)) - (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
+      return getProfit(b) - getProfit(a);
+    });
+  } else if (type === 'payout-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear() && (j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator));
+    filtered.sort((a,b) => {
+      const getPayout = j => (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
+      return getPayout(b) - getPayout(a);
+    });
+  } else if (type === 'owner-op-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear() && (j.job_assignments||[]).length && (j.job_assignments||[]).every(a=>a.profiles?.is_owner_operator));
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
   } else {
     filtered = allJobs.filter(j => !j.deleted_at);
   }
@@ -2036,14 +2086,12 @@ async function permanentDeleteJob(jobId) {
 function calcPayDate(scheduledDate) {
   if (!scheduledDate) return null;
   const d = new Date(scheduledDate + 'T12:00:00');
-  // Get to the following Monday (start of next week)
   const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
-  const daysUntilNextMonday = (8 - day) % 7 || 7;
-  const nextMonday = new Date(d);
-  nextMonday.setDate(d.getDate() + daysUntilNextMonday);
-  // Friday of that week = nextMonday + 4
-  const payFriday = new Date(nextMonday);
-  payFriday.setDate(nextMonday.getDate() + 4);
+  // Days until the NEXT Friday from the clean date
+  // Mon=4, Tue=3, Wed=2, Thu=1, Fri=7, Sat=6, Sun=5
+  const daysToFriday = day === 5 ? 7 : (5 - day + 7) % 7 || 7;
+  const payFriday = new Date(d);
+  payFriday.setDate(d.getDate() + daysToFriday);
   return payFriday.toISOString().split('T')[0];
 }
 
@@ -2177,10 +2225,19 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
 
-  // Populate owner dropdown
-  const ownerSel = document.getElementById('edit-prop-owner');
-  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
-    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
+  // Populate owner checkboxes
+  const currentOwners = (p.property_owners || []).map(o => o.profile_id);
+  const ownerWrap = document.getElementById('edit-prop-owners-wrap');
+  if (ownerWrap) {
+    ownerWrap.innerHTML = (window._ownerProfiles || []).length
+      ? (window._ownerProfiles || []).map(o => `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:14px">
+            <input type="checkbox" value="${o.id}" ${currentOwners.includes(o.id) ? 'checked' : ''}
+              style="width:16px;height:16px;accent-color:var(--navy)"/>
+            ${o.full_name}${o.email ? ' <span style="color:var(--text-muted);font-size:12px">('+o.email+')</span>' : ''}
+          </label>`).join('')
+      : '<span style="font-size:13px;color:var(--text-muted)">No owner profiles found</span>';
+  }
 
   document.getElementById('modal-edit-property').classList.add('open');
 }
@@ -2823,19 +2880,54 @@ async function loadPendingFees() {
 }
 
 async function markPetFeeCollected(jobId) {
+  const job = allJobs.find(j => j.id === jobId);
   const { error } = await db.from('jobs').update({ pet_fee_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
-  // Update in memory
+
+  // Add 75% of pet fee to non-owner/op cleaner payouts only
+  if (job?.pet_fee_cents) {
+    const cleanerBonus = Math.round(job.pet_fee_cents * 0.75);
+    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
+    const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
+    if (eligibleAssignments.length) {
+      const share = Math.round(cleanerBonus / eligibleAssignments.length);
+      for (const a of eligibleAssignments) {
+        await db.from('job_assignments').update({ payout_cents: (a.payout_cents || 0) + share }).eq('id', a.id);
+      }
+      const { data: updatedAssignments } = await db.from('job_assignments').select('payout_cents').eq('job_id', jobId);
+      const newTotal = (updatedAssignments || []).reduce((s,a) => s + (a.payout_cents||0), 0);
+      await db.from('jobs').update({ payout_cents: newTotal }).eq('id', jobId);
+    }
+  }
+
   allJobs = allJobs.map(j => j.id === jobId ? { ...j, pet_fee_collected: true } : j);
-  showToast('Pet fee marked as collected ✓');
+  showToast('Pet fee collected ✓ — cleaner payout updated');
   await loadPendingFees();
 }
 
 async function markExtraCleanCollected(jobId) {
+  const job = allJobs.find(j => j.id === jobId);
   const { error } = await db.from('jobs').update({ additional_cleaning_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
+
+  // Add 75% of extra clean fee to non-owner/op cleaner payouts only
+  if (job?.additional_cleaning_cents) {
+    const cleanerBonus = Math.round(job.additional_cleaning_cents * 0.75);
+    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
+    const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
+    if (eligibleAssignments.length) {
+      const share = Math.round(cleanerBonus / eligibleAssignments.length);
+      for (const a of eligibleAssignments) {
+        await db.from('job_assignments').update({ payout_cents: (a.payout_cents || 0) + share }).eq('id', a.id);
+      }
+      const { data: updatedAssignments } = await db.from('job_assignments').select('payout_cents').eq('job_id', jobId);
+      const newTotal = (updatedAssignments || []).reduce((s,a) => s + (a.payout_cents||0), 0);
+      await db.from('jobs').update({ payout_cents: newTotal }).eq('id', jobId);
+    }
+  }
+
   allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: true } : j);
-  showToast('Extra cleaning fee marked as collected ✓');
+  showToast('Extra clean fee collected ✓ — cleaner payout updated');
   await loadPendingFees();
 }
 
@@ -2899,14 +2991,30 @@ async function renderPL() {
   const panel = document.getElementById('fin-panel-pl');
   panel.innerHTML = '<div class="loading-inline">Loading…</div>';
   const { start, end } = getFinDateRange();
-  const { data: jobs, error: jobsErr } = await db.from('jobs').select('charge_cents, additional_cleaning_cents, payout_cents, scheduled_date').eq('status', 'completed').is('deleted_at', null).gte('scheduled_date', start).lte('scheduled_date', end);
+
+  const { data: jobs, error: jobsErr } = await db.from('jobs')
+    .select('id, charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, pet_fee_cents, pet_fee_collected, additional_cleaning_collected, properties(name), job_assignments(payout_cents, profiles(is_owner_operator, full_name))')
+    .eq('status', 'completed').is('deleted_at', null).gte('scheduled_date', start).lte('scheduled_date', end);
   if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error: ${jobsErr.message}</div>`; return; }
+
   const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end);
-  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Run the expenses table SQL in Supabase first.</div>'; return; }
+  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Expenses table not found.</div>'; return; }
+
   const jobList = jobs || [];
   const expList = expenses || [];
-  const revenue = jobList.reduce((s,j) => s + (j.charge_cents||0) + (j.additional_cleaning_cents||0), 0);
-  const contractors = jobList.reduce((s,j) => s + (j.payout_cents||0), 0);
+
+  const cleaningRevenue   = jobList.reduce((s,j) => s + (j.charge_cents||0), 0);
+  const petFeeRevenue     = jobList.filter(j => j.pet_fee_collected).reduce((s,j) => s + (j.pet_fee_cents||0), 0);
+  const extraCleanRevenue = jobList.filter(j => j.additional_cleaning_collected).reduce((s,j) => s + (j.additional_cleaning_cents||0), 0);
+  const revenue = cleaningRevenue + petFeeRevenue + extraCleanRevenue;
+
+  const contractors = jobList.reduce((s,j) => {
+    const assignments = j.job_assignments || [];
+    if (!assignments.length) return s + (j.payout_cents||0);
+    if (assignments.every(a => a.profiles?.is_owner_operator)) return s;
+    return s + assignments.filter(a => !a.profiles?.is_owner_operator).reduce((ps,a) => ps + (a.payout_cents||0), 0);
+  }, 0);
+
   const supplies  = expList.filter(e => e.category==='supplies').reduce((s,e) => s+e.amount_cents, 0);
   const insurance = expList.filter(e => e.category==='insurance').reduce((s,e) => s+e.amount_cents, 0);
   const software  = expList.filter(e => e.category==='software').reduce((s,e) => s+e.amount_cents, 0);
@@ -2916,6 +3024,24 @@ async function renderPL() {
   const margin    = revenue > 0 ? Math.round((netProfit/revenue)*100) : 0;
   const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
+
+  window._plJobs = jobList;
+  window._plExpenses = expList;
+
+  const drillRow = (label, amount, drillType) => `
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${drillType&&amount>0?'cursor:pointer':''}"
+      ${drillType&&amount>0 ? `onclick="showPLDrilldown('${drillType}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"` : ''}>
+      <span style="font-size:14px;padding-left:16px${drillType&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${drillType&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
+      <span style="font-size:14px;font-weight:500">${amount > 0 ? fmt(amount) : '—'}</span>
+    </div>`;
+
+  const expRow = (label, amount, drillType) => `
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${drillType&&amount>0?'cursor:pointer':''}"
+      ${drillType&&amount>0 ? `onclick="showPLDrilldown('${drillType}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"` : ''}>
+      <span style="font-size:14px;padding-left:16px${drillType&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${drillType&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
+      <span style="font-size:14px;${amount>0?'color:var(--error)':'color:var(--text-muted)'}">${amount>0?'('+fmt(amount)+')':'—'}</span>
+    </div>`;
+
   panel.innerHTML = `
     <div class="stats-row" style="margin-bottom:28px">
       <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
@@ -2928,12 +3054,18 @@ async function renderPL() {
       <div style="padding:0 24px 24px">
         <div style="margin-bottom:20px">
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Revenue</div>
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)"><span style="font-size:14px;padding-left:16px">Cleaning revenue (${jobList.length} jobs)</span><span style="font-size:14px;font-weight:500">${fmt(revenue)}</span></div>
+          ${drillRow(`Cleaning revenue (${jobList.length} jobs)`, cleaningRevenue, 'cleaning-revenue')}
+          ${petFeeRevenue > 0 ? drillRow('Pet fees collected', petFeeRevenue, 'pet-fee-revenue') : ''}
+          ${extraCleanRevenue > 0 ? drillRow('Excessive clean fees collected', extraCleanRevenue, 'extra-clean-revenue') : ''}
           <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span><span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span></div>
         </div>
         <div style="margin-bottom:20px">
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Expenses</div>
-          ${[['Contractors (cleaner payouts)',contractors],['Supplies',supplies],['Insurance',insurance],['Software',software],['Other',other]].map(([l,a])=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark)"><span style="font-size:14px;padding-left:16px">${l}</span><span style="font-size:14px;${a>0?'color:var(--error)':'color:var(--text-muted)'}">${a>0?'('+fmt(a)+')':'—'}</span></div>`).join('')}
+          ${expRow(`Contractors (${jobList.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).length} jobs)`, contractors, 'contractors')}
+          ${expRow('Supplies', supplies, 'supplies')}
+          ${expRow('Insurance', insurance, 'insurance')}
+          ${expRow('Software', software, 'software')}
+          ${expRow('Other', other, 'other')}
           <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span><span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExp)})</span></div>
         </div>
         <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit>=0?'var(--success-bg)':'#FDEEEE'};border-radius:var(--radius)">
@@ -2941,8 +3073,56 @@ async function renderPL() {
           <span style="font-size:16px;font-weight:600;color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</span>
         </div>
       </div>
-    </div>`;
+    </div>
+    <div id="pl-drilldown" style="display:none;margin-top:24px"></div>`;
 }
+
+function showPLDrilldown(type) {
+  const panel = document.getElementById('pl-drilldown');
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const jobs = window._plJobs || [];
+  const expenses = window._plExpenses || [];
+  let title = '', rows = '', headers = '';
+
+  if (type === 'cleaning-revenue') {
+    title = 'Cleaning Revenue';
+    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Charge</th>';
+    rows = jobs.map(j => `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.charge_cents||0)}</td></tr>`).join('');
+    rows += `<tr style="font-weight:600;border-top:2px solid var(--navy)"><td colspan="2">Total</td><td style="text-align:right">${fmt(jobs.reduce((s,j)=>s+(j.charge_cents||0),0))}</td></tr>`;
+  } else if (type === 'pet-fee-revenue') {
+    title = 'Pet Fees Collected';
+    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
+    rows = jobs.filter(j=>j.pet_fee_collected&&j.pet_fee_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.pet_fee_cents)}</td></tr>`).join('');
+  } else if (type === 'extra-clean-revenue') {
+    title = 'Excessive Clean Fees Collected';
+    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
+    rows = jobs.filter(j=>j.additional_cleaning_collected&&j.additional_cleaning_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.additional_cleaning_cents)}</td></tr>`).join('');
+  } else if (type === 'contractors') {
+    title = 'Contractor Payouts';
+    headers = '<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Payout</th>';
+    rows = jobs.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).map(j => {
+      const payout = (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
+      const cleaners = (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).map(a=>a.profiles?.full_name||'—').join(', ');
+      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px">${cleaners}</td><td style="text-align:right;color:var(--error)">(${fmt(payout)})</td></tr>`;
+    }).join('');
+  } else {
+    title = type.charAt(0).toUpperCase()+type.slice(1)+' Expenses';
+    headers = '<th>Date</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th>';
+    rows = expenses.filter(e=>e.category===type).map(e=>`<tr><td>${formatDate(e.date)}</td><td>${e.description||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${e.vendor||'—'}</td><td style="text-align:right;color:var(--error)">(${fmt(e.amount_cents)})</td></tr>`).join('');
+  }
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between">
+        <span class="card-title">${title}</span>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('pl-drilldown').style.display='none'">✕ Close</button>
+      </div>
+      <table style="width:100%"><thead><tr>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No transactions</td></tr>'}</tbody></table>
+    </div>`;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 
 async function renderExpenses() {
   const panel = document.getElementById('fin-panel-expenses');
@@ -3399,7 +3579,7 @@ function today() { return new Date().toISOString().split('T')[0]; }
 
 function formatDate(d) {
   if (!d) return '—';
-  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: '2-digit' });
 }
 
 function formatTime(t) {
@@ -3651,7 +3831,6 @@ async function permanentDeleteUser(userId, userName) {
   // Step 1: delete from auth
   try {
     const result = await callAdminFn({ action: 'delete_user', userId });
-    console.log('delete_user result:', result);
     if (!result.success && !result.not_in_auth) {
       showToast('Auth delete failed: ' + (result.error || 'unknown'));
       return;
