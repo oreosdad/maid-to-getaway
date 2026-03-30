@@ -2932,10 +2932,8 @@ function renderPendingFeesTab() {
 
   const totalAmt = current.reduce((s,j) => {
     if (!showingCollectedFees) {
-      if (j.pet_fee_required && !j.pet_fee_collected) s += (j.pet_fee_cents||0);
       if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) s += j.additional_cleaning_cents;
     } else {
-      if (j.pet_fee_required && j.pet_fee_collected) s += (j.pet_fee_cents||0);
       if (j.additional_cleaning_cents > 0 && j.additional_cleaning_collected) s += j.additional_cleaning_cents;
     }
     return s;
@@ -2944,30 +2942,6 @@ function renderPendingFeesTab() {
   const buildRows = (job) => {
     const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
     const rows = [];
-
-    if (job.pet_fee_required) {
-      const isOut = !job.pet_fee_collected;
-      if (showingCollectedFees !== isOut) {
-        rows.push(`<tr>
-          <td>${formatDate(job.scheduled_date)}</td>
-          <td>${job.properties?.name||'—'}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-          <td>
-            <span style="background:${isOut?'#FBF3D5':'var(--success-bg)'};color:${isOut?'#A07D1C':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${isOut?'🐶 Pet fee':'✓ Pet fee'}</span>
-            ${job.collect_from && isOut ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
-          </td>
-          <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : '—'}</td>
-          <td>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${isOut
-                ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>`
-                : `<button class="btn btn-outline btn-sm" onclick="undoPetFeeCollected('${job.id}')">Undo</button>`}
-              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-            </div>
-          </td>
-        </tr>`);
-      }
-    }
 
     if (job.additional_cleaning_cents > 0) {
       const isOut = !job.additional_cleaning_collected;
