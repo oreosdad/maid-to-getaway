@@ -1146,7 +1146,21 @@
 
     <!-- BUCKET 3: EXTRA FEE -->
     <div style="background:#FEF3DC;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #F7C96A">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Extra Fee</div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Flags &amp; Extra Fee</div>
+      <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
+        <label class="checkbox-label" style="margin:0;font-size:13px">
+          <input type="checkbox" id="edit-job-pet-fee"/>
+          🐶 Pet
+        </label>
+        <label class="checkbox-label" style="margin:0;font-size:13px">
+          <input type="checkbox" id="edit-job-flag-excessive"/>
+          📸 Excessive clean
+        </label>
+        <label class="checkbox-label" style="margin:0;font-size:13px">
+          <input type="checkbox" id="edit-job-flag-other"/>
+          📝 Other
+        </label>
+      </div>
       <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
         <div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
@@ -1953,7 +1967,10 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-checkout').value    = job.guest_checkout ? job.guest_checkout.slice(0,16) : '';
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
-  // Legacy pet fee — handled by unified extra fee field above
+  // Load flags
+  document.getElementById('edit-job-pet-fee').checked = !!job.pet_fee_required;
+  document.getElementById('edit-job-flag-excessive').checked = !!(job.additional_cleaning_notes && job.additional_cleaning_notes.toLowerCase().includes('excessive'));
+  document.getElementById('edit-job-flag-other').checked = !!(job.additional_cleaning_notes && !job.additional_cleaning_notes.toLowerCase().includes('excessive') && !job.pet_fee_required && job.additional_cleaning_cents);
   const extraRow = document.getElementById('edit-extra-collect-from-row');
   const extraSel = document.getElementById('edit-extra-collect-from');
   if (extraRow) extraRow.style.display = (job.additional_cleaning_cents > 0) ? 'block' : 'none';
@@ -2021,8 +2038,7 @@ async function saveEditJob() {
     extra_collect_from: document.getElementById('edit-extra-collect-from')?.value || 'owner',
     extra_cleaner_pct: document.getElementById('edit-job-extra-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null,
     additional_cleaning_collected: document.getElementById('edit-job-pet-fee-collected')?.checked || false,
-    // Clear old pet fee fields — all fees now go through additional_cleaning
-    pet_fee_required: false,
+    pet_fee_required: document.getElementById('edit-job-pet-fee')?.checked || false,
     pet_fee_collected: false,
     pet_fee_cents: null,
     collect_from: null,
