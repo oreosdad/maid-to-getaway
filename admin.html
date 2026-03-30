@@ -1575,7 +1575,7 @@ function showPage(name, el) {
 async function loadJobs() {
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, profiles(full_name, id, is_owner_operator)), pet_fee_collected')
+    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, base_payout_cents, profiles(full_name, id, is_owner_operator)), pet_fee_collected')
     .order('scheduled_date', { ascending: true })
     .limit(500);
   if (error) { showToast('Error loading jobs'); return; }
@@ -1925,8 +1925,11 @@ function openEditJobModal(id) {
   const cleaner2 = assignments[1] || null;
   document.getElementById('edit-job-cleaner').innerHTML  = buildAssigneeOptions(cleaner1?.cleaner_id || '');
   document.getElementById('edit-job-cleaner2').innerHTML = buildAssigneeOptions(cleaner2?.cleaner_id || '');
-  document.getElementById('edit-job-payout-1').value = cleaner1?.payout_cents ? Math.round(cleaner1.payout_cents/100) : (job.payout_cents ? Math.round(job.payout_cents/100) : '');
-  document.getElementById('edit-job-payout-2').value = cleaner2?.payout_cents ? Math.round(cleaner2.payout_cents/100) : '';
+  // Show base payout (without fee cuts) in the payout fields
+  const base1 = cleaner1?.base_payout_cents ?? cleaner1?.payout_cents;
+  const base2 = cleaner2?.base_payout_cents ?? cleaner2?.payout_cents;
+  document.getElementById('edit-job-payout-1').value = base1 ? Math.round(base1/100) : (job.payout_cents ? Math.round(job.payout_cents/100) : '');
+  document.getElementById('edit-job-payout-2').value = base2 ? Math.round(base2/100) : '';
   // Show/hide second cleaner row
   const hasSecond = !!cleaner2?.cleaner_id;
   document.getElementById('edit-job-cleaner2-row').style.display = hasSecond ? 'flex' : 'none';
@@ -2036,40 +2039,32 @@ async function saveEditJob() {
   const payout1Base = payout1Raw ? Math.round(parseFloat(payout1Raw) * 100) : 0;
   const payout2Base = payout2Raw ? Math.round(parseFloat(payout2Raw) * 100) : 0;
 
-  // Calculate fee cuts
-  const petFeeCleanerCut = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value
-    ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cleaner-pct').value) * 100) : null;
-  const extraCleanerCut = document.getElementById('edit-job-extra-cleaner-pct')?.value
-    ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null;
-  const petFeeCents = document.getElementById('edit-job-pet-fee-cents').value
-    ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
-  const extraCleanCents = document.getElementById('edit-job-additional-cleaning').value
-    ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
+  // Calculate fee cuts to add on top of base payout
+  const petFeeCleanerCutRaw = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value;
+  const extraCleanerCutRaw  = document.getElementById('edit-job-extra-cleaner-pct')?.value;
+  const petFeeCents2  = document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
+  const extraCleanCents2 = document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
+  const petCut2   = petFeeCleanerCutRaw  ? Math.round(parseFloat(petFeeCleanerCutRaw) * 100)  : Math.round(petFeeCents2 * 0.75);
+  const extraCut2 = extraCleanerCutRaw   ? Math.round(parseFloat(extraCleanerCutRaw) * 100)   : Math.round(extraCleanCents2 * 0.75);
+  const totalFeeCut = petCut2 + extraCut2;
 
-  // Default fee cut: 75% of fee if not explicitly set
-  const petCut   = petFeeCleanerCut != null ? petFeeCleanerCut : Math.round(petFeeCents * 0.75);
-  const extraCut = extraCleanerCut  != null ? extraCleanerCut  : Math.round(extraCleanCents * 0.75);
-
-  // Check if cleaners are owner/op so we skip fee cuts for them
   const c1Profile = cleaners.find(c => c.id === cleanerId);
   const c2Profile = cleaners.find(c => c.id === cleanerId2);
   const c1IsOwnerOp = c1Profile?.is_owner_operator || false;
   const c2IsOwnerOp = c2Profile?.is_owner_operator || false;
-
-  // Distribute fee cuts among non-owner/op cleaners
   const eligibleCount = [!c1IsOwnerOp && cleanerId, !c2IsOwnerOp && cleanerId2].filter(Boolean).length;
-  const feeSharePerCleaner = eligibleCount > 0 ? Math.round((petCut + extraCut) / eligibleCount) : 0;
+  const feeShare = eligibleCount > 0 ? Math.round(totalFeeCut / eligibleCount) : 0;
 
-  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId ? feeSharePerCleaner : 0);
-  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeSharePerCleaner : 0);
+  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId ? feeShare : 0);
+  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeShare : 0);
 
+  // Save assignments: store base_payout_cents separately from total payout_cents
   await db.from('job_assignments').delete().eq('job_id', id);
   const newAssignments = [];
-  if (cleanerId)  newAssignments.push({ job_id: id, cleaner_id: cleanerId,  response: 'accepted', payout_cents: finalPayout1 || null });
-  if (cleanerId2) newAssignments.push({ job_id: id, cleaner_id: cleanerId2, response: 'accepted', payout_cents: finalPayout2 || null });
+  if (cleanerId)  newAssignments.push({ job_id: id, cleaner_id: cleanerId,  response: 'accepted', base_payout_cents: payout1Base || null, payout_cents: finalPayout1 || null });
+  if (cleanerId2) newAssignments.push({ job_id: id, cleaner_id: cleanerId2, response: 'accepted', base_payout_cents: payout2Base || null, payout_cents: finalPayout2 || null });
   if (newAssignments.length) await db.from('job_assignments').insert(newAssignments);
 
-  // Update job total payout
   const totalPayout = finalPayout1 + (cleanerId2 ? finalPayout2 : 0);
   if (totalPayout > 0) await db.from('jobs').update({ payout_cents: totalPayout }).eq('id', id);
 
