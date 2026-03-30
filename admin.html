@@ -1144,70 +1144,49 @@
       <input type="number" id="edit-job-payout" style="display:none"/>
     </div>
 
-    <!-- BUCKET 3: FEES (collect from owner/guest + cleaner cut) -->
+    <!-- BUCKET 3: EXTRA FEE -->
     <div style="background:#FEF3DC;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #F7C96A">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Fees</div>
-
-      <!-- Pet fee -->
-      <div style="margin-bottom:12px">
-        <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px">
-          <label class="checkbox-label" style="margin:0">
-            <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'flex':'none';document.getElementById('edit-collect-from-row').style.display=this.checked?'block':'none'"/>
-            🐶 Pet fee
-          </label>
-          <div style="display:flex;flex-direction:column;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
-            <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
-            <input type="number" id="edit-job-pet-fee-cleaner-pct" placeholder="e.g. 30" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Extra Fee</div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
+          <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"
+            style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
         </div>
-        <div id="edit-pet-fee-collected-row" style="display:none;align-items:center;gap:12px;margin-bottom:4px">
-          <label class="checkbox-label" style="margin:0">
-            <input type="checkbox" id="edit-job-pet-fee-collected"/>
-            Collected ✓
-          </label>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
+          <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 30" min="0" step="1"
+            style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
         </div>
-        <div id="edit-collect-from-row" style="display:none">
-          <label style="font-size:12px;color:var(--text-muted)">Collect from</label>
-          <select id="edit-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white;margin-top:4px">
-            <option value="guest">Guest directly</option>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px">
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500">REASON</span>
+          <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet hair, excessive mess…"
+            style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+          <span style="font-size:10px;color:var(--text-muted);font-weight:500">COLLECT FROM</span>
+          <select id="edit-extra-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white">
             <option value="owner">Owner</option>
+            <option value="guest">Guest directly</option>
             <option value="airbnb">Airbnb</option>
             <option value="vrbo">VRBO</option>
           </select>
         </div>
+        <label class="checkbox-label" style="margin:0;padding-top:16px">
+          <input type="checkbox" id="edit-job-pet-fee-collected"/>
+          ✓ Collected
+        </label>
       </div>
-
-      <!-- Extra clean fee -->
-      <div style="border-top:1px solid #F7C96A;padding-top:12px">
-        <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px">
-          <span style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap">📸 Extra clean</span>
-          <div style="display:flex;flex-direction:column;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
-            <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 25" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
-            <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 19" min="0" step="1" style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--text-muted)">Reason</label>
-          <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…" style="width:100%;margin-top:4px"/>
-        </div>
-        <div id="edit-extra-collect-from-row" style="margin-top:8px">
-          <label style="font-size:12px;color:var(--text-muted)">Collect from</label>
-          <select id="edit-extra-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white;margin-top:4px">
-            <option value="guest">Guest directly</option>
-            <option value="owner">Owner</option>
-            <option value="airbnb">Airbnb</option>
-            <option value="vrbo">VRBO</option>
-          </select>
-        </div>
-      </div>
+      <!-- Hidden fields for backwards compatibility -->
+      <input type="hidden" id="edit-job-pet-fee" value="false"/>
+      <input type="hidden" id="edit-job-pet-fee-cents" value=""/>
+      <input type="hidden" id="edit-job-pet-fee-cleaner-pct" value=""/>
+      <input type="hidden" id="edit-collect-from" value="owner"/>
+      <input type="hidden" id="edit-pet-fee-collected-row"/>
+      <input type="hidden" id="edit-collect-from-row"/>
+      <input type="hidden" id="edit-extra-collect-from-row"/>
     </div>
 
     <div class="form-group">
@@ -1948,9 +1927,15 @@ function openEditJobModal(id) {
   const cleaner2 = assignments[1] || null;
   document.getElementById('edit-job-cleaner').innerHTML  = buildAssigneeOptions(cleaner1?.cleaner_id || '');
   document.getElementById('edit-job-cleaner2').innerHTML = buildAssigneeOptions(cleaner2?.cleaner_id || '');
-  // Load BASE payout only — never load total payout into base fields
-  const base1 = cleaner1?.base_payout_cents != null ? cleaner1.base_payout_cents : cleaner1?.payout_cents;
-  const base2 = cleaner2?.base_payout_cents != null ? cleaner2.base_payout_cents : cleaner2?.payout_cents;
+  // Load BASE payout — from base_payout_cents if set, otherwise fall back to property default
+  const jobProp2 = properties.find(p => p.id === job.property_id);
+  const propDefault = jobProp2?.default_payout_cents || null;
+  const base1 = cleaner1?.base_payout_cents != null ? cleaner1.base_payout_cents
+              : cleaner1?.payout_cents != null ? cleaner1.payout_cents
+              : propDefault;
+  const base2 = cleaner2?.base_payout_cents != null ? cleaner2.base_payout_cents
+              : cleaner2?.payout_cents != null ? cleaner2.payout_cents
+              : null;
   document.getElementById('edit-job-payout-1').value = base1 ? Math.round(base1/100) : '';
   document.getElementById('edit-job-payout-2').value = base2 ? Math.round(base2/100) : '';
   // Show/hide second cleaner row
@@ -1963,25 +1948,19 @@ function openEditJobModal(id) {
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
   // Pre-fill payout from job, or fall back to property default
   const jobProp = properties.find(p => p.id === job.property_id);
-  const payoutCents = job.payout_cents || (jobProp && jobProp.default_payout_cents) || null;
   const chargeCents = job.charge_cents || (jobProp && jobProp.default_charge_cents) || null;
   document.getElementById('edit-job-charge').value = chargeCents ? Math.round(chargeCents / 100) : '';
-  document.getElementById('edit-job-payout').value = payoutCents ? Math.round(payoutCents / 100) : '';
   document.getElementById('edit-job-checkout').value    = job.guest_checkout ? job.guest_checkout.slice(0,16) : '';
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
-  document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
-  document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
-  document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
-  document.getElementById('edit-collect-from-row').style.display = (job.pet_fee_required && !job.pet_fee_collected) ? 'block' : 'none';
-  document.getElementById('edit-collect-from').value = job.collect_from || 'guest';
+  // Legacy pet fee — handled by unified extra fee field above
   const extraRow = document.getElementById('edit-extra-collect-from-row');
   const extraSel = document.getElementById('edit-extra-collect-from');
   if (extraRow) extraRow.style.display = (job.additional_cleaning_cents > 0) ? 'block' : 'none';
   if (extraSel) extraSel.value = job.extra_collect_from || 'owner';
-  document.getElementById('edit-job-pet-fee-cleaner-pct').value = job.pet_fee_cleaner_pct != null ? Math.round(job.pet_fee_cleaner_pct / 100) : '';
-  document.getElementById('edit-job-extra-cleaner-pct').value = job.extra_cleaner_pct != null ? Math.round(job.extra_cleaner_pct / 100) : '';
-  document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
+  const cleanerCut = job.extra_cleaner_pct ?? job.pet_fee_cleaner_pct ?? null;
+  document.getElementById('edit-job-extra-cleaner-pct').value = cleanerCut != null ? Math.round(cleanerCut/100) : '';
+
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
   document.getElementById('edit-job-notes').value                     = job.notes || '';
@@ -2036,15 +2015,18 @@ async function saveEditJob() {
     // Auto-flag pet fee if completing a VRBO job or one with "pet" in summary
     ...(status === 'completed' && !document.getElementById('edit-job-pet-fee').checked && (() => {
       const j = allJobs.find(j => j.id === document.getElementById('edit-job-id').value);
-      return (j?.source === 'vrbo' || (j?.ical_summary||'').toLowerCase().includes('pet')) ? { pet_fee_required: true } : {};
+      return {}; // Auto pet fee removed — use Extra Fee field manually
     })()),
-    pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
-    pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
-    collect_from: document.getElementById('edit-collect-from')?.value || null,
-    extra_collect_from: document.getElementById('edit-extra-collect-from')?.value || null,
-    pet_fee_cleaner_pct: document.getElementById('edit-job-pet-fee-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cleaner-pct').value) * 100) : null,
+
+    extra_collect_from: document.getElementById('edit-extra-collect-from')?.value || 'owner',
     extra_cleaner_pct: document.getElementById('edit-job-extra-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null,
-    pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
+    additional_cleaning_collected: document.getElementById('edit-job-pet-fee-collected')?.checked || false,
+    // Clear old pet fee fields — all fees now go through additional_cleaning
+    pet_fee_required: false,
+    pet_fee_collected: false,
+    pet_fee_cents: null,
+    collect_from: null,
+    pet_fee_cleaner_pct: null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
     charge_cents:              document.getElementById('edit-job-charge').value ? Math.round(parseFloat(document.getElementById('edit-job-charge').value) * 100) : null,
@@ -2064,15 +2046,11 @@ async function saveEditJob() {
 
   // BUCKET 2: Base pay (exactly what's in the fields — no modification)
   // BUCKET 3: Fee cuts — calculated fresh, never compounds
-  const petFeeCleanerCutVal = document.getElementById('edit-job-pet-fee-cleaner-pct')?.value;
-  const extraCleanerCutVal  = document.getElementById('edit-job-extra-cleaner-pct')?.value;
-  const petFeeCentsVal  = document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : 0;
+  const extraCleanerCutVal = document.getElementById('edit-job-extra-cleaner-pct')?.value;
   const extraCleanCentsVal = document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
 
   // Fee cut = explicit value if set, otherwise 75% default
-  const petCut   = petFeeCleanerCutVal  ? Math.round(parseFloat(petFeeCleanerCutVal) * 100)  : Math.round(petFeeCentsVal * 0.75);
-  const extraCut = extraCleanerCutVal   ? Math.round(parseFloat(extraCleanerCutVal) * 100)   : Math.round(extraCleanCentsVal * 0.75);
-  const totalFeeCut = petCut + extraCut;
+  const totalFeeCut = extraCleanerCutVal ? Math.round(parseFloat(extraCleanerCutVal) * 100) : Math.round(extraCleanCentsVal * 0.75);
 
   // Only give fee cuts to non-owner/op cleaners
   const c1Profile = cleaners.find(c => c.id === cleanerId);
@@ -2098,7 +2076,8 @@ async function saveEditJob() {
 
   closeModal('modal-edit-job');
   showToast('Job updated ✓');
-  await loadJobs();
+  await Promise.all([loadJobs(), loadPaymentData()]);
+  renderPayments();
 }
 
 async function markComplete(jobId) {
@@ -2878,19 +2857,17 @@ async function loadPendingFees() {
     .select('*, properties(name), job_assignments(profiles(full_name, is_owner_operator))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo')
+    .or('additional_cleaning_cents.gt.0')
     .order('scheduled_date', { ascending: false });
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
   pendingFeesData = (data || []).filter(j =>
-    j.pet_fee_required || j.additional_cleaning_cents > 0 ||
-    (j.source === 'vrbo' && !j.pet_fee_collected)
+    j.additional_cleaning_cents > 0
   );
 
   const outstanding = pendingFeesData.filter(j =>
-    (j.pet_fee_required && !j.pet_fee_collected) ||
-    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
+    j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected
   );
 
   // Update nav badge
@@ -2922,12 +2899,10 @@ function renderPendingFeesTab() {
   const fmt = c => '$'+(c/100).toFixed(2);
 
   const outstanding = pendingFeesData.filter(j =>
-    (j.pet_fee_required && !j.pet_fee_collected) ||
-    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
+    j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected
   );
   const collected = pendingFeesData.filter(j =>
-    (j.pet_fee_required && j.pet_fee_collected) ||
-    (j.additional_cleaning_cents > 0 && j.additional_cleaning_collected)
+    j.additional_cleaning_cents > 0 && j.additional_cleaning_collected
   );
 
   const current = showingCollectedFees ? collected : outstanding;
@@ -3208,7 +3183,7 @@ async function renderPL() {
   const expList = expenses || [];
 
   const cleaningRevenue   = jobList.reduce((s,j) => s + (j.charge_cents||0), 0);
-  const petFeeRevenue     = jobList.filter(j => j.pet_fee_collected).reduce((s,j) => s + (j.pet_fee_cents||0), 0);
+  const petFeeRevenue     = 0; // Unified into additional_cleaning_cents
   const extraCleanRevenue = jobList.filter(j => j.additional_cleaning_collected).reduce((s,j) => s + (j.additional_cleaning_cents||0), 0);
   const revenue = cleaningRevenue + petFeeRevenue + extraCleanRevenue;
 
