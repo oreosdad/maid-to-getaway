@@ -2051,8 +2051,8 @@ async function saveEditJob() {
   const extraCut = extraCleanerCut  != null ? extraCleanerCut  : Math.round(extraCleanCents * 0.75);
 
   // Check if cleaners are owner/op so we skip fee cuts for them
-  const c1Profile = allCleaners.find(c => c.id === cleanerId);
-  const c2Profile = allCleaners.find(c => c.id === cleanerId2);
+  const c1Profile = cleaners.find(c => c.id === cleanerId);
+  const c2Profile = cleaners.find(c => c.id === cleanerId2);
   const c1IsOwnerOp = c1Profile?.is_owner_operator || false;
   const c2IsOwnerOp = c2Profile?.is_owner_operator || false;
 
