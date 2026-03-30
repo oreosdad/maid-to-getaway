@@ -682,6 +682,16 @@
         <h2>Pending Fees</h2>
         <button class="btn btn-outline btn-sm" onclick="loadPendingFees()">↻ Refresh</button>
       </div>
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
+        <button id="fees-tab-outstanding" onclick="setFeesTab(false)"
+          style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">
+          Outstanding <span id="fees-outstanding-badge" style="background:var(--error);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px"></span>
+        </button>
+        <button id="fees-tab-collected" onclick="setFeesTab(true)"
+          style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">
+          Collected
+        </button>
+      </div>
       <div id="pending-fees-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
@@ -2775,160 +2785,168 @@ function showToast(msg) {
 
 // ── PENDING FEES ──
 let pendingFeesData = [];
+let showingCollectedFees = false;
 
 async function loadPendingFees() {
   const wrap = document.getElementById('pending-fees-content');
   wrap.innerHTML = '<div class="loading-inline">Loading…</div>';
 
-  // Load all completed jobs with outstanding pet fees or additional cleaning fees
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name, owner_id), job_assignments(profiles(full_name))')
+    .select('*, properties(name), job_assignments(profiles(full_name, is_owner_operator))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo');
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo')
+    .order('scheduled_date', { ascending: false });
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
-  // Include both outstanding AND collected fees (collected shown in separate section)
-  pendingFeesData = (data || []).filter(j => {
-    const hasPetFee = j.pet_fee_required;
-    const hasExtraClean = j.additional_cleaning_cents > 0;
-    const isVrboUnchecked = j.source === 'vrbo' && !j.pet_fee_collected && j.status === 'completed';
-    return hasPetFee || hasExtraClean || isVrboUnchecked;
-  });
+  pendingFeesData = (data || []).filter(j =>
+    j.pet_fee_required || j.additional_cleaning_cents > 0 ||
+    (j.source === 'vrbo' && !j.pet_fee_collected)
+  );
 
-  // Update badge
+  const outstanding = pendingFeesData.filter(j =>
+    (j.pet_fee_required && !j.pet_fee_collected) ||
+    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
+  );
+
+  // Update nav badge
   const badge = document.getElementById('pending-fees-badge');
-  if (pendingFeesData.length) {
-    badge.style.display = 'inline-flex';
-    badge.style.alignItems = 'center';
-    badge.style.justifyContent = 'center';
-    badge.textContent = pendingFeesData.length;
-  } else {
-    badge.style.display = 'none';
-  }
+  badge.style.display = outstanding.length ? 'inline-flex' : 'none';
+  badge.style.alignItems = 'center';
+  badge.style.justifyContent = 'center';
+  badge.textContent = outstanding.length;
 
-  if (!pendingFeesData.length) {
-    wrap.innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:8px">✅</div><p>No outstanding fees. All caught up!</p></div>';
+  const outBadge = document.getElementById('fees-outstanding-badge');
+  if (outBadge) outBadge.textContent = outstanding.length || '';
+
+  renderPendingFeesTab();
+}
+
+function setFeesTab(showCollected) {
+  showingCollectedFees = showCollected;
+  const outBtn = document.getElementById('fees-tab-outstanding');
+  const colBtn = document.getElementById('fees-tab-collected');
+  if (outBtn) {
+    outBtn.style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${!showCollected?'var(--navy)':' var(--text-muted)'};border-bottom:${!showCollected?'2px solid var(--navy)':' none'};margin-bottom:-2px`;
+    colBtn.style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${showCollected?'var(--navy)':' var(--text-muted)'};border-bottom:${showCollected?'2px solid var(--navy)':' none'};margin-bottom:-2px`;
+  }
+  renderPendingFeesTab();
+}
+
+function renderPendingFeesTab() {
+  const wrap = document.getElementById('pending-fees-content');
+  const fmt = c => '$'+(c/100).toFixed(2);
+
+  const outstanding = pendingFeesData.filter(j =>
+    (j.pet_fee_required && !j.pet_fee_collected) ||
+    (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected)
+  );
+  const collected = pendingFeesData.filter(j =>
+    (j.pet_fee_required && j.pet_fee_collected) ||
+    (j.additional_cleaning_cents > 0 && j.additional_cleaning_collected)
+  );
+
+  const current = showingCollectedFees ? collected : outstanding;
+
+  if (!current.length) {
+    wrap.innerHTML = showingCollectedFees
+      ? '<div class="empty-state"><p>No collected fees yet.</p></div>'
+      : '<div class="empty-state"><div style="font-size:36px;margin-bottom:8px">✅</div><p>No outstanding fees. All caught up!</p></div>';
     return;
   }
 
-  const totalOutstanding = pendingFeesData.reduce((s, j) => {
-    let amt = 0;
-    if (j.pet_fee_required && !j.pet_fee_collected) amt += (j.pet_fee_cents || 0);
-    if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) amt += j.additional_cleaning_cents;
-    return s + amt;
+  const totalAmt = current.reduce((s,j) => {
+    if (!showingCollectedFees) {
+      if (j.pet_fee_required && !j.pet_fee_collected) s += (j.pet_fee_cents||0);
+      if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) s += j.additional_cleaning_cents;
+    } else {
+      if (j.pet_fee_required && j.pet_fee_collected) s += (j.pet_fee_cents||0);
+      if (j.additional_cleaning_cents > 0 && j.additional_cleaning_collected) s += j.additional_cleaning_cents;
+    }
+    return s;
   }, 0);
 
+  const buildRows = (job) => {
+    const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
+    const rows = [];
+
+    if (job.pet_fee_required) {
+      const isOut = !job.pet_fee_collected;
+      if (showingCollectedFees !== isOut) {
+        rows.push(`<tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name||'—'}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+          <td>
+            <span style="background:${isOut?'#FBF3D5':'var(--success-bg)'};color:${isOut?'#A07D1C':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${isOut?'🐶 Pet fee':'✓ Pet fee'}</span>
+            ${job.collect_from && isOut ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
+          </td>
+          <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : '—'}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${isOut
+                ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>`
+                : `<button class="btn btn-outline btn-sm" onclick="undoPetFeeCollected('${job.id}')">Undo</button>`}
+              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
+            </div>
+          </td>
+        </tr>`);
+      }
+    }
+
+    if (job.additional_cleaning_cents > 0) {
+      const isOut = !job.additional_cleaning_collected;
+      if (showingCollectedFees !== isOut) {
+        rows.push(`<tr>
+          <td>${formatDate(job.scheduled_date)}</td>
+          <td>${job.properties?.name||'—'}</td>
+          <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+          <td>
+            <span style="background:${isOut?'#FDEEEE':'var(--success-bg)'};color:${isOut?'var(--error)':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${isOut?'📸 Extra clean':'✓ Extra clean'}${job.additional_cleaning_notes?' — '+job.additional_cleaning_notes:''}</span>
+            ${job.extra_collect_from && isOut ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.extra_collect_from}</strong></span>` : ''}
+          </td>
+          <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${isOut
+                ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>`
+                : `<button class="btn btn-outline btn-sm" onclick="undoExtraCleanCollected('${job.id}')">Undo</button>`}
+              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
+            </div>
+          </td>
+        </tr>`);
+      }
+    }
+
+    return rows.join('');
+  };
+
   wrap.innerHTML = `
-    <div class="stats-row" style="margin-bottom:24px">
-      <div class="stat-card flagged">
-        <div class="stat-label">Outstanding fees</div>
-        <div class="stat-value">${pendingFeesData.length}</div>
-      </div>
-      <div class="stat-card gold">
-        <div class="stat-label">Total owed</div>
-        <div class="stat-value">$${Math.round(totalOutstanding/100)}</div>
-      </div>
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px">
+      ${!showingCollectedFees ? `
+        <div style="background:var(--success-bg);border-radius:10px;padding:10px 20px;text-align:center">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Outstanding</div>
+          <div style="font-size:20px;font-weight:500;color:var(--navy)">${current.length} fee${current.length!==1?'s':''}</div>
+        </div>
+        <div style="background:#FDEEEE;border-radius:10px;padding:10px 20px;text-align:center">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Total owed</div>
+          <div style="font-size:20px;font-weight:500;color:var(--error)">$${Math.round(totalAmt/100)}</div>
+        </div>` : `
+        <div style="background:var(--success-bg);border-radius:10px;padding:10px 20px;text-align:center">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Collected</div>
+          <div style="font-size:20px;font-weight:500;color:var(--success)">$${Math.round(totalAmt/100)}</div>
+        </div>`}
     </div>
     <div class="card">
       <table>
-        <thead><tr>
-          <th>Date</th>
-          <th>Property</th>
-          <th>Cleaner</th>
-          <th>Fee type</th>
-          <th>Amount</th>
-          <th>Actions</th>
-        </tr></thead>
-        <tbody>
-          ${pendingFeesData.filter(job =>
-            (job.pet_fee_required && !job.pet_fee_collected) ||
-            (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected)
-          ).map(job => {
-            const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
-            const rows = [];
-            if (job.pet_fee_required && !job.pet_fee_collected) {
-              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name || '—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td>
-                  <span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span>
-                  ${job.collect_from ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.collect_from}</strong></span>` : ''}
-                </td>
-                <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
-                <td onclick="event.stopPropagation()">
-                  <div style="display:flex;gap:6px;flex-wrap:wrap">
-                    <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
-                    <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-                  </div>
-                </td>
-              </tr>`);
-            }
-            if (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected) {
-              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name || '—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td>
-                  <span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span>
-                  ${job.extra_collect_from ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.extra_collect_from}</strong></span>` : ''}
-                </td>
-                <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
-                <td onclick="event.stopPropagation()">
-                  <div style="display:flex;gap:6px;flex-wrap:wrap">
-                    <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>
-                    <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-                  </div>
-                </td>
-              </tr>`);
-            }
-            return rows.join('');
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-    ${pendingFeesData.some(j => j.pet_fee_collected || j.additional_cleaning_collected) ? `
-    <div style="margin-top:32px">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:12px">Collected</div>
-      <table>
         <thead><tr><th>Date</th><th>Property</th><th>Cleaner</th><th>Fee type</th><th>Amount</th><th>Actions</th></tr></thead>
-        <tbody>
-          ${pendingFeesData.filter(job =>
-            (job.pet_fee_required && job.pet_fee_collected) ||
-            (job.additional_cleaning_cents > 0 && job.additional_cleaning_collected)
-          ).map(job => {
-            const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
-            const rows = [];
-            if (job.pet_fee_required && job.pet_fee_collected) {
-              rows.push(`<tr style="opacity:0.7">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name||'—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:var(--success-bg);color:var(--success);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">✓ Pet fee</span></td>
-                <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : '—'}</td>
-                <td><button class="btn btn-outline btn-sm" onclick="undoPetFeeCollected('${job.id}')">Undo</button></td>
-              </tr>`);
-            }
-            if (job.additional_cleaning_cents > 0 && job.additional_cleaning_collected) {
-              rows.push(`<tr style="opacity:0.7">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name||'—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:var(--success-bg);color:var(--success);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">✓ Extra clean</span></td>
-                <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
-                <td><button class="btn btn-outline btn-sm" onclick="undoExtraCleanCollected('${job.id}')">Undo</button></td>
-              </tr>`);
-            }
-            return rows.join('');
-          }).join('')}
-        </tbody>
+        <tbody>${current.map(buildRows).join('')}</tbody>
       </table>
-    </div>` : ''}
     </div>`;
 }
+
 
 async function markPetFeeCollected(jobId) {
   const job = allJobs.find(j => j.id === jobId);
