@@ -261,6 +261,7 @@
         .eq('id', userId)
         .single();
 
+      console.log('profile:', JSON.stringify(profile), 'error:', error?.message);
       if (error || !profile) { window.location.href = 'admin.html'; return; }
 
       const allRoles = profile.notification_prefs?.roles;
