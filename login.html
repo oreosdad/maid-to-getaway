@@ -254,34 +254,47 @@
   }
 
   async function redirectByRole(userId) {
-    const { data: profile, error } = await db
-      .from('profiles')
-      .select('role, notification_prefs')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data: profile, error } = await db
+        .from('profiles')
+        .select('role, notification_prefs')
+        .eq('id', userId)
+        .single();
 
-    if (error || !profile) { window.location.href = 'admin.html'; return; }
+      if (error || !profile) { window.location.href = 'admin.html'; return; }
 
-    const roles = profile.notification_prefs?.roles || [profile.role];
-    const validRoles = roles.filter(r => ['admin','cleaner','owner'].includes(r));
+      const allRoles = profile.notification_prefs?.roles;
+      const roles = (Array.isArray(allRoles) && allRoles.length > 0)
+        ? allRoles
+        : [profile.role];
+      const validRoles = roles.filter(r => ['admin','cleaner','owner'].includes(r));
 
-    if (validRoles.length <= 1) {
-      const role = validRoles[0] || profile.role;
-      if (role === 'admin')   window.location.href = 'admin.html';
-      if (role === 'cleaner') window.location.href = 'cleaner.html';
-      if (role === 'owner')   window.location.href = 'owner.html';
-      return;
+      if (validRoles.length === 0) { window.location.href = 'admin.html'; return; }
+
+      if (validRoles.length === 1) {
+        const role = validRoles[0];
+        if (role === 'admin')   { window.location.href = 'admin.html';   return; }
+        if (role === 'cleaner') { window.location.href = 'cleaner.html'; return; }
+        if (role === 'owner')   { window.location.href = 'owner.html';   return; }
+        window.location.href = 'admin.html';
+        return;
+      }
+
+      // Multi-role — show picker
+      const portalNames = { admin: '⚙️ Admin', cleaner: '🧹 Cleaner', owner: '🏠 Owner' };
+      const portalUrls  = { admin: 'admin.html', cleaner: 'cleaner.html', owner: 'owner.html' };
+      const btn = document.querySelector('.btn[disabled]');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Sign in'; }
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('role-picker').style.display = 'block';
+      document.getElementById('role-buttons').innerHTML = validRoles.map(r => `
+        <a href="${portalUrls[r]}" class="btn" style="display:block;text-align:center;margin-bottom:12px;padding:16px;font-size:15px">
+          ${portalNames[r]} Portal
+        </a>`).join('');
+    } catch(e) {
+      console.error('redirectByRole error:', e);
+      window.location.href = 'admin.html';
     }
-
-    // Multi-role — show picker
-    const portalNames = { admin: '⚙️ Admin', cleaner: '🧹 Cleaner', owner: '🏠 Owner' };
-    const portalUrls  = { admin: 'admin.html', cleaner: 'cleaner.html', owner: 'owner.html' };
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('role-picker').style.display = 'block';
-    document.getElementById('role-buttons').innerHTML = validRoles.map(r => `
-      <a href="${portalUrls[r]}" class="btn" style="display:block;text-align:center;margin-bottom:12px;padding:16px;font-size:15px">
-        ${portalNames[r]} Portal
-      </a>`).join('');
   }
 
   function showError(msg) {
