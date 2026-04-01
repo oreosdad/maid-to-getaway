@@ -520,6 +520,18 @@
   <div class="highfive-sub" id="highfive-sub">Job marked complete</div>
 </div>
 
+<!-- PROPERTY CHECKLIST MODAL -->
+<div class="modal-overlay" id="modal-prop-checklist-cleaner">
+  <div class="modal" style="max-width:540px;max-height:85vh;overflow-y:auto">
+    <div class="modal-header" style="position:sticky;top:0;background:white;z-index:1;padding-bottom:12px">
+      <h3 id="cleaner-checklist-title">Checklist</h3>
+      <button class="modal-close" onclick="closeModal('modal-prop-checklist-cleaner')">✕</button>
+    </div>
+    <div id="cleaner-checklist-body" style="padding-top:8px"></div>
+  </div>
+</div>
+
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -1183,6 +1195,7 @@ async function renderProperties() {
           ${p.default_checkout_time ? `<span class="meta-pill pill-time">🚪 Checkout ${formatTime12(p.default_checkout_time)}</span>` : ''}
           ${p.default_checkin_time  ? `<span class="meta-pill pill-time">🏠 Check-in ${formatTime12(p.default_checkin_time)}</span>`  : ''}
         </div>` : ''}
+      <button class="btn btn-outline btn-full" style="margin-top:12px;font-size:13px" onclick="openPropertyChecklist('${p.id}', '${(p.name||'').replace(/'/g,"\\'")}')">📋 View Checklist</button>
     </div>`).join('');
 }
 
@@ -1325,6 +1338,42 @@ async function saveCleanerReportNotes(reportId) {
   document.getElementById('cleaner-report-notes-view-'+reportId).textContent = notes;
   cancelCleanerEditReport(reportId);
   showToast('Updated ✓');
+}
+
+
+async function openPropertyChecklist(propertyId, propertyName) {
+  document.getElementById('cleaner-checklist-title').textContent = propertyName + ' — Checklist';
+  const body = document.getElementById('cleaner-checklist-body');
+  body.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">Loading…</div>';
+  document.getElementById('modal-prop-checklist-cleaner').classList.add('open');
+
+  // Load master + property-specific items
+  let items = [...masterChecklist];
+  const { data: propChecklist } = await db.from('checklist_templates').select('items').eq('property_id', propertyId).single();
+  if (propChecklist?.items?.length) {
+    items = [...items, ...propChecklist.items.map(i => ({ ...i, propertySpecific: true }))];
+  }
+
+  if (!items.length) {
+    body.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center">No checklist set up yet.</div>';
+    return;
+  }
+
+  const sections = {};
+  items.forEach(item => {
+    if (!sections[item.section]) sections[item.section] = [];
+    sections[item.section].push(item);
+  });
+
+  body.innerHTML = Object.entries(sections).map(([section, sectionItems]) => `
+    <div class="checklist-section">
+      <div class="checklist-section-title">${section}</div>
+      ${sectionItems.map(item => `
+        <label class="checklist-item" id="propcheck-${item.id}">
+          <input type="checkbox" onchange="this.closest('.checklist-item').classList.toggle('checked', this.checked)"/>
+          <span class="checklist-item-text">${item.text}${item.propertySpecific ? ' <span style="font-size:10px;color:var(--gold-dark);background:var(--gold-light);padding:1px 5px;border-radius:4px;margin-left:4px">Property note</span>' : ''}</span>
+        </label>`).join('')}
+    </div>`).join('');
 }
 
 // ── SETTINGS ──
