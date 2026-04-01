@@ -11,9 +11,9 @@
     :root {
       --cream: #F4EFE4;
       --cream-dark: #EDE6D6;
-      --navy: #0F4A45;
-      --gold: #F0A830;
-      --gold-dark: #C47A10;
+      --navy: #1C2B3A;
+      --gold: #C49A2A;
+      --gold-dark: #A07D1C;
       --text: #1C2B3A;
       --text-muted: #7A7060;
       --white: #FFFFFF;
@@ -188,9 +188,7 @@
 
 <div class="card">
   <div class="logo-area">
-    <div style="width:64px;height:64px;border-radius:14px;overflow:hidden;background:white;border:1.5px solid #EDE6D4;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
-      <img src="/m2g_logo.svg" alt="M2G" style="width:100%;height:100%;object-fit:contain;padding:3px"/>
-    </div>
+    <div class="logo-icon">🧹</div>
     <h1>Maid to <em>Getaway</em></h1>
     <p>Staff Portal · Kansas City</p>
   </div>
@@ -258,19 +256,32 @@
   async function redirectByRole(userId) {
     const { data: profile, error } = await db
       .from('profiles')
-      .select('role')
+      .select('role, notification_prefs')
       .eq('id', userId)
       .single();
 
-    // If profile can't be read, go to admin.html anyway (for testing)
-    if (error || !profile) {
-      window.location.href = 'admin.html';
+    if (error || !profile) { window.location.href = 'admin.html'; return; }
+
+    const roles = profile.notification_prefs?.roles || [profile.role];
+    const validRoles = roles.filter(r => ['admin','cleaner','owner'].includes(r));
+
+    if (validRoles.length <= 1) {
+      const role = validRoles[0] || profile.role;
+      if (role === 'admin')   window.location.href = 'admin.html';
+      if (role === 'cleaner') window.location.href = 'cleaner.html';
+      if (role === 'owner')   window.location.href = 'owner.html';
       return;
     }
 
-    if (profile.role === 'admin')   window.location.href = 'admin.html';
-    if (profile.role === 'cleaner') window.location.href = 'cleaner.html';
-    if (profile.role === 'owner')   window.location.href = 'owner.html';
+    // Multi-role — show picker
+    const portalNames = { admin: '⚙️ Admin', cleaner: '🧹 Cleaner', owner: '🏠 Owner' };
+    const portalUrls  = { admin: 'admin.html', cleaner: 'cleaner.html', owner: 'owner.html' };
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('role-picker').style.display = 'block';
+    document.getElementById('role-buttons').innerHTML = validRoles.map(r => `
+      <a href="${portalUrls[r]}" class="btn" style="display:block;text-align:center;margin-bottom:12px;padding:16px;font-size:15px">
+        ${portalNames[r]} Portal
+      </a>`).join('');
   }
 
   function showError(msg) {
