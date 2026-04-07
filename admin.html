@@ -11,10 +11,10 @@
     :root {
       --cream: #F4EFE4;
       --cream-dark: #EDE6D6;
-      --navy: #0F4A45;
-      --gold: #F0A830;
-      --gold-dark: #C47A10;
-      --gold-light: #FEF3DC;
+      --navy: #1C2B3A;
+      --gold: #C49A2A;
+      --gold-dark: #A07D1C;
+      --gold-light: #FBF3D5;
       --text: #1C2B3A;
       --text-muted: #7A7060;
       --white: #FFFFFF;
@@ -442,18 +442,6 @@
 <body>
 
 <!-- Shown while checking auth -->
-<!-- Sync error banner -->
-<div id="sync-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#C0392B;color:white;padding:12px 24px;align-items:center;justify-content:space-between;gap:16px;font-family:'DM Sans',sans-serif;font-size:14px">
-  <div style="display:flex;align-items:center;gap:10px">
-    <span style="font-size:18px">⚠️</span>
-    <span id="sync-error-banner-text">iCal sync error — check Maintenance Requests for details</span>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <button onclick="showPage('reports',document.getElementById('nav-reports'))" style="background:white;color:#C0392B;border:none;border-radius:8px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">View details</button>
-    <button onclick="dismissSyncBanner()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
-  </div>
-</div>
-
 <div id="auth-loading">Checking your session…</div>
 
 <!-- Hidden until auth confirmed -->
@@ -461,15 +449,8 @@
 
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:8px;overflow:hidden;background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          <img src="/m2g_logo.svg" alt="M2G" style="width:100%;height:100%;object-fit:contain;padding:3px"/>
-        </div>
-        <div>
-          <h1 style="margin:0">Maid to <em>Getaway</em></h1>
-          <p style="margin:0">Admin Portal</p>
-        </div>
-      </div>
+      <h1>Maid to <em>Getaway</em></h1>
+      <p>Admin Portal</p>
     </div>
     <nav>
       <a class="nav-item active" id="nav-jobs" onclick="showPage('jobs', this)">
@@ -488,9 +469,6 @@
         <span class="nav-icon">⚠️</span> Pending Fees
         <span id="pending-fees-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
-      <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
-        <span class="nav-icon">📊</span> Financials
-      </a>
       <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
         <span class="nav-icon">👥</span> Users
       </a>
@@ -505,10 +483,7 @@
     <div class="page active" id="page-jobs">
       <div class="page-header">
         <h2>Jobs</h2>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline" id="sync-btn" onclick="manualSync()">↻ Sync calendars</button>
-          <button class="btn" onclick="openNewJobModal()">+ New job</button>
-        </div>
+        <button class="btn" onclick="openNewJobModal()">+ New job</button>
       </div>
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
@@ -531,21 +506,17 @@
           <div class="stat-label">⚑ Flagged</div>
           <div class="stat-value" id="stat-flagged">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
+        <div class="stat-card">
           <div class="stat-label">Cleaner payout MTD</div>
           <div class="stat-value" id="stat-payout">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd')" title="Click to filter">
+        <div class="stat-card">
           <div class="stat-label">Revenue MTD</div>
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
+        <div class="stat-card" style="border-color:#C49A2A">
           <div class="stat-label">Profit MTD</div>
           <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
-        </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
-          <div class="stat-label">Owner/op revenue MTD</div>
-          <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
         </div>
       </div>
       <div class="card">
@@ -592,38 +563,6 @@
     </div>
 
     <!-- USERS PAGE (unified — cleaners, owners, admins) -->
-    <!-- FINANCIALS PAGE -->
-    <div class="page" id="page-financials">
-      <div class="page-header">
-        <h2>Financials</h2>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="fin-period" onchange="onFinPeriodChange()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
-            <option value="mtd">This Month</option>
-            <option value="last_month">Last Month</option>
-            <option value="ytd">Year to Date</option>
-            <option value="q1">Q1 2026</option>
-            <option value="q2">Q2 2026</option>
-            <option value="all">All Time</option>
-            <option value="custom">Custom Range…</option>
-          </select>
-          <div id="fin-custom-dates" style="display:none;align-items:center;gap:6px">
-            <input type="date" id="fin-custom-start" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
-            <span style="font-size:13px;color:var(--text-muted)">to</span>
-            <input type="date" id="fin-custom-end" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="exportFinancials('csv')">↓ CSV</button>
-          <button class="btn btn-outline btn-sm" onclick="exportFinancials('pdf')">↓ PDF</button>
-          <button class="btn btn-sm" onclick="openAddExpenseModal()">+ Add expense</button>
-        </div>
-      </div>
-      <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
-        <button id="fin-tab-pl" onclick="setFinTab('pl')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">P&L</button>
-        <button id="fin-tab-expenses" onclick="setFinTab('expenses')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">Expenses</button>
-      </div>
-      <div id="fin-panel-pl"></div>
-      <div id="fin-panel-expenses" style="display:none"></div>
-    </div>
-
     <div class="page" id="page-users">
       <div class="page-header">
         <h2>Users</h2>
@@ -682,16 +621,6 @@
         <h2>Pending Fees</h2>
         <button class="btn btn-outline btn-sm" onclick="loadPendingFees()">↻ Refresh</button>
       </div>
-      <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
-        <button id="fees-tab-outstanding" onclick="setFeesTab(false)"
-          style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">
-          Outstanding <span id="fees-outstanding-badge" style="background:var(--error);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px"></span>
-        </button>
-        <button id="fees-tab-collected" onclick="setFeesTab(true)"
-          style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">
-          Collected
-        </button>
-      </div>
       <div id="pending-fees-content"><div class="loading-inline">Loading…</div></div>
     </div>
 
@@ -718,7 +647,7 @@
           <option value="">All statuses</option>
           <option value="open" selected>Open</option>
           <option 
-          <option value="resolved">Archived</option>
+          <option value="resolved">Closed</option>
         </select>
         <select id="report-filter-property" onchange="renderAdminReports()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
           <option value="">All properties</option>
@@ -1047,10 +976,10 @@
       </div>
     </div>
     <div class="form-group">
-      <label>Owners</label>
-      <div id="edit-prop-owners-wrap" style="border:1.5px solid var(--cream-dark);border-radius:8px;padding:10px 14px;background:var(--cream);max-height:160px;overflow-y:auto">
-        <span style="font-size:13px;color:var(--text-muted)">Loading…</span>
-      </div>
+      <label>Assign owner</label>
+      <select id="edit-prop-owner">
+        <option value="">No owner assigned</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Notes</label>
@@ -1074,12 +1003,10 @@
       <div class="alert-icon">⚑</div>
       <div class="alert-body">
         <div class="alert-title">SHORT TURNAROUND — PAY ATTENTION</div>
-        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in.</div>
+        <div class="alert-sub" id="edit-job-short-alert-sub">Less than 8 hours between guest checkout and next check-in. Coordinate with your cleaner immediately.</div>
       </div>
     </div>
     <input type="hidden" id="edit-job-id"/>
-
-    <!-- PROPERTY & DATE -->
     <div class="form-group">
       <label>Property</label>
       <select id="edit-job-property"></select>
@@ -1099,6 +1026,10 @@
       </div>
     </div>
     <div class="form-group">
+      <label>Assigned cleaner</label>
+      <select id="edit-job-cleaner"></select>
+    </div>
+    <div class="form-group">
       <label>Status</label>
       <select id="edit-job-status">
         <option value="unassigned">Unassigned</option>
@@ -1109,100 +1040,44 @@
         <option value="flagged">Flagged</option>
       </select>
     </div>
-
-    <!-- BUCKET 1: REVENUE -->
-    <div style="background:var(--cream);border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid var(--cream-dark)">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:12px">Revenue</div>
-      <div class="form-row" style="margin-bottom:0">
-        <div class="form-group" style="margin-bottom:0">
-          <label>Charge to owner ($)</label>
-          <input type="number" id="edit-job-charge" placeholder="e.g. 120" min="0" step="1"/>
-        </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Charge to owner ($)</label>
+        <input type="number" id="edit-job-charge" placeholder="e.g. 120" min="0" step="1"/>
+      </div>
+      <div class="form-group">
+        <label>Cleaner payout ($)</label>
+        <input type="number" id="edit-job-payout" placeholder="e.g. 85" min="0" step="1"/>
       </div>
     </div>
-
-    <!-- BUCKET 2: CLEANER PAY -->
-    <div style="background:#EAF7F0;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #C3E6D5">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--success);margin-bottom:12px">Cleaner Pay</div>
-      <div id="edit-job-cleaners-wrap">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-          <select id="edit-job-cleaner" style="flex:1"></select>
-          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">BASE PAY ($)</span>
-            <input type="number" id="edit-job-payout-1" oninput="updateTotalPayout()" placeholder="e.g. 85" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid #C3E6D5;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
-        </div>
-        <div style="display:none;gap:8px;align-items:center;margin-bottom:8px" id="edit-job-cleaner2-row">
-          <select id="edit-job-cleaner2" style="flex:1"></select>
-          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-            <span style="font-size:10px;color:var(--text-muted);font-weight:500">BASE PAY ($)</span>
-            <input type="number" id="edit-job-payout-2" oninput="updateTotalPayout()" placeholder="e.g. 85" min="0" step="1" style="width:100px;padding:8px;border-radius:8px;border:1.5px solid #C3E6D5;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-          </div>
-        </div>
-        <button type="button" id="edit-job-split-btn" onclick="toggleSplitCleaner()" style="font-size:12px;color:var(--success);background:none;border:none;cursor:pointer;padding:0;font-family:'DM Sans',sans-serif">+ Add second cleaner</button>
-      </div>
-      <input type="number" id="edit-job-payout" style="display:none"/>
-    </div>
-
-    <!-- BUCKET 3: EXTRA FEE -->
-    <div style="background:#FEF3DC;border-radius:10px;padding:16px;margin-bottom:16px;border:1.5px solid #F7C96A">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold-dark);margin-bottom:12px">Flags &amp; Extra Fee</div>
-      <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
-        <label class="checkbox-label" style="margin:0;font-size:13px">
-          <input type="checkbox" id="edit-job-pet-fee"/>
-          🐶 Pet
-        </label>
-        <label class="checkbox-label" style="margin:0;font-size:13px">
-          <input type="checkbox" id="edit-job-flag-excessive"/>
-          📸 Excessive clean
-        </label>
-        <label class="checkbox-label" style="margin:0;font-size:13px">
-          <input type="checkbox" id="edit-job-flag-other"/>
-          📝 Other
+    <div class="form-row">
+      <div class="form-group">
+        <label class="checkbox-label" style="margin-top:8px">
+          <input type="checkbox" id="edit-job-pet-fee" onchange="document.getElementById('edit-pet-fee-collected-row').style.display=this.checked?'block':'none'"/>
+          🐶 Pet fee
         </label>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:500">FEE AMOUNT ($)</span>
-          <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"
-            style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:500">CLEANER GETS ($)</span>
-          <input type="number" id="edit-job-extra-cleaner-pct" placeholder="e.g. 30" min="0" step="1"
-            style="width:90px;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:500">REASON</span>
-          <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet hair, excessive mess…"
-            style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:14px;background:white"/>
-        </div>
+      <div class="form-group">
+        <label>Pet fee amount ($)</label>
+        <input type="number" id="edit-job-pet-fee-cents" placeholder="e.g. 40" min="0" step="1" oninput="if(this.value) document.getElementById('edit-job-pet-fee').checked=true"/>
       </div>
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
-          <span style="font-size:10px;color:var(--text-muted);font-weight:500">COLLECT FROM</span>
-          <select id="edit-extra-collect-from" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #F7C96A;font-family:'DM Sans',sans-serif;font-size:13px;background:white">
-            <option value="owner">Owner</option>
-            <option value="guest">Guest directly</option>
-            <option value="airbnb">Airbnb</option>
-            <option value="vrbo">VRBO</option>
-          </select>
-        </div>
-        <label class="checkbox-label" style="margin:0;padding-top:16px">
+      <div class="form-group">
+        <label class="checkbox-label" id="edit-pet-fee-collected-row" style="display:none">
           <input type="checkbox" id="edit-job-pet-fee-collected"/>
-          ✓ Collected
+          🐶 Pet fee collected from owner
         </label>
       </div>
-      <!-- Hidden fields for backwards compatibility -->
-      <input type="hidden" id="edit-job-pet-fee" value="false"/>
-      <input type="hidden" id="edit-job-pet-fee-cents" value=""/>
-      <input type="hidden" id="edit-job-pet-fee-cleaner-pct" value=""/>
-      <input type="hidden" id="edit-collect-from" value="owner"/>
-      <input type="hidden" id="edit-pet-fee-collected-row"/>
-      <input type="hidden" id="edit-collect-from-row"/>
-      <input type="hidden" id="edit-extra-collect-from-row"/>
     </div>
-
+    <div class="form-row">
+      <div class="form-group">
+        <label>Additional cleaning fee ($)</label>
+        <input type="number" id="edit-job-additional-cleaning" placeholder="e.g. 40" min="0" step="1"/>
+      </div>
+      <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label>Reason</label>
+        <input type="text" id="edit-job-additional-cleaning-notes" placeholder="e.g. Pet mess, excessive dirt…"/>
+      </div>
+    </div>
     <div class="form-group">
       <label>Admin notes <span style="color:var(--text-muted);font-weight:400">(only visible to admin)</span></label>
       <textarea id="edit-job-notes" placeholder="Any special instructions…"></textarea>
@@ -1298,192 +1173,6 @@
   </div>
 </div>
 
-<!-- ADD EXPENSE MODAL -->
-<div class="modal-overlay" id="modal-add-expense">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h3>Add Expense</h3>
-      <button class="modal-close" onclick="closeModal('modal-add-expense')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="exp-date"/>
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-          <option value="supplies">Supplies</option>
-          <option value="insurance">Insurance</option>
-          <option value="software">Software</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Amount ($)</label>
-        <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="exp-description" placeholder="e.g. Cleaning supplies from Target"/>
-      </div>
-      <div class="form-group">
-        <label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-        <input type="text" id="exp-vendor" placeholder="e.g. Target, Amazon"/>
-      </div>
-      <div class="form-group">
-        <label>Receipt <span style="color:var(--text-muted);font-weight:400">(optional · screenshot only · max 1MB)</span></label>
-        <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px" onchange="checkReceiptSize(this)"/>
-        <div id="exp-receipt-warning" style="display:none;color:var(--error);font-size:12px;margin-top:4px">⚠️ File must be under 1MB.</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-add-expense')">Cancel</button>
-      <button class="btn" onclick="saveExpense()">Save expense</button>
-    </div>
-  </div>
-</div>
-
-<!-- W9 MODAL -->
-<div class="modal-overlay" id="modal-w9">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h3>W9 — <span id="w9-cleaner-name"></span></h3>
-      <button class="modal-close" onclick="closeModal('modal-w9')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="w9-cleaner-id"/>
-      <div id="w9-current" style="margin-bottom:16px"></div>
-      <div class="form-group">
-        <label>Upload W9 <span style="color:var(--text-muted);font-weight:400">(PDF or image · max 5MB)</span></label>
-        <input type="file" id="w9-file" accept=".pdf,image/*" style="font-size:13px" onchange="checkW9Size(this)"/>
-        <div id="w9-size-warning" style="display:none;color:var(--error);font-size:12px;margin-top:4px">⚠️ File must be under 5MB.</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-w9')">Cancel</button>
-      <button class="btn" onclick="saveW9()">Upload W9</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- RESET PASSWORD MODAL -->
-<div class="modal-overlay" id="modal-reset-password">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>Set New Password</h3>
-      <button class="modal-close" onclick="closeModal('modal-reset-password')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p id="reset-pw-email" style="font-size:14px;color:var(--text-muted);margin-bottom:20px"></p>
-      <input type="hidden" id="reset-pw-user-id"/>
-      <div class="form-group">
-        <label>New password</label>
-        <div style="position:relative">
-          <input type="password" id="reset-pw-new" placeholder="Min. 6 characters" autocomplete="new-password"
-            style="width:100%;padding-right:44px"/>
-          <button type="button" onclick="togglePwVis('reset-pw-new','reset-pw-eye')"
-            id="reset-pw-eye"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Confirm password</label>
-        <div style="position:relative">
-          <input type="password" id="reset-pw-confirm" placeholder="Re-enter password" autocomplete="new-password"
-            style="width:100%;padding-right:44px"/>
-          <button type="button" onclick="togglePwVis('reset-pw-confirm','reset-pw-eye2')"
-            id="reset-pw-eye2"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
-        </div>
-      </div>
-      <div id="reset-pw-error" style="display:none;font-size:13px;color:var(--error);margin-top:4px"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-reset-password')">Cancel</button>
-      <button class="btn" onclick="submitResetPassword()">Set password</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- GRANT LOGIN MODAL -->
-<div class="modal-overlay" id="modal-grant-login">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <h3>Grant Login Access</h3>
-      <button class="modal-close" onclick="closeModal('modal-grant-login')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p id="grant-login-name" style="font-size:14px;font-weight:500;color:var(--navy);margin-bottom:4px"></p>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">This will create a login account linked to their existing profile and job history.</p>
-      <input type="hidden" id="grant-login-user-id"/>
-      <div class="form-group">
-        <label>Email address</label>
-        <input type="email" id="grant-login-email" placeholder="cleaner@example.com" autocomplete="off"/>
-      </div>
-      <div class="form-group">
-        <label>Temporary password</label>
-        <div style="position:relative">
-          <input type="password" id="grant-login-password" value="ChangeMe123!" style="width:100%;padding-right:44px"/>
-          <button type="button" onclick="togglePwVis('grant-login-password','grant-login-eye')" id="grant-login-eye"
-            style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
-        </div>
-      </div>
-      <div id="grant-login-error" style="display:none;font-size:13px;color:var(--error);margin-top:4px"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-grant-login')">Cancel</button>
-      <button class="btn" onclick="submitGrantLogin()">Grant access</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- EDIT EXPENSE MODAL -->
-<div class="modal-overlay" id="modal-edit-expense">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h3>Edit Expense</h3>
-      <button class="modal-close" onclick="closeModal('modal-edit-expense')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-exp-id"/>
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="edit-exp-date"/>
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="edit-exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
-          <option value="supplies">Supplies</option>
-          <option value="insurance">Insurance</option>
-          <option value="software">Software</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Amount ($)</label>
-        <input type="number" id="edit-exp-amount" min="0" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="edit-exp-description"/>
-      </div>
-      <div class="form-group">
-        <label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-        <input type="text" id="edit-exp-vendor"/>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-edit-expense')">Cancel</button>
-      <button class="btn" onclick="saveEditExpense()">Save changes</button>
-    </div>
-  </div>
-</div>
-
-
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1513,17 +1202,7 @@ function sortJobsTable(col) {
     else if (col === 'cleaner')  { av = a.job_assignments?.[0]?.profiles?.full_name || ''; bv = b.job_assignments?.[0]?.profiles?.full_name || ''; }
     else if (col === 'charge')   { av = a.charge_cents || 0; bv = b.charge_cents || 0; }
     else if (col === 'payout')   { av = a.payout_cents || 0; bv = b.payout_cents || 0; }
-    else if (col === 'profit') {
-      const getProfit = j => {
-        const rev = (j.charge_cents||0) + (j.additional_cleaning_cents||0);
-        const assignments = j.job_assignments || [];
-        const pay = assignments.length
-          ? assignments.filter(a => !a.profiles?.is_owner_operator).reduce((s,a) => s+(a.payout_cents||0), 0)
-          : (j.payout_cents||0);
-        return rev - pay;
-      };
-      av = getProfit(a); bv = getProfit(b);
-    }
+    else if (col === 'profit')   { av = ((a.charge_cents||0)+(a.additional_cleaning_cents||0))-(a.payout_cents||0); bv = ((b.charge_cents||0)+(b.additional_cleaning_cents||0))-(b.payout_cents||0); }
     else if (col === 'flags')    { av = (a.is_short_window?1:0)+(a.pet_fee_required?1:0); bv = (b.is_short_window?1:0)+(b.pet_fee_required?1:0); }
     else if (col === 'paydate')  { av = a.cleaner_pay_date || '9999'; bv = b.cleaner_pay_date || '9999'; }
     else { av = ''; bv = ''; }
@@ -1559,11 +1238,9 @@ async function init() {
 
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
-  loadPendingFees();
-  checkSyncErrors();
   // Load owner profiles for property assignment dropdown
-  const { data: allProfs } = await db.from('profiles').select('id, full_name, email, role, notification_prefs').order('full_name');
-  window._ownerProfiles = (allProfs||[]).filter(p => { const roles = p.notification_prefs?.roles||[]; return p.role==='owner'||roles.includes('owner'); });
+  const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
+  window._ownerProfiles = owners || [];
 }
 
 // Only redirect on explicit sign-out, not on every state change
@@ -1584,14 +1261,13 @@ function showPage(name, el) {
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
   if (name === 'users')      { loadUsers(); }
   if (name === 'pending-fees') { loadPendingFees(); }
-  if (name === 'financials')    { renderFinancials(); }
 }
 
 // ── JOBS ──
 async function loadJobs() {
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, base_payout_cents, profiles(full_name, id, is_owner_operator)), pet_fee_collected')
+    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id)), pet_fee_collected')
     .order('scheduled_date', { ascending: true })
     .limit(500);
   if (error) { showToast('Error loading jobs'); return; }
@@ -1741,27 +1417,13 @@ function renderJobStats() {
   document.getElementById('stat-completed').textContent   = completedThisWeek.length;
   document.getElementById('stat-flagged').textContent     = flagged.length;
 
-  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => {
-    const assignments = j.job_assignments || [];
-    if (!assignments.length) return sum + (j.payout_cents||0);
-    const nonOwnerOpPayout = assignments.filter(a => !a.profiles?.is_owner_operator).reduce((s,a) => s + (a.payout_cents||0), 0);
-    return sum + nonOwnerOpPayout;
-  }, 0);
+  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
   document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
 
   const mtdCharge = mtdCompletedJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
   const mtdProfit = mtdCharge - mtdPayout;
   document.getElementById('stat-revenue-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
   document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
-
-  // Owner/op MTD — revenue from jobs where all cleaners are owner/op
-  const ownerOpMtdJobs = mtdCompletedJobs.filter(j => {
-    const assignments = j.job_assignments || [];
-    if (!assignments.length) return false;
-    return assignments.every(a => a.profiles?.is_owner_operator);
-  });
-  const ownerOpMtdRevenue = ownerOpMtdJobs.reduce((s,j) => s + (j.charge_cents||0) + (j.additional_cleaning_cents||0), 0);
-  document.getElementById('stat-owner-op-mtd').textContent = ownerOpMtdRevenue > 0 ? '$' + Math.round(ownerOpMtdRevenue / 100) : '—';
 }
 
 function filterJobsFromStat(type) {
@@ -1790,28 +1452,6 @@ function filterJobsFromStat(type) {
     filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
   } else if (type === 'flagged') {
     filtered = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
-  } else if (type === 'revenue-mtd') {
-    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
-    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
-    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
-  } else if (type === 'profit-mtd') {
-    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
-    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
-    filtered.sort((a,b) => {
-      const getProfit = j => ((j.charge_cents||0)+(j.additional_cleaning_cents||0)) - (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
-      return getProfit(b) - getProfit(a);
-    });
-  } else if (type === 'payout-mtd') {
-    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
-    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear() && (j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator));
-    filtered.sort((a,b) => {
-      const getPayout = j => (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
-      return getPayout(b) - getPayout(a);
-    });
-  } else if (type === 'owner-op-mtd') {
-    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
-    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear() && (j.job_assignments||[]).length && (j.job_assignments||[]).every(a=>a.profiles?.is_owner_operator));
-    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
   } else {
     filtered = allJobs.filter(j => !j.deleted_at);
   }
@@ -1898,7 +1538,7 @@ function renderJobsTable(jobs) {
           <td>${job.properties?.name || '—'}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
           <td style="font-size:13px;color:var(--text-muted)">${job.job_assignments?.[0]?.profiles?.full_name || '—'}</td>
-          <td>${job.charge_cents ? '$' + Math.round((job.charge_cents + (job.additional_cleaning_cents||0)) / 100) : '—'}</td>
+          <td>${job.charge_cents ? '$' + Math.round(job.charge_cents / 100) : '—'}</td>
           <td>${job.payout_cents ? '$' + Math.round(job.payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(job.charge_cents && job.payout_cents) ? '#1E7B4B' : '#B0A896'}">${(job.charge_cents && job.payout_cents) ? '$' + Math.round(((job.charge_cents + (job.additional_cleaning_cents||0)) - job.payout_cents) / 100) : '—'}</td>
           <td>
@@ -1926,7 +1566,7 @@ function renderJobsTable(jobs) {
 }
 
 function openEditJobModal(id) {
-  const job = allJobs.find(j => j.id === id) || allPaymentJobs.find(j => j.id === id) || pendingFeesData.find(j => j.id === id);
+  const job = allJobs.find(j => j.id === id) || allPaymentJobs.find(j => j.id === id);
   if (!job) return;
 
   // Populate property dropdown
@@ -1935,49 +1575,23 @@ function openEditJobModal(id) {
     properties.map(p => `<option value="${p.id}" ${p.id === job.property_id ? 'selected' : ''}>${p.name}</option>`).join('');
 
   // Populate cleaner dropdown
-  // Populate cleaner slots from job_assignments
-  const assignments = job.job_assignments || [];
-  const cleaner1 = assignments[0] || null;
-  const cleaner2 = assignments[1] || null;
-  document.getElementById('edit-job-cleaner').innerHTML  = buildAssigneeOptions(cleaner1?.cleaner_id || '');
-  document.getElementById('edit-job-cleaner2').innerHTML = buildAssigneeOptions(cleaner2?.cleaner_id || '');
-  // Load BASE payout — from base_payout_cents if set, otherwise fall back to property default
-  const jobProp2 = properties.find(p => p.id === job.property_id);
-  const propDefault = jobProp2?.default_payout_cents || null;
-  const base1 = cleaner1?.base_payout_cents != null ? cleaner1.base_payout_cents
-              : cleaner1?.payout_cents != null ? cleaner1.payout_cents
-              : propDefault;
-  const base2 = cleaner2?.base_payout_cents != null ? cleaner2.base_payout_cents
-              : cleaner2?.payout_cents != null ? cleaner2.payout_cents
-              : null;
-  document.getElementById('edit-job-payout-1').value = base1 ? Math.round(base1/100) : '';
-  document.getElementById('edit-job-payout-2').value = base2 ? Math.round(base2/100) : '';
-  // Show/hide second cleaner row
-  const hasSecond = !!cleaner2?.cleaner_id;
-  document.getElementById('edit-job-cleaner2-row').style.display = hasSecond ? 'flex' : 'none';
-  document.getElementById('edit-job-split-btn').textContent = hasSecond ? '✕ Remove second cleaner' : '+ Add second cleaner';
-  updateTotalPayout();
+  document.getElementById('edit-job-cleaner').innerHTML = buildAssigneeOptions(job.job_assignments?.[0]?.cleaner_id || '');
 
   document.getElementById('edit-job-id').value          = job.id;
   document.getElementById('edit-job-date').value        = job.scheduled_date || '';
   // Pre-fill payout from job, or fall back to property default
   const jobProp = properties.find(p => p.id === job.property_id);
+  const payoutCents = job.payout_cents || (jobProp && jobProp.default_payout_cents) || null;
   const chargeCents = job.charge_cents || (jobProp && jobProp.default_charge_cents) || null;
   document.getElementById('edit-job-charge').value = chargeCents ? Math.round(chargeCents / 100) : '';
+  document.getElementById('edit-job-payout').value = payoutCents ? Math.round(payoutCents / 100) : '';
   document.getElementById('edit-job-checkout').value    = job.guest_checkout ? job.guest_checkout.slice(0,16) : '';
   document.getElementById('edit-job-checkin').value     = job.guest_checkin  ? job.guest_checkin.slice(0,16)  : '';
   document.getElementById('edit-job-status').value      = job.status;
-  // Load flags
-  document.getElementById('edit-job-pet-fee').checked = !!job.pet_fee_required;
-  document.getElementById('edit-job-flag-excessive').checked = !!(job.additional_cleaning_notes && job.additional_cleaning_notes.toLowerCase().includes('excessive'));
-  document.getElementById('edit-job-flag-other').checked = !!(job.additional_cleaning_notes && !job.additional_cleaning_notes.toLowerCase().includes('excessive') && !job.pet_fee_required && job.additional_cleaning_cents);
-  const extraRow = document.getElementById('edit-extra-collect-from-row');
-  const extraSel = document.getElementById('edit-extra-collect-from');
-  if (extraRow) extraRow.style.display = (job.additional_cleaning_cents > 0) ? 'block' : 'none';
-  if (extraSel) extraSel.value = job.extra_collect_from || 'owner';
-  const cleanerCut = job.extra_cleaner_pct ?? job.pet_fee_cleaner_pct ?? null;
-  document.getElementById('edit-job-extra-cleaner-pct').value = cleanerCut != null ? Math.round(cleanerCut/100) : '';
-
+  document.getElementById('edit-job-pet-fee').checked   = job.pet_fee_required;
+  document.getElementById('edit-pet-fee-collected-row').style.display = job.pet_fee_required ? 'block' : 'none';
+  document.getElementById('edit-job-pet-fee-collected').checked = !!job.pet_fee_collected;
+  document.getElementById('edit-job-pet-fee-cents').value = job.pet_fee_cents ? Math.round(job.pet_fee_cents/100) : '';
   document.getElementById('edit-job-additional-cleaning').value       = job.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents / 100) : '';
   document.getElementById('edit-job-additional-cleaning-notes').value = job.additional_cleaning_notes || '';
   document.getElementById('edit-job-notes').value                     = job.notes || '';
@@ -2032,17 +1646,11 @@ async function saveEditJob() {
     // Auto-flag pet fee if completing a VRBO job or one with "pet" in summary
     ...(status === 'completed' && !document.getElementById('edit-job-pet-fee').checked && (() => {
       const j = allJobs.find(j => j.id === document.getElementById('edit-job-id').value);
-      return {}; // Auto pet fee removed — use Extra Fee field manually
+      return (j?.source === 'vrbo' || (j?.ical_summary||'').toLowerCase().includes('pet')) ? { pet_fee_required: true } : {};
     })()),
-
-    extra_collect_from: document.getElementById('edit-extra-collect-from')?.value || 'owner',
-    extra_cleaner_pct: document.getElementById('edit-job-extra-cleaner-pct')?.value ? Math.round(parseFloat(document.getElementById('edit-job-extra-cleaner-pct').value) * 100) : null,
-    additional_cleaning_collected: document.getElementById('edit-job-pet-fee-collected')?.checked || false,
-    pet_fee_required: document.getElementById('edit-job-pet-fee')?.checked || false,
-    pet_fee_collected: false,
-    pet_fee_cents: null,
-    collect_from: null,
-    pet_fee_cleaner_pct: null,
+    pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
+    pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
+    pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
     notes:            document.getElementById('edit-job-notes').value || null,
     cleaner_pay_date: calcPayDate(date),
     charge_cents:              document.getElementById('edit-job-charge').value ? Math.round(parseFloat(document.getElementById('edit-job-charge').value) * 100) : null,
@@ -2053,47 +1661,17 @@ async function saveEditJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update assignments — delete all, reinsert
-  const cleanerId2 = document.getElementById('edit-job-cleaner2').value || null;
-  const payout1Raw = document.getElementById('edit-job-payout-1').value;
-  const payout2Raw = document.getElementById('edit-job-payout-2').value;
-  const payout1Base = payout1Raw ? Math.round(parseFloat(payout1Raw) * 100) : 0;
-  const payout2Base = payout2Raw ? Math.round(parseFloat(payout2Raw) * 100) : 0;
-
-  // BUCKET 2: Base pay (exactly what's in the fields — no modification)
-  // BUCKET 3: Fee cuts — calculated fresh, never compounds
-  const extraCleanerCutVal = document.getElementById('edit-job-extra-cleaner-pct')?.value;
-  const extraCleanCentsVal = document.getElementById('edit-job-additional-cleaning').value ? Math.round(parseFloat(document.getElementById('edit-job-additional-cleaning').value) * 100) : 0;
-
-  // Fee cut = explicit value if set, otherwise 75% default
-  const totalFeeCut = extraCleanerCutVal ? Math.round(parseFloat(extraCleanerCutVal) * 100) : Math.round(extraCleanCentsVal * 0.75);
-
-  // Only give fee cuts to non-owner/op cleaners
-  const c1Profile = cleaners.find(c => c.id === cleanerId);
-  const c2Profile = cleaners.find(c => c.id === cleanerId2);
-  const c1IsOwnerOp = c1Profile?.is_owner_operator || false;
-  const c2IsOwnerOp = c2Profile?.is_owner_operator || false;
-  const eligibleCount = [!c1IsOwnerOp && cleanerId, !c2IsOwnerOp && cleanerId2].filter(Boolean).length;
-  const feeSharePerCleaner = eligibleCount > 0 ? Math.round(totalFeeCut / eligibleCount) : 0;
-
-  // Total payout = base + fee cut (calculated fresh every save — NO compounding)
-  const finalPayout1 = payout1Base + (!c1IsOwnerOp && cleanerId  ? feeSharePerCleaner : 0);
-  const finalPayout2 = payout2Base + (!c2IsOwnerOp && cleanerId2 ? feeSharePerCleaner : 0);
-
-  // Save: base_payout_cents stores base only, payout_cents stores total
-  await db.from('job_assignments').delete().eq('job_id', id);
-  const newAssignments = [];
-  if (cleanerId)  newAssignments.push({ job_id: id, cleaner_id: cleanerId,  response: 'accepted', base_payout_cents: payout1Base || null, payout_cents: finalPayout1 || null });
-  if (cleanerId2) newAssignments.push({ job_id: id, cleaner_id: cleanerId2, response: 'accepted', base_payout_cents: payout2Base || null, payout_cents: finalPayout2 || null });
-  if (newAssignments.length) await db.from('job_assignments').insert(newAssignments);
-
-  const totalPayout = finalPayout1 + (cleanerId2 ? finalPayout2 : 0);
-  if (totalPayout > 0) await db.from('jobs').update({ payout_cents: totalPayout }).eq('id', id);
+  // Update assignment if cleaner changed
+  if (cleanerId) {
+    await db.from('job_assignments')
+      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
+  } else {
+    await db.from('job_assignments').delete().eq('job_id', id);
+  }
 
   closeModal('modal-edit-job');
   showToast('Job updated ✓');
-  await Promise.all([loadJobs(), loadPaymentData()]);
-  renderPayments();
+  await loadJobs();
 }
 
 async function markComplete(jobId) {
@@ -2176,12 +1754,14 @@ async function permanentDeleteJob(jobId) {
 function calcPayDate(scheduledDate) {
   if (!scheduledDate) return null;
   const d = new Date(scheduledDate + 'T12:00:00');
+  // Get to the following Monday (start of next week)
   const day = d.getDay(); // 0=Sun, 1=Mon ... 6=Sat
-  // Days until the NEXT Friday from the clean date
-  // Mon=4, Tue=3, Wed=2, Thu=1, Fri=7, Sat=6, Sun=5
-  const daysToFriday = day === 5 ? 7 : (5 - day + 7) % 7 || 7;
-  const payFriday = new Date(d);
-  payFriday.setDate(d.getDate() + daysToFriday);
+  const daysUntilNextMonday = (8 - day) % 7 || 7;
+  const nextMonday = new Date(d);
+  nextMonday.setDate(d.getDate() + daysUntilNextMonday);
+  // Friday of that week = nextMonday + 4
+  const payFriday = new Date(nextMonday);
+  payFriday.setDate(nextMonday.getDate() + 4);
   return payFriday.toISOString().split('T')[0];
 }
 
@@ -2268,7 +1848,7 @@ async function saveJob() {
 
 // ── PROPERTIES ──
 async function loadProperties() {
-  const { data } = await db.from('properties').select('*, property_owners(profile_id, profiles(full_name, email))').order('name');
+  const { data } = await db.from('properties').select('*').order('name');
   properties = data || [];
 }
 
@@ -2280,7 +1860,7 @@ function renderProperties() {
   }
   wrap.innerHTML = `
     <table>
-      <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Owners</th><th>Notes</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Name</th><th>Address</th><th>Airbnb iCal</th><th>VRBO iCal</th><th>Charge</th><th>Payout</th><th>Profit</th><th>Notes</th><th>Actions</th></tr></thead>
       <tbody>${properties.map(p => `
         <tr style="cursor:pointer" onclick="openEditPropertyModal('${p.id}')">
           <td><strong>${p.name}</strong></td>
@@ -2290,7 +1870,6 @@ function renderProperties() {
           <td>${p.default_charge_cents ? '$' + Math.round(p.default_charge_cents / 100) : '—'}</td>
           <td>${p.default_payout_cents ? '$' + Math.round(p.default_payout_cents / 100) : '—'}</td>
           <td style="font-weight:500;color:${(p.default_charge_cents && p.default_payout_cents) ? '#1E7B4B' : '#B0A896'}">${(p.default_charge_cents && p.default_payout_cents) ? '$' + Math.round((p.default_charge_cents - p.default_payout_cents) / 100) : '—'}</td>
-          <td style="font-size:12px;color:var(--text-muted)">${(p.property_owners||[]).map(o=>o.profiles?.full_name).filter(Boolean).join(', ') || '—'}</td>
           <td style="color:var(--text-muted);font-size:13px;max-width:200px"><span title="${p.notes || ''}" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default">${p.notes || '—'}</span></td>
           <td onclick="event.stopPropagation()" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openEditPropertyModal('${p.id}')">Edit</button>
@@ -2315,19 +1894,10 @@ function openEditPropertyModal(id) {
   document.getElementById('edit-prop-payout').value         = p.default_payout_cents ? Math.round(p.default_payout_cents / 100) : '';
   document.getElementById('edit-prop-notes').value          = p.notes || '';
 
-  // Populate owner checkboxes
-  const currentOwners = (p.property_owners || []).map(o => o.profile_id);
-  const ownerWrap = document.getElementById('edit-prop-owners-wrap');
-  if (ownerWrap) {
-    ownerWrap.innerHTML = (window._ownerProfiles || []).length
-      ? (window._ownerProfiles || []).map(o => `
-          <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:14px">
-            <input type="checkbox" value="${o.id}" ${currentOwners.includes(o.id) ? 'checked' : ''}
-              style="width:16px;height:16px;accent-color:var(--navy)"/>
-            ${o.full_name}${o.email ? ' <span style="color:var(--text-muted);font-size:12px">('+o.email+')</span>' : ''}
-          </label>`).join('')
-      : '<span style="font-size:13px;color:var(--text-muted)">No owner profiles found</span>';
-  }
+  // Populate owner dropdown
+  const ownerSel = document.getElementById('edit-prop-owner');
+  ownerSel.innerHTML = '<option value="">No owner assigned</option>' +
+    (window._ownerProfiles || []).map(o => `<option value="${o.id}" ${o.id === p.owner_id ? 'selected' : ''}>${o.full_name} (${o.email})</option>`).join('');
 
   document.getElementById('modal-edit-property').classList.add('open');
 }
@@ -2351,13 +1921,8 @@ async function saveEditProperty() {
     default_charge_cents:   document.getElementById('edit-prop-charge').value ? Math.round(parseFloat(document.getElementById('edit-prop-charge').value) * 100) : null,
     default_payout_cents:   document.getElementById('edit-prop-payout').value ? Math.round(parseFloat(document.getElementById('edit-prop-payout').value) * 100) : null,
     notes:                  document.getElementById('edit-prop-notes').value.trim() || null,
+    owner_id:               document.getElementById('edit-prop-owner').value || null
   }).eq('id', id);
-
-  const selectedOwners = [...document.querySelectorAll('#edit-prop-owners-wrap input[type=checkbox]:checked')].map(cb => cb.value);
-  await db.from('property_owners').delete().eq('property_id', id);
-  if (selectedOwners.length) {
-    await db.from('property_owners').insert(selectedOwners.map(pid => ({ property_id: id, profile_id: pid })));
-  }
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-property');
@@ -2410,20 +1975,9 @@ async function saveProperty() {
   renderProperties();
 }
 
-async function manualSync() {
-  const btn = document.getElementById('sync-btn');
-  btn.disabled = true;
-  btn.textContent = '↻ Syncing…';
-  await triggerIcalSync();
-  btn.disabled = false;
-  btn.textContent = '↻ Sync calendars';
-  await loadJobs();
-}
-
 async function triggerIcalSync() {
   try {
-    const jwt = await getAdminJWT();
-    const res  = await fetch('/.netlify/functions/sync-ical', { headers: { 'x-admin-jwt': jwt || '' } });
+    const res  = await fetch('/.netlify/functions/sync-ical?secret=MaidSync2026!');
     const data = await res.json();
     const msg  = data.created > 0
       ? `✓ Calendar synced — ${data.created} new job${data.created !== 1 ? 's' : ''} added`
@@ -2557,15 +2111,14 @@ async function loadPaymentData() {
   allPaymentJobs = [];
   (data || []).forEach(j => {
     const assignments = j.job_assignments || [];
-    const validAssignments = assignments.filter(a => a.profiles);
+    const validAssignments = assignments.filter(a => a.profiles && !a.profiles.is_owner_operator);
     if (!validAssignments.length) return;
     validAssignments.forEach(a => {
       allPaymentJobs.push({
         ...j,
-        _cleaner_id:      a.cleaner_id,
-        _cleaner_name:    a.profiles.full_name,
-        _payout_cents:    a.payout_cents || j.payout_cents || 0,
-        _is_owner_op:     !!a.profiles.is_owner_operator,
+        _cleaner_id:   a.cleaner_id,
+        _cleaner_name: a.profiles.full_name,
+        _payout_cents: a.payout_cents || j.payout_cents || 0,
       });
     });
   });
@@ -2614,9 +2167,8 @@ async function renderPayments() {
   if (statusFilter === 'paid')   filtered = filtered.filter(j =>  j.cleaner_paid_at);
 
   // Stats
-  const totalOwed   = filtered.filter(j => !j.cleaner_paid_at && !j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
-  const totalPaid   = filtered.filter(j =>  j.cleaner_paid_at && !j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
-  const ownerOpVal  = filtered.filter(j => j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
+  const totalOwed = filtered.filter(j => !j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
+  const totalPaid = filtered.filter(j =>  j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
   document.getElementById('payment-stats-row').innerHTML = `
     <div class="stat-card flagged">
       <div class="stat-label">Outstanding</div>
@@ -2627,10 +2179,6 @@ async function renderPayments() {
       <div class="stat-value" style="color:var(--success)">$${Math.round(totalPaid/100)}</div>
     </div>
     <div class="stat-card gold">
-      <div class="stat-label">Owner/op labor value</div>
-      <div class="stat-value" style="color:var(--gold-dark)">$${Math.round(ownerOpVal/100)}</div>
-    </div>
-    <div class="stat-card">
       <div class="stat-label">Jobs shown</div>
       <div class="stat-value">${filtered.length}</div>
     </div>`;
@@ -2645,7 +2193,7 @@ async function renderPayments() {
   const byCleanerDate = {};
   filtered.forEach(j => {
     const key = j._cleaner_id + '|' + (j.cleaner_pay_date || 'no-date');
-    if (!byCleanerDate[key]) byCleanerDate[key] = { cleaner: j._cleaner_name, cleanerId: j._cleaner_id, payDate: j.cleaner_pay_date, isOwnerOp: j._is_owner_op, jobs: [] };
+    if (!byCleanerDate[key]) byCleanerDate[key] = { cleaner: j._cleaner_name, cleanerId: j._cleaner_id, payDate: j.cleaner_pay_date, jobs: [] };
     byCleanerDate[key].jobs.push(j);
   });
 
@@ -2681,20 +2229,12 @@ async function renderPayments() {
           ${!allPaid ? `
             <div style="text-align:right">
               <div style="font-size:22px;font-weight:500;color:var(--navy)">$${Math.round(unpaidTotal/100)}</div>
-              <div style="font-size:11px;color:var(--text-muted)">${group.isOwnerOp ? 'est. labor value' : 'due'}</div>
+              <div style="font-size:11px;color:var(--text-muted)">due</div>
             </div>
-            ${group.isOwnerOp
-              ? `<div style="display:flex;gap:8px;align-items:center">
-                  <span style="background:var(--gold-light);color:var(--gold-dark);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500">👤 Owner/operator</span>
-                  <button class="btn btn-outline btn-sm" style="white-space:nowrap"
-                    onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')},true)">
-                    ✓ Mark paid $0
-                  </button>
-                </div>`
-              : `<button class="btn" style="background:var(--success);color:white;white-space:nowrap"
-                  onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
-                  ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
-                </button>`}
+            <button class="btn" style="background:var(--success);color:white;white-space:nowrap"
+              onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
+              ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
+            </button>
           ` : `
             <div style="display:flex;align-items:center;gap:8px">
               <span style="color:var(--success);font-weight:500">✓ Paid $${Math.round(paidTotal/100)}</span>
@@ -2729,7 +2269,7 @@ async function renderPayments() {
   }).join('');
 }
 
-async function markCleanerPaid(cleanerId, payDate, jobIds, ownerOp = false) {
+async function markCleanerPaid(cleanerId, payDate, jobIds) {
   const ids = typeof jobIds === 'string' ? JSON.parse(jobIds) : jobIds;
   const now = new Date().toISOString();
   let success = 0;
@@ -2862,867 +2402,152 @@ function showToast(msg) {
 
 // ── PENDING FEES ──
 let pendingFeesData = [];
-let showingCollectedFees = false;
 
 async function loadPendingFees() {
   const wrap = document.getElementById('pending-fees-content');
   wrap.innerHTML = '<div class="loading-inline">Loading…</div>';
 
+  // Load all completed jobs with outstanding pet fees or additional cleaning fees
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(profiles(full_name, is_owner_operator))')
+    .select('*, properties(name, owner_id), job_assignments(profiles(full_name))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .or('additional_cleaning_cents.gt.0')
-    .order('scheduled_date', { ascending: false });
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo');
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
-  pendingFeesData = (data || []).filter(j =>
-    j.additional_cleaning_cents > 0
-  );
+  // Filter to only jobs with something outstanding
+  pendingFeesData = (data || []).filter(j => {
+    const hasPetFee = j.pet_fee_required && !j.pet_fee_collected;
+    const hasExtraClean = j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected;
+    // VRBO: owner pays platform directly, flag as pending until manually collected
+    const isVrboOwnerPay = j.source === 'vrbo' && !j.additional_cleaning_collected && !j.additional_cleaning_cents;
+    return hasPetFee || hasExtraClean || isVrboOwnerPay;
+  });
 
-  const outstanding = pendingFeesData.filter(j =>
-    j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected
-  );
-
-  // Update nav badge
+  // Update badge
   const badge = document.getElementById('pending-fees-badge');
-  badge.style.display = outstanding.length ? 'inline-flex' : 'none';
-  badge.style.alignItems = 'center';
-  badge.style.justifyContent = 'center';
-  badge.textContent = outstanding.length;
-
-  const outBadge = document.getElementById('fees-outstanding-badge');
-  if (outBadge) outBadge.textContent = outstanding.length || '';
-
-  renderPendingFeesTab();
-}
-
-function setFeesTab(showCollected) {
-  showingCollectedFees = showCollected;
-  const outBtn = document.getElementById('fees-tab-outstanding');
-  const colBtn = document.getElementById('fees-tab-collected');
-  if (outBtn) {
-    outBtn.style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${!showCollected?'var(--navy)':' var(--text-muted)'};border-bottom:${!showCollected?'2px solid var(--navy)':' none'};margin-bottom:-2px`;
-    colBtn.style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${showCollected?'var(--navy)':' var(--text-muted)'};border-bottom:${showCollected?'2px solid var(--navy)':' none'};margin-bottom:-2px`;
+  if (pendingFeesData.length) {
+    badge.style.display = 'inline-flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+    badge.textContent = pendingFeesData.length;
+  } else {
+    badge.style.display = 'none';
   }
-  renderPendingFeesTab();
-}
 
-function renderPendingFeesTab() {
-  const wrap = document.getElementById('pending-fees-content');
-  const fmt = c => '$'+(c/100).toFixed(2);
-
-  const outstanding = pendingFeesData.filter(j =>
-    j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected
-  );
-  const collected = pendingFeesData.filter(j =>
-    j.additional_cleaning_cents > 0 && j.additional_cleaning_collected
-  );
-
-  const current = showingCollectedFees ? collected : outstanding;
-
-  if (!current.length) {
-    wrap.innerHTML = showingCollectedFees
-      ? '<div class="empty-state"><p>No collected fees yet.</p></div>'
-      : '<div class="empty-state"><div style="font-size:36px;margin-bottom:8px">✅</div><p>No outstanding fees. All caught up!</p></div>';
+  if (!pendingFeesData.length) {
+    wrap.innerHTML = '<div class="empty-state"><div style="font-size:36px;margin-bottom:8px">✅</div><p>No outstanding fees. All caught up!</p></div>';
     return;
   }
 
-  const totalAmt = current.reduce((s,j) => {
-    if (!showingCollectedFees) {
-      if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) s += j.additional_cleaning_cents;
-    } else {
-      if (j.additional_cleaning_cents > 0 && j.additional_cleaning_collected) s += j.additional_cleaning_cents;
-    }
-    return s;
+  const totalOutstanding = pendingFeesData.reduce((s, j) => {
+    let amt = 0;
+    if (j.pet_fee_required && !j.pet_fee_collected) amt += (j.pet_fee_cents || 0);
+    if (j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected) amt += j.additional_cleaning_cents;
+    return s + amt;
   }, 0);
 
-  const buildRows = (job) => {
-    const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
-    const rows = [];
-
-    if (job.additional_cleaning_cents > 0) {
-      const isOut = !job.additional_cleaning_collected;
-      if (showingCollectedFees !== isOut) {
-        rows.push(`<tr>
-          <td>${formatDate(job.scheduled_date)}</td>
-          <td>${job.properties?.name||'—'}</td>
-          <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-          <td>
-            <span style="background:${isOut?'#FDEEEE':'var(--success-bg)'};color:${isOut?'var(--error)':'var(--success)'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">${isOut?'📸 Extra clean':'✓ Extra clean'}${job.additional_cleaning_notes?' — '+job.additional_cleaning_notes:''}</span>
-            ${job.extra_collect_from && isOut ? `<span style="font-size:11px;color:var(--text-muted);margin-left:6px">collect from: <strong>${job.extra_collect_from}</strong></span>` : ''}
-          </td>
-          <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
-          <td>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${isOut
-                ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>`
-                : `<button class="btn btn-outline btn-sm" onclick="undoExtraCleanCollected('${job.id}')">Undo</button>`}
-              <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
-            </div>
-          </td>
-        </tr>`);
-      }
-    }
-
-    return rows.join('');
-  };
-
   wrap.innerHTML = `
-    <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px">
-      ${!showingCollectedFees ? `
-        <div style="background:var(--success-bg);border-radius:10px;padding:10px 20px;text-align:center">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Outstanding</div>
-          <div style="font-size:20px;font-weight:500;color:var(--navy)">${current.length} fee${current.length!==1?'s':''}</div>
-        </div>
-        <div style="background:#FDEEEE;border-radius:10px;padding:10px 20px;text-align:center">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Total owed</div>
-          <div style="font-size:20px;font-weight:500;color:var(--error)">$${Math.round(totalAmt/100)}</div>
-        </div>` : `
-        <div style="background:var(--success-bg);border-radius:10px;padding:10px 20px;text-align:center">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em">Collected</div>
-          <div style="font-size:20px;font-weight:500;color:var(--success)">$${Math.round(totalAmt/100)}</div>
-        </div>`}
+    <div class="stats-row" style="margin-bottom:24px">
+      <div class="stat-card flagged">
+        <div class="stat-label">Outstanding fees</div>
+        <div class="stat-value">${pendingFeesData.length}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Total owed</div>
+        <div class="stat-value">$${Math.round(totalOutstanding/100)}</div>
+      </div>
     </div>
     <div class="card">
       <table>
-        <thead><tr><th>Date</th><th>Property</th><th>Cleaner</th><th>Fee type</th><th>Amount</th><th>Actions</th></tr></thead>
-        <tbody>${current.map(buildRows).join('')}</tbody>
+        <thead><tr>
+          <th>Date</th>
+          <th>Property</th>
+          <th>Cleaner</th>
+          <th>Fee type</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${pendingFeesData.map(job => {
+            const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
+            const rows = [];
+            if (job.pet_fee_required && !job.pet_fee_collected) {
+              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+                <td>${formatDate(job.scheduled_date)}</td>
+                <td>${job.properties?.name || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
+                <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
+                <td onclick="event.stopPropagation()">
+                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </td>
+              </tr>`);
+            }
+            if (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected) {
+              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+                <td>${formatDate(job.scheduled_date)}</td>
+                <td>${job.properties?.name || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+                <td><span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span></td>
+                <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
+                <td onclick="event.stopPropagation()">
+                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </td>
+              </tr>`);
+            }
+            // VRBO jobs — owner pays platform directly, flag as reminder
+            if (job.source === 'vrbo' && !job.additional_cleaning_cents && !job.additional_cleaning_collected) {
+              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+                <td>${formatDate(job.scheduled_date)}</td>
+                <td>${job.properties?.name || '—'}</td>
+                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+                <td>
+                  <span style="background:#E8F0FB;color:#1A56A4;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🏦 VRBO — owner pays platform</span>
+                  <span style="font-size:11px;color:var(--text-muted);margin-left:6px">Set fee amount if collecting separately</span>
+                </td>
+                <td style="font-weight:500;color:var(--text-muted)">—</td>
+                <td onclick="event.stopPropagation()">
+                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markVrboAcknowledged('${job.id}')">✓ Acknowledged</button>
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </td>
+              </tr>`);
+            }
+            return rows.join('');
+          }).join('')}
+        </tbody>
       </table>
     </div>`;
 }
 
-
 async function markPetFeeCollected(jobId) {
-  const job = allJobs.find(j => j.id === jobId);
   const { error } = await db.from('jobs').update({ pet_fee_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
-
-  // Add configured cleaner cut of pet fee to non-owner/op cleaners
-  const petCleanerCut = job?.pet_fee_cleaner_pct != null ? job.pet_fee_cleaner_pct : (job?.pet_fee_cents ? Math.round(job.pet_fee_cents * 0.75) : 0);
-  if (petCleanerCut > 0 && job?.pet_fee_cents) {
-    const cleanerBonus = petCleanerCut;
-    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
-    const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
-    if (eligibleAssignments.length) {
-      const share = Math.round(cleanerBonus / eligibleAssignments.length);
-      for (const a of eligibleAssignments) {
-        await db.from('job_assignments').update({ payout_cents: (a.payout_cents || 0) + share }).eq('id', a.id);
-      }
-      const { data: updatedAssignments } = await db.from('job_assignments').select('payout_cents').eq('job_id', jobId);
-      const newTotal = (updatedAssignments || []).reduce((s,a) => s + (a.payout_cents||0), 0);
-      await db.from('jobs').update({ payout_cents: newTotal }).eq('id', jobId);
-    }
-  }
-
+  // Update in memory
   allJobs = allJobs.map(j => j.id === jobId ? { ...j, pet_fee_collected: true } : j);
-  showToast('Pet fee collected ✓ — cleaner payout updated');
+  showToast('Pet fee marked as collected ✓');
   await loadPendingFees();
 }
 
 async function markExtraCleanCollected(jobId) {
-  const job = allJobs.find(j => j.id === jobId);
   const { error } = await db.from('jobs').update({ additional_cleaning_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
-
-  // Add configured cleaner cut of extra clean fee to non-owner/op cleaners
-  const extraCleanerCut = job?.extra_cleaner_pct != null ? job.extra_cleaner_pct : (job?.additional_cleaning_cents ? Math.round(job.additional_cleaning_cents * 0.75) : 0);
-  if (extraCleanerCut > 0 && job?.additional_cleaning_cents) {
-    const cleanerBonus = extraCleanerCut;
-    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
-    const eligibleAssignments = (assignments || []).filter(a => !a.profiles?.is_owner_operator);
-    if (eligibleAssignments.length) {
-      const share = Math.round(cleanerBonus / eligibleAssignments.length);
-      for (const a of eligibleAssignments) {
-        await db.from('job_assignments').update({ payout_cents: (a.payout_cents || 0) + share }).eq('id', a.id);
-      }
-      const { data: updatedAssignments } = await db.from('job_assignments').select('payout_cents').eq('job_id', jobId);
-      const newTotal = (updatedAssignments || []).reduce((s,a) => s + (a.payout_cents||0), 0);
-      await db.from('jobs').update({ payout_cents: newTotal }).eq('id', jobId);
-    }
-  }
-
   allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: true } : j);
-  showToast('Extra clean fee collected ✓ — cleaner payout updated');
+  showToast('Extra cleaning fee marked as collected ✓');
   await loadPendingFees();
 }
 
-
-
-async function undoPetFeeCollected(jobId) {
-  if (!confirm('Undo pet fee collection? This will reverse the cleaner payout adjustment.')) return;
-  const job = allJobs.find(j => j.id === jobId);
-
-  const { error } = await db.from('jobs').update({ pet_fee_collected: false }).eq('id', jobId);
+async function markVrboAcknowledged(jobId) {
+  // Mark additional_cleaning_collected=true to remove from pending — no money collected, just acknowledged
+  const { error } = await db.from('jobs').update({ additional_cleaning_collected: true }).eq('id', jobId);
   if (error) { showToast('Error: ' + error.message); return; }
-
-  // Reverse 75% bonus from non-owner/op cleaners
-  if (job?.pet_fee_cents) {
-    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
-    const eligible = (assignments||[]).filter(a => !a.profiles?.is_owner_operator);
-    if (eligible.length) {
-      const cut = job.pet_fee_cleaner_pct != null ? job.pet_fee_cleaner_pct : Math.round(job.pet_fee_cents * 0.75);
-      const share = Math.round(cut / eligible.length);
-      for (const a of eligible) {
-        await db.from('job_assignments').update({ payout_cents: Math.max(0, (a.payout_cents||0) - share) }).eq('id', a.id);
-      }
-    }
-  }
-
-  allJobs = allJobs.map(j => j.id === jobId ? { ...j, pet_fee_collected: false } : j);
-  showToast('Pet fee collection reversed ✓');
+  allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: true } : j);
+  showToast('VRBO job acknowledged ✓');
   await loadPendingFees();
-}
-
-async function undoExtraCleanCollected(jobId) {
-  if (!confirm('Undo extra clean fee collection? This will reverse the cleaner payout adjustment.')) return;
-  const job = allJobs.find(j => j.id === jobId);
-
-  const { error } = await db.from('jobs').update({ additional_cleaning_collected: false }).eq('id', jobId);
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  // Reverse 75% bonus from non-owner/op cleaners
-  if (job?.additional_cleaning_cents) {
-    const { data: assignments } = await db.from('job_assignments').select('id, payout_cents, profiles(is_owner_operator)').eq('job_id', jobId);
-    const eligible = (assignments||[]).filter(a => !a.profiles?.is_owner_operator);
-    if (eligible.length) {
-      const cut = job.extra_cleaner_pct != null ? job.extra_cleaner_pct : Math.round(job.additional_cleaning_cents * 0.75);
-      const share = Math.round(cut / eligible.length);
-      for (const a of eligible) {
-        await db.from('job_assignments').update({ payout_cents: Math.max(0, (a.payout_cents||0) - share) }).eq('id', a.id);
-      }
-    }
-  }
-
-  allJobs = allJobs.map(j => j.id === jobId ? { ...j, additional_cleaning_collected: false } : j);
-  showToast('Extra clean fee collection reversed ✓');
-  await loadPendingFees();
-}
-
-// ── FINANCIALS ──
-let finTab = 'pl';
-let finExpenses = [];
-
-function setFinTab(tab) {
-  finTab = tab;
-  document.getElementById('fin-tab-pl').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='pl'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='pl'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
-  document.getElementById('fin-tab-expenses').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='expenses'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='expenses'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
-  document.getElementById('fin-panel-pl').style.display       = tab === 'pl'       ? 'block' : 'none';
-  document.getElementById('fin-panel-expenses').style.display = tab === 'expenses' ? 'block' : 'none';
-  renderFinancials();
-}
-
-function onFinPeriodChange() {
-  const period = document.getElementById('fin-period').value;
-  const customDates = document.getElementById('fin-custom-dates');
-  if (period === 'custom') {
-    customDates.style.display = 'flex';
-    // Default to current month if no dates set
-    const now = new Date();
-    if (!document.getElementById('fin-custom-start').value) {
-      document.getElementById('fin-custom-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      document.getElementById('fin-custom-end').value = now.toISOString().split('T')[0];
-    }
-  } else {
-    customDates.style.display = 'none';
-    renderFinancials();
-  }
-}
-
-function getFinDateRange() {
-  const period = document.getElementById('fin-period')?.value || 'mtd';
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  let start, end;
-  if (period === 'mtd') { start = new Date(y, m, 1); end = new Date(now); }
-  else if (period === 'last_month') { start = new Date(y, m - 1, 1); end = new Date(y, m, 0); }
-  else if (period === 'ytd') { start = new Date(y, 0, 1); end = new Date(now); }
-  else if (period === 'q1') { start = new Date(y, 0, 1); end = new Date(y, 2, 31); }
-  else if (period === 'q2') { start = new Date(y, 3, 1); end = new Date(y, 5, 30); }
-  else if (period === 'custom') {
-    const s = document.getElementById('fin-custom-start')?.value;
-    const e = document.getElementById('fin-custom-end')?.value;
-    return { start: s || '2020-01-01', end: e || now.toISOString().split('T')[0] };
-  }
-  else { start = new Date('2020-01-01'); end = new Date(now); }
-  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-}
-
-async function renderFinancials() {
-  if (finTab === 'pl') await renderPL();
-  else await renderExpenses();
-}
-
-async function renderPL() {
-  const panel = document.getElementById('fin-panel-pl');
-  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
-  const { start, end } = getFinDateRange();
-
-  const { data: jobs, error: jobsErr } = await db.from('jobs')
-    .select('id, charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, pet_fee_cents, pet_fee_collected, additional_cleaning_collected, properties(name), job_assignments(payout_cents, profiles(is_owner_operator, full_name))')
-    .eq('status', 'completed').is('deleted_at', null).gte('scheduled_date', start).lte('scheduled_date', end);
-  if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error: ${jobsErr.message}</div>`; return; }
-
-  const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end);
-  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Expenses table not found.</div>'; return; }
-
-  const jobList = jobs || [];
-  const expList = expenses || [];
-
-  const cleaningRevenue   = jobList.reduce((s,j) => s + (j.charge_cents||0), 0);
-  const petFeeRevenue     = 0; // Unified into additional_cleaning_cents
-  const extraCleanRevenue = jobList.filter(j => j.additional_cleaning_collected).reduce((s,j) => s + (j.additional_cleaning_cents||0), 0);
-  const revenue = cleaningRevenue + petFeeRevenue + extraCleanRevenue;
-
-  const contractors = jobList.reduce((s,j) => {
-    const assignments = j.job_assignments || [];
-    if (!assignments.length) return s + (j.payout_cents||0);
-    if (assignments.every(a => a.profiles?.is_owner_operator)) return s;
-    return s + assignments.filter(a => !a.profiles?.is_owner_operator).reduce((ps,a) => ps + (a.payout_cents||0), 0);
-  }, 0);
-
-  const supplies  = expList.filter(e => e.category==='supplies').reduce((s,e) => s+e.amount_cents, 0);
-  const insurance = expList.filter(e => e.category==='insurance').reduce((s,e) => s+e.amount_cents, 0);
-  const software  = expList.filter(e => e.category==='software').reduce((s,e) => s+e.amount_cents, 0);
-  const other     = expList.filter(e => e.category==='other').reduce((s,e) => s+e.amount_cents, 0);
-  const totalExp  = contractors + supplies + insurance + software + other;
-  const netProfit = revenue - totalExp;
-  const margin    = revenue > 0 ? Math.round((netProfit/revenue)*100) : 0;
-  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
-
-  window._plJobs = jobList;
-  window._plExpenses = expList;
-
-  const drillRow = (label, amount, drillType) => `
-    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${drillType&&amount>0?'cursor:pointer':''}"
-      ${drillType&&amount>0 ? `onclick="showPLDrilldown('${drillType}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"` : ''}>
-      <span style="font-size:14px;padding-left:16px${drillType&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${drillType&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
-      <span style="font-size:14px;font-weight:500">${amount > 0 ? fmt(amount) : '—'}</span>
-    </div>`;
-
-  const expRow = (label, amount, drillType) => `
-    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${drillType&&amount>0?'cursor:pointer':''}"
-      ${drillType&&amount>0 ? `onclick="showPLDrilldown('${drillType}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"` : ''}>
-      <span style="font-size:14px;padding-left:16px${drillType&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${drillType&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
-      <span style="font-size:14px;${amount>0?'color:var(--error)':'color:var(--text-muted)'}">${amount>0?'('+fmt(amount)+')':'—'}</span>
-    </div>`;
-
-  panel.innerHTML = `
-    <div class="stats-row" style="margin-bottom:28px">
-      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
-      <div class="stat-card flagged"><div class="stat-label">Total Expenses</div><div class="stat-value">${fmt(totalExp)}</div></div>
-      <div class="stat-card" style="border-color:#C49A2A"><div class="stat-label">Net Profit</div><div class="stat-value" style="color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</div></div>
-      <div class="stat-card gold"><div class="stat-label">Margin</div><div class="stat-value" style="color:#A07D1C">${margin}%</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Profit & Loss — ${periodLabel}</span></div>
-      <div style="padding:0 24px 24px">
-        <div style="margin-bottom:20px">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Revenue</div>
-          ${drillRow(`Cleaning revenue (${jobList.length} jobs)`, cleaningRevenue, 'cleaning-revenue')}
-          ${petFeeRevenue > 0 ? drillRow('Pet fees collected', petFeeRevenue, 'pet-fee-revenue') : ''}
-          ${extraCleanRevenue > 0 ? drillRow('Excessive clean fees collected', extraCleanRevenue, 'extra-clean-revenue') : ''}
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span><span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span></div>
-        </div>
-        <div style="margin-bottom:20px">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Expenses</div>
-          ${expRow(`Contractors (${jobList.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).length} jobs)`, contractors, 'contractors')}
-          ${expRow('Supplies', supplies, 'supplies')}
-          ${expRow('Insurance', insurance, 'insurance')}
-          ${expRow('Software', software, 'software')}
-          ${expRow('Other', other, 'other')}
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span><span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExp)})</span></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit>=0?'var(--success-bg)':'#FDEEEE'};border-radius:var(--radius)">
-          <span style="font-size:16px;font-weight:600;color:var(--navy)">Net Profit</span>
-          <span style="font-size:16px;font-weight:600;color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</span>
-        </div>
-      </div>
-    </div>
-    <div id="pl-drilldown" style="display:none;margin-top:24px"></div>`;
-}
-
-function showPLDrilldown(type) {
-  const panel = document.getElementById('pl-drilldown');
-  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const jobs = window._plJobs || [];
-  const expenses = window._plExpenses || [];
-  let title = '', rows = '', headers = '';
-
-  if (type === 'cleaning-revenue') {
-    title = 'Cleaning Revenue';
-    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Charge</th>';
-    rows = jobs.map(j => `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.charge_cents||0)}</td></tr>`).join('');
-    rows += `<tr style="font-weight:600;border-top:2px solid var(--navy)"><td colspan="2">Total</td><td style="text-align:right">${fmt(jobs.reduce((s,j)=>s+(j.charge_cents||0),0))}</td></tr>`;
-  } else if (type === 'pet-fee-revenue') {
-    title = 'Pet Fees Collected';
-    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
-    rows = jobs.filter(j=>j.pet_fee_collected&&j.pet_fee_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.pet_fee_cents)}</td></tr>`).join('');
-  } else if (type === 'extra-clean-revenue') {
-    title = 'Excessive Clean Fees Collected';
-    headers = '<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
-    rows = jobs.filter(j=>j.additional_cleaning_collected&&j.additional_cleaning_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.additional_cleaning_cents)}</td></tr>`).join('');
-  } else if (type === 'contractors') {
-    title = 'Contractor Payouts';
-    headers = '<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Payout</th>';
-    rows = jobs.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).map(j => {
-      const payout = (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
-      const cleaners = (j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).map(a=>a.profiles?.full_name||'—').join(', ');
-      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px">${cleaners}</td><td style="text-align:right;color:var(--error)">(${fmt(payout)})</td></tr>`;
-    }).join('');
-  } else {
-    title = type.charAt(0).toUpperCase()+type.slice(1)+' Expenses';
-    headers = '<th>Date</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th>';
-    rows = expenses.filter(e=>e.category===type).map(e=>`<tr><td>${formatDate(e.date)}</td><td>${e.description||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${e.vendor||'—'}</td><td style="text-align:right;color:var(--error)">(${fmt(e.amount_cents)})</td></tr>`).join('');
-  }
-
-  panel.style.display = 'block';
-  panel.innerHTML = `
-    <div class="card">
-      <div class="card-header" style="justify-content:space-between">
-        <span class="card-title">${title}</span>
-        <button class="btn btn-outline btn-sm" onclick="document.getElementById('pl-drilldown').style.display='none'">✕ Close</button>
-      </div>
-      <table style="width:100%"><thead><tr>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No transactions</td></tr>'}</tbody></table>
-    </div>`;
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-
-async function renderExpenses() {
-  const panel = document.getElementById('fin-panel-expenses');
-  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
-  const { start, end } = getFinDateRange();
-  const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end).order('date', { ascending: false });
-  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Run the expenses table SQL in Supabase first.</div>'; return; }
-  finExpenses = expenses || [];
-  const total = finExpenses.reduce((s,e) => s+e.amount_cents, 0);
-  panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div style="font-size:14px;color:var(--text-muted)">${finExpenses.length} expense${finExpenses.length!==1?'s':''} · Total: <strong style="color:var(--navy)">$${(total/100).toFixed(2)}</strong></div>
-    </div>
-    <div class="card">
-      ${!finExpenses.length ? '<div class="empty-state" style="padding:40px">📋<p>No expenses logged for this period.</p></div>' : `
-      <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th></tr></thead>
-      <tbody>${finExpenses.map(e=>`<tr id="exp-row-${e.id}">
-        <td>${formatDate(e.date)}</td>
-        <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
-        <td style="font-size:13px">${e.description||'—'}</td>
-        <td style="font-size:13px;color:var(--text-muted)">${e.vendor||'—'}</td>
-        <td style="font-weight:500">$${(e.amount_cents/100).toFixed(2)}</td>
-        <td>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-outline btn-sm" onclick="openEditExpenseModal('${e.id}')">Edit</button>
-            <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="deleteExpense('${e.id}')">Delete</button>
-          </div>
-        </td>
-      </tr>`).join('')}</tbody></table>`}
-    </div>`;
-}
-
-function openAddExpenseModal() {
-  document.getElementById('modal-add-expense').classList.add('open');
-  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('exp-category').value = 'supplies';
-  document.getElementById('exp-amount').value = '';
-  document.getElementById('exp-description').value = '';
-  document.getElementById('exp-vendor').value = '';
-}
-
-function checkReceiptSize(input) {
-  const warning = document.getElementById('exp-receipt-warning');
-  if (input.files[0] && input.files[0].size > 1048576) { warning.style.display = 'block'; input.value = ''; }
-  else warning.style.display = 'none';
-}
-
-async function saveExpense() {
-  const date = document.getElementById('exp-date').value;
-  const category = document.getElementById('exp-category').value;
-  const amount = parseFloat(document.getElementById('exp-amount').value);
-  const desc = document.getElementById('exp-description').value.trim();
-  const vendor = document.getElementById('exp-vendor').value.trim();
-  if (!date || !category || !amount || amount <= 0) { showToast('Please fill in date, category, and amount'); return; }
-  const { error } = await db.from('expenses').insert({ date, category, amount_cents: Math.round(amount*100), description: desc||null, vendor: vendor||null });
-  if (error) { showToast('Error: '+error.message); return; }
-  closeModal('modal-add-expense');
-  showToast('Expense added ✓');
-  await renderFinancials();
-}
-
-async function deleteExpense(id) {
-  if (!confirm('Delete this expense?')) return;
-  await db.from('expenses').delete().eq('id', id);
-  showToast('Expense deleted');
-  await renderFinancials();
-}
-
-function exportFinancials(format = 'csv') {
-  const { start, end } = getFinDateRange();
-  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
-  const isExpensesTab = finTab === 'expenses';
-  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-
-  if (format === 'csv') {
-    if (isExpensesTab) {
-      const rows = [['Date','Category','Description','Vendor','Amount']];
-      finExpenses.forEach(e => rows.push([e.date, e.category, e.description||'', e.vendor||'', (e.amount_cents/100).toFixed(2)]));
-      const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = `expenses-${start}-${end}.csv`; a.click();
-    } else {
-      // P&L CSV
-      const plPanel = document.getElementById('fin-panel-pl');
-      const rows = [['Line Item','Amount']];
-      plPanel.querySelectorAll('div[style*="justify-content:space-between"]').forEach(row => {
-        const cells = row.querySelectorAll('span');
-        if (cells.length >= 2) rows.push([cells[0].textContent.trim(), cells[cells.length-1].textContent.trim()]);
-      });
-      const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = `pl-${start}-${end}.csv`; a.click();
-    }
-    return;
-  }
-
-  // PDF
-  const sharedStyles = `
-    body { font-family: 'DM Sans', sans-serif; color: #1A2B28; padding: 40px; max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 24px; margin-bottom: 4px; }
-    .sub { color: #6B6354; font-size: 13px; margin-bottom: 32px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #0F4A45; color: #0F4A45; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
-    td { padding: 8px 12px; border-bottom: 1px solid #EDE6D4; }
-    tr:last-child td { border-bottom: none; }
-    .total-row td { font-weight: 600; border-top: 2px solid #0F4A45; border-bottom: none; color: #0F4A45; }
-    .section-header td { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #6B6354; background: #F5F0E8; padding: 10px 12px; }
-    .logo { font-size: 18px; font-weight: 700; color: #0F4A45; margin-bottom: 8px; }
-    @media print { body { padding: 20px; } }`;
-
-  let html;
-
-  if (isExpensesTab) {
-    const total = finExpenses.reduce((s,e) => s + e.amount_cents, 0);
-    const rows = finExpenses.map(e => `
-      <tr>
-        <td>${formatDate(e.date)}</td>
-        <td style="text-transform:capitalize">${e.category}</td>
-        <td>${e.description||'—'}</td>
-        <td>${e.vendor||'—'}</td>
-        <td style="text-align:right;font-weight:500">${fmt(e.amount_cents)}</td>
-      </tr>`).join('');
-
-    html = `<!DOCTYPE html><html><head><title>Expenses — ${periodLabel}</title><style>${sharedStyles}</style></head><body>
-    <div class="logo">Maid to Getaway</div>
-    <h1>Expense Report</h1>
-    <div class="sub">${periodLabel} · ${start} to ${end}</div>
-    <table>
-      <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th></tr></thead>
-      <tbody>${rows}
-        <tr class="total-row"><td colspan="4">Total Expenses</td><td style="text-align:right">${fmt(total)}</td></tr>
-      </tbody>
-    </table>
-    <script>window.onload = () => window.print();<\/script></body></html>`;
-
-  } else {
-    // P&L PDF — pull from the rendered panel DOM
-    const plPanel = document.getElementById('fin-panel-pl');
-    const statCards = plPanel.querySelectorAll('.stat-card');
-    let revenue = '—', expenses = '—', netProfit = '—', margin = '—';
-    statCards.forEach(c => {
-      const label = c.querySelector('.stat-label')?.textContent || '';
-      const val = c.querySelector('.stat-value')?.textContent || '';
-      if (label.includes('Revenue')) revenue = val;
-      if (label.includes('Expenses')) expenses = val;
-      if (label.includes('Profit')) netProfit = val;
-      if (label.includes('Margin')) margin = val;
-    });
-
-    // Get line items from P&L table
-    const rows = [];
-    plPanel.querySelectorAll('div[style*="justify-content:space-between"]').forEach(row => {
-      const spans = row.querySelectorAll('span');
-      if (spans.length >= 2) {
-        const label = spans[0].textContent.trim();
-        const val = spans[spans.length-1].textContent.trim();
-        if (label && val && !label.includes('undefined')) rows.push([label, val]);
-      }
-    });
-
-    const lineItems = rows.map(([l,v]) => `<tr><td>${l}</td><td style="text-align:right">${v}</td></tr>`).join('');
-
-    html = `<!DOCTYPE html><html><head><title>P&L — ${periodLabel}</title><style>${sharedStyles}
-    .summary { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; margin-bottom:32px; }
-    .summary-card { background:#F5F0E8; border-radius:8px; padding:16px; text-align:center; }
-    .summary-label { font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:#6B6354; margin-bottom:4px; }
-    .summary-value { font-size:20px; font-weight:600; color:#0F4A45; }
-    </style></head><body>
-    <div class="logo">Maid to Getaway</div>
-    <h1>Profit & Loss</h1>
-    <div class="sub">${periodLabel} · ${start} to ${end}</div>
-    <div class="summary">
-      <div class="summary-card"><div class="summary-label">Revenue</div><div class="summary-value">${revenue}</div></div>
-      <div class="summary-card"><div class="summary-label">Expenses</div><div class="summary-value">${expenses}</div></div>
-      <div class="summary-card"><div class="summary-label">Net Profit</div><div class="summary-value">${netProfit}</div></div>
-      <div class="summary-card"><div class="summary-label">Margin</div><div class="summary-value">${margin}</div></div>
-    </div>
-    <table>
-      <thead><tr><th>Line Item</th><th style="text-align:right">Amount</th></tr></thead>
-      <tbody>${lineItems}</tbody>
-    </table>
-    <script>window.onload = () => window.print();<\/script></body></html>`;
-  }
-
-  const w = window.open('', '_blank');
-  w.document.write(html);
-  w.document.close();
-}
-
-// ── ARCHIVE PROPERTY ──
-async function archiveProperty(id) {
-  if (!id) return;
-  const prop = properties.find(p => p.id === id);
-  if (!confirm(`Archive "${prop?.name}"? Existing jobs stay. Future unassigned jobs can be bulk deleted.`)) return;
-  const today = new Date().toISOString().split('T')[0];
-  const { data: futureJobs } = await db.from('jobs').select('id').eq('property_id', id).eq('status', 'unassigned').is('deleted_at', null).gte('scheduled_date', today);
-  if (futureJobs && futureJobs.length > 0) {
-    const deleteFuture = confirm(`There are ${futureJobs.length} unassigned future job(s). Delete them too?`);
-    if (deleteFuture) {
-      await db.from('jobs').update({ deleted_at: new Date().toISOString(), deleted_reason: 'Property archived' }).in('id', futureJobs.map(j => j.id));
-    }
-  }
-  const { error } = await db.from('properties').update({ is_active: false }).eq('id', id);
-  if (error) { showToast('Error: '+error.message); return; }
-  closeModal('modal-edit-property');
-  showToast('Property archived ✓');
-  await loadProperties(); renderProperties();
-}
-
-async function restoreProperty(id) {
-  const { error } = await db.from('properties').update({ is_active: true }).eq('id', id);
-  if (error) { showToast('Error: '+error.message); return; }
-  showToast('Property restored ✓');
-  await loadProperties(); renderProperties();
-}
-
-async function permanentDeleteProperty(id) {
-  if (!confirm('Permanently delete this property? This cannot be undone.')) return;
-  const { error } = await db.from('properties').delete().eq('id', id);
-  if (error) { showToast('Error: '+error.message); return; }
-  showToast('Property deleted ✓');
-  await loadProperties(); renderProperties();
-}
-
-// ── SYNC ERROR CHECK ──
-async function checkSyncErrors() {
-  const { data } = await db.from('maintenance_requests').select('id, notes, created_at').eq('status', 'open').ilike('notes', '%iCal sync errors%').order('created_at', { ascending: false }).limit(1);
-  const banner = document.getElementById('sync-error-banner');
-  if (data && data.length > 0) {
-    const when = new Date(data[0].created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-    document.getElementById('sync-error-banner-text').textContent = `⚠️ iCal sync error at ${when} — some bookings may be missing`;
-    banner.style.display = 'flex';
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
-function dismissSyncBanner() {
-  document.getElementById('sync-error-banner').style.display = 'none';
-}
-
-
-// ── W9 MANAGEMENT ──
-async function openW9Modal(userId, userName) {
-  document.getElementById('w9-cleaner-id').value = userId;
-  document.getElementById('w9-cleaner-name').textContent = userName;
-  document.getElementById('w9-file').value = '';
-  document.getElementById('w9-size-warning').style.display = 'none';
-
-  // Check for existing W9
-  const currentDiv = document.getElementById('w9-current');
-  const { data } = await db.from('profiles').select('w9_url, w9_filename').eq('id', userId).single();
-  if (data?.w9_url) {
-    currentDiv.innerHTML = `
-      <div style="background:var(--success-bg);border:1px solid #C3E6D5;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:13px;font-weight:500;color:var(--success)">✓ W9 on file</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${data.w9_filename || 'W9 document'}</div>
-        </div>
-        <a href="${data.w9_url}" target="_blank" class="btn btn-outline btn-sm">View / Download</a>
-      </div>`;
-  } else {
-    currentDiv.innerHTML = '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">No W9 on file yet.</div>';
-  }
-
-  document.getElementById('modal-w9').classList.add('open');
-}
-
-function checkW9Size(input) {
-  const warning = document.getElementById('w9-size-warning');
-  if (input.files[0] && input.files[0].size > 5242880) {
-    warning.style.display = 'block';
-    input.value = '';
-  } else {
-    warning.style.display = 'none';
-  }
-}
-
-async function saveW9() {
-  const userId = document.getElementById('w9-cleaner-id').value;
-  const file = document.getElementById('w9-file').files[0];
-  if (!file) { showToast('Please select a file'); return; }
-  if (file.size > 5242880) { showToast('File must be under 5MB'); return; }
-
-  showToast('Uploading…');
-  const ext = file.name.split('.').pop();
-  const fileName = `w9s/${userId}-${Date.now()}.${ext}`;
-  const { error: uploadErr } = await db.storage.from('documents').upload(fileName, file, { upsert: true });
-  if (uploadErr) { showToast('Upload failed: ' + uploadErr.message); return; }
-
-  const { data: urlData } = db.storage.from('documents').getPublicUrl(fileName);
-  const { error: updateErr } = await db.from('profiles').update({
-    w9_url: urlData.publicUrl,
-    w9_filename: file.name
-  }).eq('id', userId);
-
-  if (updateErr) { showToast('Error saving: ' + updateErr.message); return; }
-  closeModal('modal-w9');
-  showToast('W9 uploaded ✓');
-  loadUsers();
-}
-
-
-function toggleSplitCleaner() {
-  const row = document.getElementById('edit-job-cleaner2-row');
-  const btn = document.getElementById('edit-job-split-btn');
-  const showing = row.style.display !== 'none';
-  row.style.display = showing ? 'none' : 'flex';
-  btn.textContent = showing ? '+ Add second cleaner' : '✕ Remove second cleaner';
-  if (showing) {
-    document.getElementById('edit-job-cleaner2').value = '';
-    document.getElementById('edit-job-payout-2').value = '';
-  }
-  updateTotalPayout();
-}
-
-function updateTotalPayout() {
-  const p1 = parseFloat(document.getElementById('edit-job-payout-1').value) || 0;
-  const p2 = parseFloat(document.getElementById('edit-job-payout-2').value) || 0;
-  document.getElementById('edit-job-payout').value = (p1 + p2) || '';
-}
-
-
-function editReportNotes(reportId, currentNotes) {
-  document.getElementById('report-notes-view-'+reportId).style.display = 'none';
-  document.getElementById('report-notes-edit-'+reportId).style.display = 'block';
-  document.getElementById('report-notes-input-'+reportId).value = currentNotes;
-  document.getElementById('report-notes-input-'+reportId).focus();
-}
-
-function cancelEditReportNotes(reportId) {
-  document.getElementById('report-notes-view-'+reportId).style.display = 'block';
-  document.getElementById('report-notes-edit-'+reportId).style.display = 'none';
-}
-
-async function saveReportNotes(reportId) {
-  const notes = document.getElementById('report-notes-input-'+reportId).value.trim();
-  const { error } = await db.from('maintenance_requests').update({ notes }).eq('id', reportId);
-  if (error) { showToast('Error: '+error.message); return; }
-  allAdminReports = allAdminReports.map(r => r.id === reportId ? { ...r, notes } : r);
-  document.getElementById('report-notes-view-'+reportId).querySelector('p').textContent = notes;
-  cancelEditReportNotes(reportId);
-  showToast('Notes updated ✓');
-}
-
-
-async function grantLoginAccess(userId, userName) {
-  document.getElementById('grant-login-user-id').value = userId;
-  document.getElementById('grant-login-name').textContent = userName;
-  document.getElementById('grant-login-email').value = '';
-  document.getElementById('grant-login-password').value = 'ChangeMe123!';
-  document.getElementById('grant-login-error').style.display = 'none';
-  document.getElementById('modal-grant-login').classList.add('open');
-  setTimeout(() => document.getElementById('grant-login-email').focus(), 100);
-}
-
-async function submitGrantLogin() {
-  const userId   = document.getElementById('grant-login-user-id').value;
-  const userName = document.getElementById('grant-login-name').textContent;
-  const email    = document.getElementById('grant-login-email').value.trim();
-  const password = document.getElementById('grant-login-password').value.trim();
-  const errEl    = document.getElementById('grant-login-error');
-  errEl.style.display = 'none';
-
-  if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email'; errEl.style.display = 'block'; return; }
-  if (!password || password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
-
-  const data = await callAdminFn({ action: 'create_auth', userId, email, name: userName, newPassword: password });
-  if (!data) return;
-  if (data.success) {
-    closeModal('modal-grant-login');
-    showToast(`Login granted for ${userName} ✓ — temp password: ${password}`);
-    if (data.warning) setTimeout(() => showToast('Warning: ' + data.warning), 2000);
-    loadUsers();
-  } else {
-    errEl.textContent = 'Error: ' + (data.error || 'Failed');
-    errEl.style.display = 'block';
-  }
-}
-
-
-
-function openEditExpenseModal(expId) {
-  const exp = finExpenses.find(e => e.id === expId);
-  if (!exp) return;
-  document.getElementById('edit-exp-id').value          = exp.id;
-  document.getElementById('edit-exp-date').value        = exp.date;
-  document.getElementById('edit-exp-category').value    = exp.category;
-  document.getElementById('edit-exp-amount').value      = (exp.amount_cents / 100).toFixed(2);
-  document.getElementById('edit-exp-description').value = exp.description || '';
-  document.getElementById('edit-exp-vendor').value      = exp.vendor || '';
-  document.getElementById('modal-edit-expense').classList.add('open');
-}
-
-async function saveEditExpense() {
-  const id          = document.getElementById('edit-exp-id').value;
-  const date        = document.getElementById('edit-exp-date').value;
-  const category    = document.getElementById('edit-exp-category').value;
-  const amount      = parseFloat(document.getElementById('edit-exp-amount').value);
-  const description = document.getElementById('edit-exp-description').value.trim();
-  const vendor      = document.getElementById('edit-exp-vendor').value.trim();
-  if (!date || !category || !amount || amount <= 0) { showToast('Please fill in date, category, and amount'); return; }
-  const { error } = await db.from('expenses').update({
-    date, category,
-    amount_cents: Math.round(amount * 100),
-    description: description || null,
-    vendor: vendor || null
-  }).eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeModal('modal-edit-expense');
-  showToast('Expense updated ✓');
-  await renderFinancials();
-}
-
-
-async function getAdminJWT() {
-  const { data } = await db.auth.getSession();
-  return data?.session?.access_token || null;
-}
-
-async function callAdminFn(payload) {
-  const jwt = await getAdminJWT();
-  if (!jwt) { showToast('Not authenticated'); return null; }
-  const res = await fetch('/.netlify/functions/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, jwt })
-  });
-  return res.json();
 }
 
 // ── SIGN OUT ──
@@ -3748,7 +2573,7 @@ function today() { return new Date().toISOString().split('T')[0]; }
 
 function formatDate(d) {
   if (!d) return '—';
-  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric', year: '2-digit' });
+  return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatTime(t) {
@@ -3827,22 +2652,12 @@ async function renderAdminReports() {
         <div style="display:flex;gap:8px;align-items:center">
           <select onchange="updateReportStatus('${r.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--cream-dark);background:${statusBg[r.status]||'var(--cream)'};color:${statusColor[r.status]||'var(--text)'};font-family:inherit;font-weight:500">
             <option value="open" ${r.status==='open'?'selected':''}>Open</option>
-            <option value="resolved" ${r.status==='resolved'?'selected':''}>Archive</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>Closed</option>
           </select>
-          <button class="btn btn-outline btn-sm" onclick="editReportNotes('${r.id}', \`${(r.notes||'').replace(/`/g,'\\`')}\`)">Edit</button>
           <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="deleteAdminReport('${r.id}')">Delete</button>
         </div>
       </div>
-      <div id="report-notes-view-${r.id}">
-        <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5;white-space:pre-wrap">${r.notes}</p>
-      </div>
-      <div id="report-notes-edit-${r.id}" style="display:none;margin-bottom:10px">
-        <textarea id="report-notes-input-${r.id}" style="width:100%;padding:10px;font-family:'DM Sans',sans-serif;font-size:14px;border:1.5px solid var(--navy);border-radius:8px;background:var(--cream);resize:vertical;min-height:80px">${r.notes||''}</textarea>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button class="btn btn-sm" onclick="saveReportNotes('${r.id}')">Save</button>
-          <button class="btn btn-outline btn-sm" onclick="cancelEditReportNotes('${r.id}')">Cancel</button>
-        </div>
-      </div>
+      <p style="font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.5">${r.notes}</p>
       ${r.photo_urls?.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${r.photo_urls.map(url=>`<div style="width:56px;height:56px;border-radius:6px;overflow:hidden;cursor:pointer" onclick="window.open('${url}','_blank')"><img src="${url}" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>`).join('')}</div>` : ''}
       <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:8px">Comments</div>
@@ -3994,25 +2809,10 @@ async function restoreUser(userId, userName) {
 
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
-
-  showToast('Deleting…');
-
-  // Step 1: delete from auth
-  try {
-    const result = await callAdminFn({ action: 'delete_user', userId });
-    if (!result.success && !result.not_in_auth) {
-      showToast('Auth delete failed: ' + (result.error || 'unknown'));
-      return;
-    }
-  } catch (e) {
-    console.error('delete_user fetch error:', e);
-    showToast('Network error: ' + e.message);
-    return;
-  }
-
-  // Steps 2+3 handled server-side via service role
+  const { error } = await db.from('profiles').delete().eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
   showToast(`${userName} permanently deleted`);
-  await loadUsers();
+  loadUsers();
 }
 
 function openNewUserModal() {
@@ -4033,15 +2833,18 @@ async function saveNewUser() {
   if (!name) { showToast('Please enter a name'); return; }
 
   if (email) {
-    // Create auth account via service role
-    const result = await callAdminFn({ action: 'create_user', email, name, newPassword: 'ChangeMe123!' });
-    if (!result.success) { showToast('Error: ' + (result.error || 'Could not create user')); return; }
-    const authId = result.userId;
-    await db.from('profiles').upsert({
-      id: authId, email, full_name: name, phone,
-      role, is_active: true, is_owner_operator: false,
-      notification_prefs: newRoles.length > 1 ? { roles: newRoles } : {}
-    }, { onConflict: 'id' });
+    // Full account creation with login access
+    const { data, error } = await db.auth.signUp({
+      email, password: 'ChangeMe123!',
+      options: { data: { full_name: name, role } }
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    if (data?.user?.id) {
+      await db.from('profiles').upsert({
+        id: data.user.id, email, full_name: name, phone,
+        role, is_active: true, is_owner_operator: false
+      }, { onConflict: 'id' });
+    }
     closeModal('modal-new-user');
     showToast('User created ✓ — temp password: ChangeMe123!');
   } else {
@@ -4103,30 +2906,45 @@ async function saveEditUser() {
   const role = selectedRoles[0]; // primary role for portal routing
   const isActive   = document.getElementById('edit-user-active').checked;
   const isOwnerOp  = document.getElementById('edit-user-owner-op').checked;
-  if (!name) { showToast('Please enter a name'); return; }
+  if (!name)     { showToast('Please enter a name'); return; }
+  if (!newEmail) { showToast('Please enter an email'); return; }
 
   const originalUser = allUsers.find(u => u.id === id);
-  const emailChanged = newEmail && originalUser && originalUser.email !== newEmail;
+  const emailChanged = originalUser && originalUser.email !== newEmail;
 
+  // If email changed, call Netlify function to update auth.users
   if (emailChanged) {
-    const result = await callAdminFn({ action: 'update_email', userId: id, email: newEmail });
-    if (!result?.success) { showToast('Email update failed: ' + (result?.error || 'unknown')); return; }
+    try {
+      const res = await fetch('/.netlify/functions/update-user-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'MaidSync2026!'
+        },
+        body: JSON.stringify({ userId: id, newEmail })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast('Email update failed: ' + (data.error || 'unknown error'));
+        return;
+      }
+    } catch (e) {
+      showToast('Email update failed: ' + e.message);
+      return;
+    }
   }
-
-
 
   // Update profile — store multi-roles in notification_prefs.roles
   const existingPrefs = allUsers.find(u => u.id === id)?.notification_prefs || {};
   const updatedPrefs = { ...existingPrefs, roles: selectedRoles };
-  const updateData = {
+  const { error } = await db.from('profiles').update({
     full_name: name,
+    email: newEmail,
     phone, role,
     is_active: isActive,
     is_owner_operator: isOwnerOp,
     notification_prefs: updatedPrefs
-  };
-  if (newEmail) updateData.email = newEmail;
-  const { error } = await db.from('profiles').update(updateData).eq('id', id);
+  }).eq('id', id);
 
   if (error) { showToast('Error: ' + error.message); return; }
   closeModal('modal-edit-user');
@@ -4155,75 +2973,11 @@ async function deleteUserFromModal() {
 }
 
 async function resetUserPassword(userId, userEmail) {
-  document.getElementById('reset-pw-user-id').value = userId;
-  document.getElementById('reset-pw-email').textContent = userEmail;
-  document.getElementById('reset-pw-new').value = '';
-  document.getElementById('reset-pw-confirm').value = '';
-  document.getElementById('reset-pw-error').style.display = 'none';
-  document.getElementById('modal-reset-password').classList.add('open');
-  setTimeout(() => document.getElementById('reset-pw-new').focus(), 100);
-}
-
-async function submitResetPassword() {
-  const userId = document.getElementById('reset-pw-user-id').value;
-  const email  = document.getElementById('reset-pw-email').textContent;
-  const pw     = document.getElementById('reset-pw-new').value;
-  const pw2    = document.getElementById('reset-pw-confirm').value;
-  const errEl  = document.getElementById('reset-pw-error');
-
-  errEl.style.display = 'none';
-  if (pw.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
-  if (pw !== pw2)    { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
-
-  const data = await callAdminFn({ userId, newPassword: pw });
-  if (!data) return;
-  if (data.success) {
-    closeModal('modal-reset-password');
-    showToast(`Password updated for ${email} ✓`);
-  } else {
-    errEl.textContent = 'Error: ' + (data.error || 'Failed to update');
-    errEl.style.display = 'block';
-  }
-}
-
-function togglePwVis(inputId, btnId) {
-  const input = document.getElementById(inputId);
-  input.type = input.type === 'password' ? 'text' : 'password';
-}
-
-
-function showResetDialog(email) {
-  return new Promise(resolve => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,43,58,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-    overlay.innerHTML = `
-      <div style="background:white;border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.15)">
-        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:6px">Reset Password</h3>
-        <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px">${email}</p>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <button id="reset-email-btn" class="btn" style="text-align:left;padding:14px 18px">
-            📧 Send reset email to ${email}
-          </button>
-          <div style="display:flex;gap:8px">
-            <input type="password" id="reset-new-pw" placeholder="Or set new password directly…" 
-              style="flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)"/>
-            <button id="reset-set-btn" class="btn">Set</button>
-          </div>
-        </div>
-        <div style="margin-top:16px;text-align:right">
-          <button id="reset-cancel-btn" class="btn btn-outline">Cancel</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('#reset-email-btn').onclick = () => { document.body.removeChild(overlay); resolve('email'); };
-    overlay.querySelector('#reset-set-btn').onclick = () => {
-      const pw = overlay.querySelector('#reset-new-pw').value.trim();
-      if (!pw || pw.length < 6) { alert('Password must be at least 6 characters'); return; }
-      document.body.removeChild(overlay);
-      resolve('set:' + pw);
-    };
-    overlay.querySelector('#reset-cancel-btn').onclick = () => { document.body.removeChild(overlay); resolve(null); };
+  if (!confirm(`Send password reset email to ${userEmail}?`)) return;
+  const { error } = await db.auth.resetPasswordForEmail(userEmail, {
+    redirectTo: window.location.origin + '/login.html'
   });
+  showToast(error ? 'Could not send — reset manually in Supabase' : `Reset email sent to ${userEmail} ✓`);
 }
 
 // ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
