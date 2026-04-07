@@ -1238,6 +1238,7 @@ async function init() {
 
   await Promise.all([loadJobs(), loadProperties(), loadCleaners()]);
   await autoPurgeTrash();
+  loadPendingFees(); // Load in background to populate badge
   // Load owner profiles for property assignment dropdown
   const { data: owners } = await db.from('profiles').select('id, full_name, email').eq('role', 'owner').order('full_name');
   window._ownerProfiles = owners || [];
