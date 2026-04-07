@@ -1644,11 +1644,7 @@ async function saveEditJob() {
     guest_checkin:    checkin,
     status:           cleanerId ? (status === 'unassigned' ? 'assigned' : status) : 'unassigned',
     is_short_window:  isShortWindow,
-    // Auto-flag pet fee if completing a VRBO job or one with "pet" in summary
-    ...(status === 'completed' && !document.getElementById('edit-job-pet-fee').checked && (() => {
-      const j = allJobs.find(j => j.id === document.getElementById('edit-job-id').value);
-      return (j?.source === 'vrbo' || (j?.ical_summary||'').toLowerCase().includes('pet')) ? { pet_fee_required: true } : {};
-    })()),
+
     pet_fee_required: document.getElementById('edit-job-pet-fee').checked,
     pet_fee_collected: document.getElementById('edit-job-pet-fee-collected').checked,
     pet_fee_cents:    document.getElementById('edit-job-pet-fee-cents').value ? Math.round(parseFloat(document.getElementById('edit-job-pet-fee-cents').value) * 100) : null,
@@ -1678,16 +1674,10 @@ async function saveEditJob() {
 async function markComplete(jobId) {
   const job = allJobs.find(j => j.id === jobId);
   const payDate = job ? calcPayDate(job.scheduled_date) : null;
-  // Auto-flag pet fee if VRBO or "pet" mentioned in booking summary
-  const autoPetFee = job && (
-    job.source === 'vrbo' ||
-    (job.ical_summary || '').toLowerCase().includes('pet')
-  ) && !job.pet_fee_required;
   const { error } = await db.from('jobs').update({
     status: 'completed',
     completed_at: new Date().toISOString(),
-    cleaner_pay_date: payDate,
-    ...(autoPetFee ? { pet_fee_required: true } : {})
+    cleaner_pay_date: payDate
   }).eq('id', jobId);
   if (error) { showToast('Error updating job'); return; }
   // Update in memory immediately so it disappears from active view without a reload
