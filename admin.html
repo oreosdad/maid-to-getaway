@@ -2111,14 +2111,15 @@ async function loadPaymentData() {
   allPaymentJobs = [];
   (data || []).forEach(j => {
     const assignments = j.job_assignments || [];
-    const validAssignments = assignments.filter(a => a.profiles && !a.profiles.is_owner_operator);
+    const validAssignments = assignments.filter(a => a.profiles);
     if (!validAssignments.length) return;
     validAssignments.forEach(a => {
       allPaymentJobs.push({
         ...j,
-        _cleaner_id:   a.cleaner_id,
-        _cleaner_name: a.profiles.full_name,
-        _payout_cents: a.payout_cents || j.payout_cents || 0,
+        _cleaner_id:      a.cleaner_id,
+        _cleaner_name:    a.profiles.full_name,
+        _payout_cents:    a.payout_cents || j.payout_cents || 0,
+        _is_owner_op:     !!a.profiles.is_owner_operator,
       });
     });
   });
@@ -2166,19 +2167,24 @@ async function renderPayments() {
   if (statusFilter === 'unpaid') filtered = filtered.filter(j => !j.cleaner_paid_at);
   if (statusFilter === 'paid')   filtered = filtered.filter(j =>  j.cleaner_paid_at);
 
-  // Stats
-  const totalOwed = filtered.filter(j => !j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
-  const totalPaid = filtered.filter(j =>  j.cleaner_paid_at).reduce((s,j) => s + j._payout_cents, 0);
+  // Stats — exclude owner/ops from cash totals
+  const totalOwed    = filtered.filter(j => !j.cleaner_paid_at && !j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
+  const totalPaid    = filtered.filter(j =>  j.cleaner_paid_at && !j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
+  const ownerOpTotal = filtered.filter(j => j._is_owner_op).reduce((s,j) => s + j._payout_cents, 0);
   document.getElementById('payment-stats-row').innerHTML = `
     <div class="stat-card flagged">
       <div class="stat-label">Outstanding</div>
       <div class="stat-value">$${Math.round(totalOwed/100)}</div>
     </div>
-    <div class="stat-card success">
+    <div class="stat-card" style="border-color:var(--success)">
       <div class="stat-label">Paid out</div>
       <div class="stat-value" style="color:var(--success)">$${Math.round(totalPaid/100)}</div>
     </div>
     <div class="stat-card gold">
+      <div class="stat-label">Owner/op labor value</div>
+      <div class="stat-value" style="color:var(--gold-dark)">$${Math.round(ownerOpTotal/100)}</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-label">Jobs shown</div>
       <div class="stat-value">${filtered.length}</div>
     </div>`;
@@ -2193,7 +2199,7 @@ async function renderPayments() {
   const byCleanerDate = {};
   filtered.forEach(j => {
     const key = j._cleaner_id + '|' + (j.cleaner_pay_date || 'no-date');
-    if (!byCleanerDate[key]) byCleanerDate[key] = { cleaner: j._cleaner_name, cleanerId: j._cleaner_id, payDate: j.cleaner_pay_date, jobs: [] };
+    if (!byCleanerDate[key]) byCleanerDate[key] = { cleaner: j._cleaner_name, cleanerId: j._cleaner_id, payDate: j.cleaner_pay_date, isOwnerOp: j._is_owner_op, jobs: [] };
     byCleanerDate[key].jobs.push(j);
   });
 
@@ -2229,12 +2235,20 @@ async function renderPayments() {
           ${!allPaid ? `
             <div style="text-align:right">
               <div style="font-size:22px;font-weight:500;color:var(--navy)">$${Math.round(unpaidTotal/100)}</div>
-              <div style="font-size:11px;color:var(--text-muted)">due</div>
+              <div style="font-size:11px;color:var(--text-muted)">${group.isOwnerOp ? 'est. labor value' : 'due'}</div>
             </div>
-            <button class="btn" style="background:var(--success);color:white;white-space:nowrap"
-              onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
-              ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
-            </button>
+            ${group.isOwnerOp
+              ? `<div style="display:flex;gap:8px;align-items:center">
+                  <span style="background:var(--gold-light);color:var(--gold-dark);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500">👤 Owner/operator</span>
+                  <button class="btn btn-outline btn-sm" style="white-space:nowrap"
+                    onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')},true)">
+                    ✓ Mark logged
+                  </button>
+                </div>`
+              : `<button class="btn" style="background:var(--success);color:white;white-space:nowrap"
+                  onclick="markCleanerPaid('${group.cleanerId}','${group.payDate}',${JSON.stringify(jobIds).replace(/"/g,'&quot;')})">
+                  ✓ Mark ${group.cleaner.split(' ')[0]} paid — $${Math.round(unpaidTotal/100)}
+                </button>`}
           ` : `
             <div style="display:flex;align-items:center;gap:8px">
               <span style="color:var(--success);font-weight:500">✓ Paid $${Math.round(paidTotal/100)}</span>
@@ -2269,7 +2283,7 @@ async function renderPayments() {
   }).join('');
 }
 
-async function markCleanerPaid(cleanerId, payDate, jobIds) {
+async function markCleanerPaid(cleanerId, payDate, jobIds, ownerOp = false) {
   const ids = typeof jobIds === 'string' ? JSON.parse(jobIds) : jobIds;
   const now = new Date().toISOString();
   let success = 0;
