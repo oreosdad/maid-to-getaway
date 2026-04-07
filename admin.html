@@ -1662,12 +1662,12 @@ async function saveEditJob() {
 
   if (error) { showToast('Error: ' + error.message); return; }
 
-  // Update assignment if cleaner changed
+  // Delete all existing assignments then reinsert — ensures cleaner change takes effect
+  await db.from('job_assignments').delete().eq('job_id', id);
   if (cleanerId) {
-    await db.from('job_assignments')
-      .upsert({ job_id: id, cleaner_id: cleanerId, response: 'pending' }, { onConflict: 'job_id,cleaner_id' });
-  } else {
-    await db.from('job_assignments').delete().eq('job_id', id);
+    const payout = document.getElementById('edit-job-payout').value
+      ? Math.round(parseFloat(document.getElementById('edit-job-payout').value) * 100) : null;
+    await db.from('job_assignments').insert({ job_id: id, cleaner_id: cleanerId, response: 'accepted', payout_cents: payout });
   }
 
   closeModal('modal-edit-job');
@@ -2432,13 +2432,12 @@ async function loadPendingFees() {
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
-  // Filter to only jobs with something outstanding
+  // Filter: one row per job — VRBO always shows, extra clean shows if amount set
+  // pet_fee_required is informational only — never creates its own pending row
   pendingFeesData = (data || []).filter(j => {
-    const hasPetFee = j.pet_fee_required && !j.pet_fee_collected;
     const hasExtraClean = j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected;
-    // VRBO: owner pays platform directly, flag as pending until manually collected
-    const isVrboOwnerPay = j.source === 'vrbo' && !j.additional_cleaning_collected && !j.additional_cleaning_cents;
-    return hasPetFee || hasExtraClean || isVrboOwnerPay;
+    const isVrbo = j.source === 'vrbo' && !j.additional_cleaning_collected;
+    return hasExtraClean || isVrbo;
   });
 
   // Update badge
@@ -2488,51 +2487,29 @@ async function loadPendingFees() {
         <tbody>
           ${pendingFeesData.map(job => {
             const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
-            const rows = [];
-            if (job.pet_fee_required && !job.pet_fee_collected) {
-              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name || '—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span></td>
-                <td style="font-weight:500">${job.pet_fee_cents ? '$'+Math.round(job.pet_fee_cents/100) : 'Amount TBD'}</td>
-                <td onclick="event.stopPropagation()">
-                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>
-                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
-                </td>
-              </tr>`);
-            }
-            if (job.additional_cleaning_cents > 0 && !job.additional_cleaning_collected) {
-              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name || '—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td><span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span></td>
-                <td style="font-weight:500">$${Math.round(job.additional_cleaning_cents/100)}</td>
-                <td onclick="event.stopPropagation()">
-                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>
-                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
-                </td>
-              </tr>`);
-            }
-            // VRBO jobs — owner pays platform directly, flag as reminder
-            if (job.source === 'vrbo' && !job.additional_cleaning_cents && !job.additional_cleaning_collected) {
-              rows.push(`<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
-                <td>${formatDate(job.scheduled_date)}</td>
-                <td>${job.properties?.name || '—'}</td>
-                <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
-                <td>
-                  <span style="background:#E8F0FB;color:#1A56A4;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🏦 VRBO — owner pays platform</span>
-                  <span style="font-size:11px;color:var(--text-muted);margin-left:6px">Set fee amount if collecting separately</span>
-                </td>
-                <td style="font-weight:500;color:var(--text-muted)">—</td>
-                <td onclick="event.stopPropagation()">
-                  <button class="btn btn-sm" style="background:var(--success);color:white" onclick="markVrboAcknowledged('${job.id}')">✓ Acknowledged</button>
-                  <button class="btn btn-outline btn-sm" style="margin-left:6px" onclick="openEditJobModal('${job.id}')">Edit</button>
-                </td>
-              </tr>`);
-            }
-            return rows.join('');
+            const isVrbo = job.source === 'vrbo';
+            const hasAmount = job.additional_cleaning_cents > 0;
+            // One row per job — never duplicates
+            const feeTag = hasAmount
+              ? `<span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span>${isVrbo ? '<span style="background:#E8F0FB;color:#1A56A4;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500;margin-left:6px">VRBO</span>' : ''}${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`
+              : `<span style="background:#E8F0FB;color:#1A56A4;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🏦 VRBO — owner pays platform</span>${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`;
+            const amount = hasAmount ? `$${Math.round(job.additional_cleaning_cents/100)}` : '—';
+            const action = hasAmount
+              ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>`
+              : `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markVrboAcknowledged('${job.id}')">✓ Acknowledged</button>`;
+            return `<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
+              <td>${formatDate(job.scheduled_date)}</td>
+              <td>${job.properties?.name || '—'}</td>
+              <td style="font-size:13px;color:var(--text-muted)">${cleaner}</td>
+              <td>${feeTag}</td>
+              <td style="font-weight:500">${amount}</td>
+              <td onclick="event.stopPropagation()">
+                <div style="display:flex;gap:6px">
+                  ${action}
+                  <button class="btn btn-outline btn-sm" onclick="openEditJobModal('${job.id}')">Edit</button>
+                </div>
+              </td>
+            </tr>`;
           }).join('')}
         </tbody>
       </table>
