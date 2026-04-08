@@ -2418,16 +2418,17 @@ async function loadPendingFees() {
     .select('*, properties(name, owner_id), job_assignments(profiles(full_name))')
     .eq('status', 'completed')
     .is('deleted_at', null)
-    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo');
+    .or('pet_fee_required.eq.true,additional_cleaning_cents.gt.0,source.eq.vrbo')
+    .order('scheduled_date', { ascending: false });
 
   if (error) { wrap.innerHTML = '<div class="empty-state">Error loading data</div>'; return; }
 
-  // Filter: one row per job — VRBO always shows, extra clean shows if amount set
-  // pet_fee_required is informational only — never creates its own pending row
+  // Filter: one row per job — VRBO always shows, extra clean shows if set, pet fee shows if flagged
   pendingFeesData = (data || []).filter(j => {
     const hasExtraClean = j.additional_cleaning_cents > 0 && !j.additional_cleaning_collected;
     const isVrbo = j.source === 'vrbo' && !j.additional_cleaning_collected;
-    return hasExtraClean || isVrbo;
+    const hasPetFee = j.pet_fee_required && !j.pet_fee_collected && !j.additional_cleaning_cents;
+    return hasExtraClean || isVrbo || hasPetFee;
   });
 
   // Update badge
@@ -2479,14 +2480,22 @@ async function loadPendingFees() {
             const cleaner = job.job_assignments?.[0]?.profiles?.full_name || '—';
             const isVrbo = job.source === 'vrbo';
             const hasAmount = job.additional_cleaning_cents > 0;
+            const hasPetOnly = job.pet_fee_required && !hasAmount && !isVrbo;
             // One row per job — never duplicates
-            const feeTag = hasAmount
-              ? `<span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span>${isVrbo ? '<span style="background:#E8F0FB;color:#1A56A4;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500;margin-left:6px">VRBO</span>' : ''}${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`
-              : `<span style="background:#E8F0FB;color:#1A56A4;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🏦 VRBO — owner pays platform</span>${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`;
-            const amount = hasAmount ? `$${Math.round(job.additional_cleaning_cents/100)}` : '—';
-            const action = hasAmount
-              ? `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>`
-              : `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markVrboAcknowledged('${job.id}')">✓ Acknowledged</button>`;
+            let feeTag, amount, action;
+            if (hasAmount) {
+              feeTag = `<span style="background:#FDEEEE;color:var(--error);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">📸 Extra clean${job.additional_cleaning_notes ? ' — '+job.additional_cleaning_notes : ''}</span>${isVrbo ? '<span style="background:#E8F0FB;color:#1A56A4;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500;margin-left:6px">VRBO</span>' : ''}${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`;
+              amount = `$${Math.round(job.additional_cleaning_cents/100)}`;
+              action = `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markExtraCleanCollected('${job.id}')">✓ Collected</button>`;
+            } else if (hasPetOnly) {
+              feeTag = `<span style="background:#FBF3D5;color:#A07D1C;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🐶 Pet fee</span>`;
+              amount = job.pet_fee_cents ? `$${Math.round(job.pet_fee_cents/100)}` : 'Amount TBD';
+              action = `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markPetFeeCollected('${job.id}')">✓ Collected</button>`;
+            } else {
+              feeTag = `<span style="background:#E8F0FB;color:#1A56A4;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">🏦 VRBO — owner pays platform</span>${job.pet_fee_required ? ' <span style="font-size:13px">🐶</span>' : ''}`;
+              amount = '—';
+              action = `<button class="btn btn-sm" style="background:var(--success);color:white" onclick="markVrboAcknowledged('${job.id}')">✓ Acknowledged</button>`;
+            }
             return `<tr style="cursor:pointer" onclick="openEditJobModal('${job.id}')">
               <td>${formatDate(job.scheduled_date)}</td>
               <td>${job.properties?.name || '—'}</td>
