@@ -1669,6 +1669,7 @@ async function saveEditJob() {
   closeModal('modal-edit-job');
   showToast('Job updated ✓');
   await loadJobs();
+  loadPendingFees();
 }
 
 async function markComplete(jobId) {
