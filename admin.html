@@ -497,17 +497,17 @@
           <div class="stat-label">Unassigned (next 2 weeks)</div>
           <div class="stat-value" id="stat-unassigned">—</div>
         </div>
-        <div class="stat-card gold" style="cursor:pointer" onclick="filterJobsFromStat('today')" title="Click to filter">
-          <div class="stat-label">Jobs today</div>
-          <div class="stat-value" id="stat-active">—</div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--navy)" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected revenue MTD</div>
+          <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('completed-week')" title="Click to filter">
-          <div class="stat-label">Completed this week</div>
-          <div class="stat-value" id="stat-completed">—</div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected profit MTD</div>
+          <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
         </div>
-        <div class="stat-card flagged" style="cursor:pointer" onclick="filterJobsFromStat('flagged')" title="Click to filter">
-          <div class="stat-label">⚑ Flagged</div>
-          <div class="stat-value" id="stat-flagged">—</div>
+        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected cleaner pay MTD</div>
+          <div class="stat-value" id="stat-flagged" style="color:#A07D1C">—</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Cleaner payout MTD</div>
@@ -1411,15 +1411,17 @@ function renderJobStats() {
   );
 
   const unassigned2wk = allJobs.filter(j => !j.deleted_at && j.status === 'unassigned' && j.scheduled_date >= todayStr && j.scheduled_date <= in2wk);
-  const todayJobs = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
-  const completedThisWeek = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
-  const flagged = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
+
+  // Projected MTD — all non-deleted jobs this month (completed + upcoming)
+  const projRevenue = thisMonthJobs.reduce((s, j) => s + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
+  const projPayout  = thisMonthJobs.reduce((s, j) => s + (j.payout_cents || 0), 0);
+  const projProfit  = projRevenue - projPayout;
 
   document.getElementById('stat-total').textContent      = thisMonthJobs.length;
   document.getElementById('stat-unassigned').textContent  = unassigned2wk.length;
-  document.getElementById('stat-active').textContent      = todayJobs.length;
-  document.getElementById('stat-completed').textContent   = completedThisWeek.length;
-  document.getElementById('stat-flagged').textContent     = flagged.length;
+  document.getElementById('stat-active').textContent      = projRevenue > 0 ? '$' + Math.round(projRevenue / 100) : '—';
+  document.getElementById('stat-completed').textContent   = projRevenue > 0 ? '$' + Math.round(projProfit / 100) : '—';
+  document.getElementById('stat-flagged').textContent     = projRevenue > 0 ? '$' + Math.round(projPayout / 100) : '—';
 
   const mtdPayout = mtdCompletedJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
   document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
@@ -1454,6 +1456,30 @@ function filterJobsFromStat(type) {
     filtered = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
   } else if (type === 'completed-week') {
     filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
+  } else if (type === 'revenue-mtd-proj') {
+    const now2 = new Date();
+    filtered = allJobs.filter(j => {
+      if (!j.scheduled_date || j.deleted_at) return false;
+      const d = new Date(j.scheduled_date + 'T12:00:00');
+      return d.getMonth() === now2.getMonth() && d.getFullYear() === now2.getFullYear();
+    });
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
+  } else if (type === 'profit-mtd-proj') {
+    const now2 = new Date();
+    filtered = allJobs.filter(j => {
+      if (!j.scheduled_date || j.deleted_at) return false;
+      const d = new Date(j.scheduled_date + 'T12:00:00');
+      return d.getMonth() === now2.getMonth() && d.getFullYear() === now2.getFullYear();
+    });
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)-(b.payout_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)-(a.payout_cents||0)));
+  } else if (type === 'payout-mtd-proj') {
+    const now2 = new Date();
+    filtered = allJobs.filter(j => {
+      if (!j.scheduled_date || j.deleted_at) return false;
+      const d = new Date(j.scheduled_date + 'T12:00:00');
+      return d.getMonth() === now2.getMonth() && d.getFullYear() === now2.getFullYear();
+    });
+    filtered.sort((a,b) => (b.payout_cents||0) - (a.payout_cents||0));
   } else if (type === 'flagged') {
     filtered = allJobs.filter(j => !j.deleted_at && (j.is_short_window || j.status === 'flagged'));
   } else {
