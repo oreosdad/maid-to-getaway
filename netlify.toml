@@ -11,10 +11,15 @@
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "ICAL_SYNC_SECRET"
 
-# Run iCal sync every hour
+# Run iCal sync every 12 hours (6am and 6pm UTC = 1am and 1pm CST)
 [[scheduled-functions]]
   name = "sync-ical"
-  cron = "0 * * * *"
+  cron = "0 6,18 * * *"
+
+# Send weekly P&L every Friday at 8am CST (2pm UTC)
+[[scheduled-functions]]
+  name = "weekly-pl-email"
+  cron = "0 14 * * 5"
 
 # Redirect www to apex
 [[redirects]]
