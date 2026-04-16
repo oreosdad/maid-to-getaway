@@ -469,6 +469,9 @@
         <span class="nav-icon">⚠️</span> Pending Fees
         <span id="pending-fees-badge" style="display:none;background:#C0392B;color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;margin-left:auto"></span>
       </a>
+      <a class="nav-item" id="nav-financials" onclick="showPage('financials', this)">
+        <span class="nav-icon">📊</span> Financials
+      </a>
       <a class="nav-item" id="nav-users" onclick="showPage('users', this)">
         <span class="nav-icon">👥</span> Users
       </a>
@@ -485,6 +488,7 @@
         <h2>Jobs</h2>
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline" id="sync-btn" onclick="manualSync()">↻ Sync calendars</button>
+          <button class="btn btn-outline" onclick="document.getElementById('modal-rules').classList.add('open')">📖 Rules</button>
           <button class="btn" onclick="openNewJobModal()">+ New job</button>
         </div>
       </div>
@@ -497,29 +501,37 @@
           <div class="stat-label">Unassigned (next 2 weeks)</div>
           <div class="stat-value" id="stat-unassigned">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--navy)" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected revenue MTD</div>
-          <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
-        </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected profit MTD</div>
-          <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
-        </div>
-        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected cleaner pay MTD</div>
-          <div class="stat-value" id="stat-flagged" style="color:#A07D1C">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Cleaner payout MTD</div>
-          <div class="stat-value" id="stat-payout">—</div>
-        </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd')" title="Click to filter">
           <div class="stat-label">Revenue MTD</div>
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
-        <div class="stat-card" style="border-color:#C49A2A">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
+          <div class="stat-label">Contractor pay MTD</div>
+          <div class="stat-value" id="stat-payout">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
+          <div class="stat-label">Owner/op labor MTD</div>
+          <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
           <div class="stat-label">Profit MTD</div>
           <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('takehome-mtd')" title="Click to filter">
+          <div class="stat-label">Owner/op labor MTD <span title="What owner/op cleaners were paid — informational only, already included in expenses" style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-value" id="stat-takehome-mtd" style="color:var(--gold-dark)">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--navy)" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected revenue this month</div>
+          <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected profit this month</div>
+          <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected contractor pay</div>
+          <div class="stat-value" id="stat-flagged" style="color:#A07D1C">—</div>
         </div>
       </div>
       <div class="card">
@@ -661,6 +673,36 @@
         <div id="admin-reports-wrap"><div class="loading-inline">Loading reports…</div></div>
       </div>
     </div>
+
+  <!-- FINANCIALS PAGE -->
+  <div class="page" id="page-financials">
+    <div class="page-header">
+      <h2>Financials</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="fin-period" onchange="onFinPeriodChange()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);color:var(--text);font-family:inherit">
+          <option value="mtd">This Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="ytd">Year to Date</option>
+          <option value="all">All Time</option>
+          <option value="custom">Custom Range…</option>
+        </select>
+        <div id="fin-custom-dates" style="display:none;align-items:center;gap:6px">
+          <input type="date" id="fin-custom-start" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
+          <span style="font-size:13px;color:var(--text-muted)">to</span>
+          <input type="date" id="fin-custom-end" onchange="renderFinancials()" style="font-size:13px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--cream-dark);background:var(--cream);font-family:'DM Sans',sans-serif"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="exportFinancials('csv')">↓ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportFinancials('pdf')">↓ PDF</button>
+        <button class="btn btn-sm" onclick="openAddExpenseModal()">+ Add expense</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--cream-dark);margin-bottom:24px">
+      <button id="fin-tab-pl" onclick="setFinTab('pl')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--navy);border-bottom:2px solid var(--navy);margin-bottom:-2px;cursor:pointer">P&L</button>
+      <button id="fin-tab-expenses" onclick="setFinTab('expenses')" style="padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer">Expenses</button>
+    </div>
+    <div id="fin-panel-pl"></div>
+    <div id="fin-panel-expenses" style="display:none"></div>
+  </div>
 
   </main>
 </div>
@@ -1176,6 +1218,107 @@
   </div>
 </div>
 
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal-overlay" id="modal-add-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3>Add Expense</h3><button class="modal-close" onclick="closeModal('modal-add-expense')">✕</button></div>
+    <div class="form-group"><label>Date</label><input type="date" id="exp-date"/></div>
+    <div class="form-group"><label>Category</label>
+      <select id="exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+        <option value="supplies">Supplies</option><option value="insurance">Insurance</option><option value="software">Software</option><option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Amount ($)</label><input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"/></div>
+    <div class="form-group"><label>Description</label><input type="text" id="exp-description" placeholder="e.g. Cleaning supplies from Target"/></div>
+    <div class="form-group"><label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label><input type="text" id="exp-vendor" placeholder="e.g. Target, Amazon"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-add-expense')">Cancel</button>
+      <button class="btn" onclick="saveExpense()">Save expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT EXPENSE MODAL -->
+<div class="modal-overlay" id="modal-edit-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><h3>Edit Expense</h3><button class="modal-close" onclick="closeModal('modal-edit-expense')">✕</button></div>
+    <input type="hidden" id="edit-exp-id"/>
+    <div class="form-group"><label>Date</label><input type="date" id="edit-exp-date"/></div>
+    <div class="form-group"><label>Category</label>
+      <select id="edit-exp-category" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--cream-dark);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--cream)">
+        <option value="supplies">Supplies</option><option value="insurance">Insurance</option><option value="software">Software</option><option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Amount ($)</label><input type="number" id="edit-exp-amount" min="0" step="0.01"/></div>
+    <div class="form-group"><label>Description</label><input type="text" id="edit-exp-description"/></div>
+    <div class="form-group"><label>Vendor <span style="color:var(--text-muted);font-weight:400">(optional)</span></label><input type="text" id="edit-exp-vendor"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-expense')">Cancel</button>
+      <button class="btn" onclick="saveEditExpense()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- RULES MODAL -->
+<div class="modal-overlay" id="modal-rules">
+  <div class="modal" style="max-width:600px;max-height:85vh;overflow-y:auto">
+    <div class="modal-header" style="position:sticky;top:0;background:white;z-index:1">
+      <span class="modal-title">📖 How everything is calculated</span>
+      <button class="modal-close" onclick="closeModal('modal-rules')">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:8px">
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">💰 Revenue</div>
+        <p style="font-size:14px;line-height:1.6">The charge to the owner/guest for the clean. Set per job or defaults from the property. Extra clean fees are added to revenue only when marked <strong>Collected</strong> in Pending Fees.</p>
+      </div>
+
+      <div style="background:#EAF7F0;border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--success);margin-bottom:10px">🧹 Contractor Pay</div>
+        <p style="font-size:14px;line-height:1.6">What you actually pay non-owner/op cleaners (Ali, Audrey, BryAnna, Taylor). This is a real cash expense. Set as base pay per job. Extra clean fee cuts are added to the cleaner's payout when their fee is collected.</p>
+      </div>
+
+      <div style="background:#FEF3DC;border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--gold-dark);margin-bottom:10px">👤 Owner/op Labor</div>
+        <p style="font-size:14px;line-height:1.6">What John and Melissa were paid for cleaning. This IS included as an expense in the profit calculation — it's real money leaving the business even though you own it. Shown separately so you can see what your own time cost the business.</p>
+      </div>
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">📊 Profit</div>
+        <p style="font-size:14px;line-height:1.6"><strong>Revenue − all payouts (including owner/op) − other expenses.</strong> This is true net profit after everyone is paid including you. If this number is positive, the business made money.</p>
+      </div>
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">📅 Pay Date</div>
+        <p style="font-size:14px;line-height:1.6">Always the <strong>next Friday</strong> after the clean date. A clean on Saturday pays the following Friday (6 days). A clean on Sunday pays that Friday (5 days). A clean on Monday pays the next Friday (4 days).</p>
+      </div>
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">⚠️ Pending Fees</div>
+        <p style="font-size:14px;line-height:1.6">Your AR tracker. Shows three types of outstanding fees:<br>
+        <strong>🐶 Pet fee</strong> — manually flagged on a job, collected from guest/owner separately<br>
+        <strong>📸 Extra clean</strong> — charged for excessive mess, set per job<br>
+        <strong>🏦 VRBO</strong> — owner pays the platform directly, appears as a reminder to verify payment<br><br>
+        Fees only count as revenue in P&L when marked <strong>Collected</strong>.</p>
+      </div>
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">📈 Projected vs MTD</div>
+        <p style="font-size:14px;line-height:1.6"><strong>MTD</strong> = completed jobs only, from the 1st through today.<br><strong>Projected</strong> = all jobs this month including future ones, using their set charge/payout amounts. A rough forecast assuming all booked jobs complete normally.</p>
+      </div>
+
+      <div style="background:var(--cream);border-radius:10px;padding:16px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:10px">🔄 Calendar Sync</div>
+        <p style="font-size:14px;line-height:1.6">Runs automatically every 12 hours (1am and 1pm CST). Pulls from Airbnb and VRBO iCal feeds and creates unassigned jobs for any new bookings. Deduplicates by <code>ical_uid</code> — the same booking will never be created twice. Hit <strong>↻ Sync calendars</strong> manually after getting a new booking notification.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1217,6 +1360,313 @@ function sortJobsTable(col) {
 }
 
 // ── AUTH: runs once, shows app or redirects ──
+// ── FINANCIALS ──
+let finTab = 'pl';
+let finExpenses = [];
+
+function setFinTab(tab) {
+  finTab = tab;
+  document.getElementById('fin-tab-pl').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='pl'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='pl'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
+  document.getElementById('fin-tab-expenses').style.cssText = `padding:10px 24px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;color:${tab==='expenses'?'var(--navy)':'var(--text-muted)'};border-bottom:${tab==='expenses'?'2px solid var(--navy)':'none'};margin-bottom:-2px`;
+  document.getElementById('fin-panel-pl').style.display       = tab === 'pl'       ? 'block' : 'none';
+  document.getElementById('fin-panel-expenses').style.display = tab === 'expenses' ? 'block' : 'none';
+  renderFinancials();
+}
+
+function onFinPeriodChange() {
+  const period = document.getElementById('fin-period').value;
+  const customDates = document.getElementById('fin-custom-dates');
+  if (period === 'custom') {
+    customDates.style.display = 'flex';
+    const now = new Date();
+    if (!document.getElementById('fin-custom-start').value) {
+      document.getElementById('fin-custom-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('fin-custom-end').value = now.toISOString().split('T')[0];
+    }
+  } else {
+    customDates.style.display = 'none';
+    renderFinancials();
+  }
+}
+
+function getFinDateRange() {
+  const period = document.getElementById('fin-period')?.value || 'mtd';
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  let start, end;
+  if (period === 'mtd')        { start = new Date(y, m, 1); end = new Date(now); }
+  else if (period === 'last_month') { start = new Date(y, m-1, 1); end = new Date(y, m, 0); }
+  else if (period === 'ytd')   { start = new Date(y, 0, 1); end = new Date(now); }
+  else if (period === 'custom') {
+    const s = document.getElementById('fin-custom-start')?.value;
+    const e = document.getElementById('fin-custom-end')?.value;
+    return { start: s || '2020-01-01', end: e || now.toISOString().split('T')[0] };
+  }
+  else { start = new Date('2020-01-01'); end = new Date(now); }
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+}
+
+async function renderFinancials() {
+  if (finTab === 'pl') await renderPL();
+  else await renderExpenses();
+}
+
+async function renderPL() {
+  const panel = document.getElementById('fin-panel-pl');
+  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
+  const { start, end } = getFinDateRange();
+
+  const { data: jobs, error: jobsErr } = await db.from('jobs')
+    .select('id, charge_cents, additional_cleaning_cents, payout_cents, scheduled_date, additional_cleaning_collected, properties(name), job_assignments(payout_cents, profiles(is_owner_operator, full_name))')
+    .eq('status', 'completed').is('deleted_at', null).gte('scheduled_date', start).lte('scheduled_date', end);
+  if (jobsErr) { panel.innerHTML = `<div class="empty-state">Error: ${jobsErr.message}</div>`; return; }
+
+  const { data: expenses, error: expErr } = await db.from('expenses').select('*').gte('date', start).lte('date', end);
+  if (expErr) { panel.innerHTML = '<div class="empty-state">⚠️ Expenses table not found — run SQL to create it.</div>'; return; }
+
+  const jobList = jobs || [];
+  const expList = expenses || [];
+
+  const cleaningRevenue   = jobList.reduce((s,j) => s + (j.charge_cents||0), 0);
+  const extraCleanRevenue = jobList.filter(j => j.additional_cleaning_collected).reduce((s,j) => s + (j.additional_cleaning_cents||0), 0);
+  const revenue = cleaningRevenue + extraCleanRevenue;
+
+  // All payouts including owner/op
+  const allPayouts = jobList.reduce((s,j) => {
+    const a = j.job_assignments || [];
+    if (!a.length) return s + (j.payout_cents||0);
+    return s + a.reduce((ps,x) => ps+(x.payout_cents||0), 0);
+  }, 0);
+
+  // Contractor-only payouts (for expense line item)
+  const contractors = jobList.reduce((s,j) => {
+    const a = j.job_assignments || [];
+    if (!a.length) return s + (j.payout_cents||0);
+    if (a.every(x => x.profiles?.is_owner_operator)) return s;
+    return s + a.filter(x => !x.profiles?.is_owner_operator).reduce((ps,x) => ps+(x.payout_cents||0), 0);
+  }, 0);
+
+  // Owner/op labor — informational only
+  const ownerOpLabor = allPayouts - contractors;
+
+  const supplies  = expList.filter(e => e.category==='supplies').reduce((s,e) => s+e.amount_cents, 0);
+  const insurance = expList.filter(e => e.category==='insurance').reduce((s,e) => s+e.amount_cents, 0);
+  const software  = expList.filter(e => e.category==='software').reduce((s,e) => s+e.amount_cents, 0);
+  const other     = expList.filter(e => e.category==='other').reduce((s,e) => s+e.amount_cents, 0);
+  const totalExp  = allPayouts + supplies + insurance + software + other;
+  const netProfit = revenue - totalExp;
+  const margin    = revenue > 0 ? Math.round((netProfit/revenue)*100) : 0;
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text || '';
+
+  window._plJobs = jobList;
+  window._plExpenses = expList;
+
+  const drillRow = (label, amount, type) => `
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${type&&amount>0?'cursor:pointer':''}"
+      ${type&&amount>0?`onclick="showPLDrilldown('${type}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"`:''}>
+      <span style="font-size:14px;padding-left:16px${type&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${type&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
+      <span style="font-size:14px;font-weight:500">${amount>0?fmt(amount):'—'}</span>
+    </div>`;
+
+  const expRow = (label, amount, type) => `
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--cream-dark);${type&&amount>0?'cursor:pointer':''}"
+      ${type&&amount>0?`onclick="showPLDrilldown('${type}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"`:''}>
+      <span style="font-size:14px;padding-left:16px${type&&amount>0?';color:var(--navy);text-decoration:underline;text-decoration-style:dotted':''}">${label}${type&&amount>0?' <span style="font-size:11px;color:var(--text-muted)">(click)</span>':''}</span>
+      <span style="font-size:14px;${amount>0?'color:var(--error)':'color:var(--text-muted)'}">${amount>0?'('+fmt(amount)+')':'—'}</span>
+    </div>`;
+
+  panel.innerHTML = `
+    <div class="stats-row" style="margin-bottom:28px">
+      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
+      <div class="stat-card flagged"><div class="stat-label">Total Expenses</div><div class="stat-value">${fmt(totalExp)}</div></div>
+      <div class="stat-card" style="border-color:#C49A2A"><div class="stat-label">Net Profit</div><div class="stat-value" style="color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</div></div>
+
+      <div class="stat-card gold"><div class="stat-label">Margin</div><div class="stat-value" style="color:#A07D1C">${margin}%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Profit & Loss — ${periodLabel}</span></div>
+      <div style="padding:0 24px 24px">
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Revenue</div>
+          ${drillRow(`Cleaning revenue (${jobList.length} jobs)`, cleaningRevenue, 'cleaning-revenue')}
+          ${extraCleanRevenue>0?drillRow('Extra clean fees collected', extraCleanRevenue, 'extra-clean-revenue'):''}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Revenue</span><span style="font-size:14px;font-weight:600;color:var(--navy)">${fmt(revenue)}</span></div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 0 8px;border-bottom:1px solid var(--cream-dark)">Expenses</div>
+          ${expRow(`All cleaner payouts (${jobList.filter(j=>(j.job_assignments||[]).length>0).length} jobs)`, allPayouts, 'contractors')}
+          ${expRow('Supplies', supplies, 'supplies')}
+          ${expRow('Insurance', insurance, 'insurance')}
+          ${expRow('Software', software, 'software')}
+          ${expRow('Other', other, 'other')}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--navy)"><span style="font-size:14px;font-weight:600;color:var(--navy)">Total Expenses</span><span style="font-size:14px;font-weight:600;color:var(--error)">(${fmt(totalExp)})</span></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:16px;background:${netProfit>=0?'var(--success-bg)':'#FDEEEE'};border-radius:var(--radius);margin-bottom:8px">
+          <span style="font-size:16px;font-weight:600;color:var(--navy)">Net Profit</span>
+          <span style="font-size:16px;font-weight:600;color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</span>
+        </div>
+        ${ownerOpLabor>0?`
+        <div style="display:flex;justify-content:space-between;padding:12px 16px;background:var(--gold-light);border-radius:var(--radius);margin-top:8px">
+          <span style="font-size:13px;color:var(--gold-dark)">ℹ️ Owner/op labor MTD</span>
+          <span style="font-size:13px;font-weight:500;color:var(--gold-dark)">${fmt(ownerOpLabor)}</span>
+        </div>`:''}
+      </div>
+    </div>
+    <div id="pl-drilldown" style="display:none;margin-top:24px"></div>`;
+}
+
+function showPLDrilldown(type) {
+  const panel = document.getElementById('pl-drilldown');
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const jobs = window._plJobs || [];
+  const expenses = window._plExpenses || [];
+  let title='', rows='', headers='';
+
+  if (type==='cleaning-revenue') {
+    title='Cleaning Revenue'; headers='<th>Date</th><th>Property</th><th style="text-align:right">Charge</th>';
+    rows=jobs.map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.charge_cents||0)}</td></tr>`).join('');
+    rows+=`<tr style="font-weight:600;border-top:2px solid var(--navy)"><td colspan="2">Total</td><td style="text-align:right">${fmt(jobs.reduce((s,j)=>s+(j.charge_cents||0),0))}</td></tr>`;
+  } else if (type==='extra-clean-revenue') {
+    title='Extra Clean Fees'; headers='<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
+    rows=jobs.filter(j=>j.additional_cleaning_collected&&j.additional_cleaning_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.additional_cleaning_cents)}</td></tr>`).join('');
+  } else if (type==='contractors') {
+    title='Contractor Payouts'; headers='<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Payout</th>';
+    rows=jobs.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).map(j=>{
+      const payout=(j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
+      const cls=(j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).map(a=>a.profiles?.full_name||'—').join(', ');
+      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px">${cls}</td><td style="text-align:right;color:var(--error)">(${fmt(payout)})</td></tr>`;
+    }).join('');
+  } else {
+    title=type.charAt(0).toUpperCase()+type.slice(1)+' Expenses';
+    headers='<th>Date</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th>';
+    rows=expenses.filter(e=>e.category===type).map(e=>`<tr><td>${formatDate(e.date)}</td><td>${e.description||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${e.vendor||'—'}</td><td style="text-align:right;color:var(--error)">(${fmt(e.amount_cents)})</td></tr>`).join('');
+  }
+
+  panel.style.display='block';
+  panel.innerHTML=`<div class="card"><div class="card-header" style="justify-content:space-between"><span class="card-title">${title}</span><button class="btn btn-outline btn-sm" onclick="document.getElementById('pl-drilldown').style.display='none'">✕ Close</button></div><table style="width:100%"><thead><tr>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No transactions</td></tr>'}</tbody></table></div>`;
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function renderExpenses() {
+  const panel = document.getElementById('fin-panel-expenses');
+  panel.innerHTML = '<div class="loading-inline">Loading…</div>';
+  const { start, end } = getFinDateRange();
+  const { data: expenses, error } = await db.from('expenses').select('*').gte('date', start).lte('date', end).order('date', { ascending: false });
+  if (error) { panel.innerHTML = '<div class="empty-state">⚠️ Expenses table not found.</div>'; return; }
+  finExpenses = expenses || [];
+  const total = finExpenses.reduce((s,e) => s+e.amount_cents, 0);
+  const fmt = c => '$'+(c/100).toFixed(2);
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:14px;color:var(--text-muted)">${finExpenses.length} expense${finExpenses.length!==1?'s':''} · Total: <strong style="color:var(--navy)">${fmt(total)}</strong></div>
+    </div>
+    <div class="card">
+      ${!finExpenses.length?'<div class="empty-state" style="padding:40px">📋<p>No expenses logged for this period.</p></div>':`
+      <table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th></th></tr></thead>
+      <tbody>${finExpenses.map(e=>`<tr>
+        <td>${formatDate(e.date)}</td>
+        <td><span style="background:var(--cream-dark);padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500;text-transform:capitalize">${e.category}</span></td>
+        <td style="font-size:13px">${e.description||'—'}</td>
+        <td style="font-size:13px;color:var(--text-muted)">${e.vendor||'—'}</td>
+        <td style="font-weight:500">${fmt(e.amount_cents)}</td>
+        <td><div style="display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="openEditExpenseModal('${e.id}')">Edit</button>
+          <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error)" onclick="deleteExpense('${e.id}')">Delete</button>
+        </div></td>
+      </tr>`).join('')}</tbody></table>`}
+    </div>`;
+}
+
+function openAddExpenseModal() {
+  document.getElementById('modal-add-expense').classList.add('open');
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('exp-category').value = 'supplies';
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-description').value = '';
+  document.getElementById('exp-vendor').value = '';
+}
+
+function checkReceiptSize(input) {
+  const w = document.getElementById('exp-receipt-warning');
+  if (input.files[0] && input.files[0].size > 1048576) { w.style.display='block'; input.value=''; }
+  else w.style.display='none';
+}
+
+async function saveExpense() {
+  const date = document.getElementById('exp-date').value;
+  const category = document.getElementById('exp-category').value;
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const desc = document.getElementById('exp-description').value.trim();
+  const vendor = document.getElementById('exp-vendor').value.trim();
+  if (!date||!category||!amount||amount<=0) { showToast('Please fill in date, category, and amount'); return; }
+  const { error } = await db.from('expenses').insert({ date, category, amount_cents: Math.round(amount*100), description: desc||null, vendor: vendor||null });
+  if (error) { showToast('Error: '+error.message); return; }
+  closeModal('modal-add-expense');
+  showToast('Expense added ✓');
+  await renderFinancials();
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  await db.from('expenses').delete().eq('id', id);
+  showToast('Expense deleted');
+  await renderFinancials();
+}
+
+function openEditExpenseModal(expId) {
+  const exp = finExpenses.find(e => e.id === expId);
+  if (!exp) return;
+  document.getElementById('edit-exp-id').value          = exp.id;
+  document.getElementById('edit-exp-date').value        = exp.date;
+  document.getElementById('edit-exp-category').value    = exp.category;
+  document.getElementById('edit-exp-amount').value      = (exp.amount_cents/100).toFixed(2);
+  document.getElementById('edit-exp-description').value = exp.description||'';
+  document.getElementById('edit-exp-vendor').value      = exp.vendor||'';
+  document.getElementById('modal-edit-expense').classList.add('open');
+}
+
+async function saveEditExpense() {
+  const id = document.getElementById('edit-exp-id').value;
+  const date = document.getElementById('edit-exp-date').value;
+  const category = document.getElementById('edit-exp-category').value;
+  const amount = parseFloat(document.getElementById('edit-exp-amount').value);
+  const desc = document.getElementById('edit-exp-description').value.trim();
+  const vendor = document.getElementById('edit-exp-vendor').value.trim();
+  if (!date||!category||!amount||amount<=0) { showToast('Please fill in date, category, and amount'); return; }
+  const { error } = await db.from('expenses').update({ date, category, amount_cents: Math.round(amount*100), description: desc||null, vendor: vendor||null }).eq('id', id);
+  if (error) { showToast('Error: '+error.message); return; }
+  closeModal('modal-edit-expense');
+  showToast('Expense updated ✓');
+  await renderFinancials();
+}
+
+function exportFinancials(format='csv') {
+  const { start, end } = getFinDateRange();
+  const periodLabel = document.getElementById('fin-period')?.selectedOptions[0]?.text||'';
+  const fmt = c => '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (format==='csv') {
+    const isExp = finTab==='expenses';
+    if (isExp) {
+      const rows=[['Date','Category','Description','Vendor','Amount']];
+      finExpenses.forEach(e=>rows.push([e.date,e.category,e.description||'',e.vendor||'',(e.amount_cents/100).toFixed(2)]));
+      const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`expenses-${start}-${end}.csv`;a.click();
+    } else {
+      const panel=document.getElementById('fin-panel-pl');
+      const rows=[['Line Item','Amount']];
+      panel.querySelectorAll('div[style*="justify-content:space-between"]').forEach(row=>{
+        const spans=row.querySelectorAll('span');
+        if(spans.length>=2){const l=spans[0].textContent.trim();const v=spans[spans.length-1].textContent.trim();if(l&&v)rows.push([l,v]);}
+      });
+      const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`pl-${start}-${end}.csv`;a.click();
+    }
+  }
+}
+
+
 async function init() {
   let session = null;
   try {
@@ -1265,6 +1715,7 @@ function showPage(name, el) {
   if (name === 'reports')    { allAdminReports = []; renderAdminReports(); }
   if (name === 'users')      { loadUsers(); }
   if (name === 'pending-fees') { loadPendingFees(); }
+  if (name === 'financials')    { renderFinancials(); }
 }
 
 // ── JOBS ──
@@ -1423,13 +1874,31 @@ function renderJobStats() {
   document.getElementById('stat-completed').textContent   = projRevenue > 0 ? '$' + Math.round(projProfit / 100) : '—';
   document.getElementById('stat-flagged').textContent     = projRevenue > 0 ? '$' + Math.round(projPayout / 100) : '—';
 
-  const mtdPayout = mtdCompletedJobs.reduce((sum, j) => sum + (j.payout_cents || 0), 0);
-  document.getElementById('stat-payout').textContent = '$' + Math.round(mtdPayout / 100);
-
   const mtdCharge = mtdCompletedJobs.reduce((sum, j) => sum + (j.charge_cents || 0) + (j.additional_cleaning_cents || 0), 0);
-  const mtdProfit = mtdCharge - mtdPayout;
-  document.getElementById('stat-revenue-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
-  document.getElementById('stat-profit-mtd').textContent = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
+
+  // Contractor pay = non-owner/op payout only
+  const mtdContractorPay = mtdCompletedJobs.reduce((sum, j) => {
+    const assignments = j.job_assignments || [];
+    if (!assignments.length) return sum + (j.payout_cents || 0);
+    if (assignments.every(a => a.profiles?.is_owner_operator)) return sum;
+    return sum + assignments.filter(a => !a.profiles?.is_owner_operator).reduce((s, a) => s + (a.payout_cents || 0), 0);
+  }, 0);
+
+  // All payouts including owner/op
+  const mtdAllPayouts = mtdCompletedJobs.reduce((sum, j) => {
+    const a = j.job_assignments || [];
+    if (!a.length) return sum + (j.payout_cents||0);
+    return sum + a.reduce((s,x) => s+(x.payout_cents||0), 0);
+  }, 0);
+
+  const mtdOwnerOpLabor = mtdAllPayouts - mtdContractorPay;
+  const mtdProfit = mtdCharge - mtdAllPayouts;
+
+  document.getElementById('stat-revenue-mtd').textContent  = mtdCharge > 0 ? '$' + Math.round(mtdCharge / 100) : '—';
+  document.getElementById('stat-payout').textContent        = '$' + Math.round(mtdContractorPay / 100);
+  document.getElementById('stat-owner-op-mtd').textContent  = mtdOwnerOpLabor > 0 ? '$' + Math.round(mtdOwnerOpLabor / 100) : '—';
+  document.getElementById('stat-profit-mtd').textContent    = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
+  document.getElementById('stat-takehome-mtd').textContent  = mtdOwnerOpLabor > 0 ? '$' + Math.round(mtdOwnerOpLabor / 100) : '—';
 }
 
 function filterJobsFromStat(type) {
@@ -1456,6 +1925,21 @@ function filterJobsFromStat(type) {
     filtered = allJobs.filter(j => !j.deleted_at && j.scheduled_date === todayStr);
   } else if (type === 'completed-week') {
     filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date >= weekStartStr && j.scheduled_date <= todayStr);
+  } else if (type === 'takehome-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+  } else if (type === 'revenue-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)));
+  } else if (type === 'payout-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+    filtered.sort((a,b) => (b.payout_cents||0) - (a.payout_cents||0));
+  } else if (type === 'profit-mtd') {
+    const now2 = new Date(); const todayStr2 = now2.toISOString().split('T')[0];
+    filtered = allJobs.filter(j => !j.deleted_at && j.status === 'completed' && j.scheduled_date <= todayStr2 && new Date(j.scheduled_date+'T12:00:00').getMonth() === now2.getMonth() && new Date(j.scheduled_date+'T12:00:00').getFullYear() === now2.getFullYear());
+    filtered.sort((a,b) => ((b.charge_cents||0)+(b.additional_cleaning_cents||0)-(b.payout_cents||0)) - ((a.charge_cents||0)+(a.additional_cleaning_cents||0)-(a.payout_cents||0)));
   } else if (type === 'revenue-mtd-proj') {
     const now2 = new Date();
     filtered = allJobs.filter(j => {
