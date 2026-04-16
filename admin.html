@@ -495,25 +495,25 @@
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
           <div class="stat-label">Total jobs this month <span title="All non-deleted jobs scheduled this calendar month" style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-value" id="stat-total" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('unassigned-2wk')" title="Click to filter">
           <div class="stat-label">Unassigned (next 2 weeks) <span title="Jobs with no cleaner assigned in the next 14 days — needs attention" style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-unassigned">—</div>
+          <div class="stat-value" id="stat-unassigned" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd')" title="Click to filter">
           <div class="stat-label">Revenue MTD <span title="Charge to owner on completed jobs this month. Extra clean fees only counted when marked Collected." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
+        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
           <div class="stat-label">Contractor pay MTD <span title="Cash paid to non-owner/op cleaners (Ali, Audrey, BryAnna, Taylor) on completed jobs this month" style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-payout">—</div>
+          <div class="stat-value" id="stat-payout" style="color:var(--gold-dark)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
+        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
           <div class="stat-label">Profit MTD <span title="Revenue minus ALL payouts (including owner/op) minus expenses. True net profit after everyone is paid." style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
+          <div class="stat-value" id="stat-profit-mtd" style="color:var(--success)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--navy)" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
+        <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
           <div class="stat-label">Projected revenue this month <span title="All jobs this month at their set charge amounts — completed and upcoming. Assumes all booked jobs complete." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
         </div>
@@ -521,9 +521,9 @@
           <div class="stat-label">Projected profit this month <span title="Projected revenue minus all projected payouts. Forward-looking estimate." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
+        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
           <div class="stat-label">Projected contractor pay <span title="What you'll pay non-owner/op cleaners this month based on all booked jobs" style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-flagged" style="color:#A07D1C">—</div>
+          <div class="stat-value" id="stat-flagged" style="color:var(--gold-dark)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
           <div class="stat-label">Owner/op labor MTD <span title="What John and Melissa were paid for cleaning this month. Already included in expenses and profit calculation — shown here for context only." style="cursor:help;font-size:11px">ℹ️</span></div>
@@ -1594,23 +1594,36 @@ function showPLDrilldown(type) {
   let title='', rows='', headers='';
 
   if (type==='cleaning-revenue') {
-    title='Cleaning Revenue'; headers='<th>Date</th><th>Property</th><th style="text-align:right">Charge</th>';
-    rows=jobs.map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.charge_cents||0)}</td></tr>`).join('');
-    rows+=`<tr style="font-weight:600;border-top:2px solid var(--navy)"><td colspan="2">Total</td><td style="text-align:right">${fmt(jobs.reduce((s,j)=>s+(j.charge_cents||0),0))}</td></tr>`;
+    title='Cleaning Revenue'; headers='<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Charge</th>';
+    const sorted = [...jobs].sort((a,b) => a.scheduled_date.localeCompare(b.scheduled_date));
+    rows=sorted.map(j=>{
+      const cleaner=(j.job_assignments||[]).map(a=>a.profiles?.full_name).filter(Boolean).join(', ')||'—';
+      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${cleaner}</td><td style="text-align:right;font-weight:500">${fmt(j.charge_cents||0)}</td></tr>`;
+    }).join('');
+    rows+=`<tr style="font-weight:600;border-top:2px solid var(--navy)"><td colspan="3">Total</td><td style="text-align:right">${fmt(sorted.reduce((s,j)=>s+(j.charge_cents||0),0))}</td></tr>`;
   } else if (type==='extra-clean-revenue') {
-    title='Extra Clean Fees'; headers='<th>Date</th><th>Property</th><th style="text-align:right">Amount</th>';
-    rows=jobs.filter(j=>j.additional_cleaning_collected&&j.additional_cleaning_cents).map(j=>`<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="text-align:right;font-weight:500">${fmt(j.additional_cleaning_cents)}</td></tr>`).join('');
+    title='Extra Clean Fees'; headers='<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Amount</th>';
+    const sortedEx = [...jobs].filter(j=>j.additional_cleaning_collected&&j.additional_cleaning_cents).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date));
+    rows=sortedEx.map(j=>{
+      const cleaner=(j.job_assignments||[]).map(a=>a.profiles?.full_name).filter(Boolean).join(', ')||'—';
+      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${cleaner}</td><td style="text-align:right;font-weight:500">${fmt(j.additional_cleaning_cents)}</td></tr>`;
+    }).join('');
   } else if (type==='contractors') {
-    title='Contractor Payouts'; headers='<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Payout</th>';
-    rows=jobs.filter(j=>(j.job_assignments||[]).some(a=>!a.profiles?.is_owner_operator)).map(j=>{
-      const payout=(j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).reduce((s,a)=>s+(a.payout_cents||0),0);
-      const cls=(j.job_assignments||[]).filter(a=>!a.profiles?.is_owner_operator).map(a=>a.profiles?.full_name||'—').join(', ');
-      return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px">${cls}</td><td style="text-align:right;color:var(--error)">(${fmt(payout)})</td></tr>`;
+    title='All Cleaner Payouts'; headers='<th>Date</th><th>Property</th><th>Cleaner</th><th style="text-align:right">Payout</th>';
+    const sortedPay = [...jobs].filter(j=>(j.job_assignments||[]).length>0).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date));
+    rows=sortedPay.map(j=>{
+      const assigns = j.job_assignments||[];
+      return assigns.map(a=>{
+        const name = a.profiles?.full_name||'—';
+        const isOO = a.profiles?.is_owner_operator;
+        return `<tr><td>${formatDate(j.scheduled_date)}</td><td>${j.properties?.name||'—'}</td><td style="font-size:12px">${name}${isOO?' <span style="font-size:10px;color:var(--gold-dark)">(owner/op)</span>':''}</td><td style="text-align:right;color:var(--error)">(${fmt(a.payout_cents||0)})</td></tr>`;
+      }).join('');
     }).join('');
   } else {
     title=type.charAt(0).toUpperCase()+type.slice(1)+' Expenses';
     headers='<th>Date</th><th>Description</th><th>Vendor</th><th style="text-align:right">Amount</th>';
-    rows=expenses.filter(e=>e.category===type).map(e=>`<tr><td>${formatDate(e.date)}</td><td>${e.description||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${e.vendor||'—'}</td><td style="text-align:right;color:var(--error)">(${fmt(e.amount_cents)})</td></tr>`).join('');
+    const sortedExp = [...expenses].filter(e=>e.category===type).sort((a,b)=>a.date.localeCompare(b.date));
+    rows=sortedExp.map(e=>`<tr><td>${formatDate(e.date)}</td><td>${e.description||'—'}</td><td style="font-size:12px;color:var(--text-muted)">${e.vendor||'—'}</td><td style="text-align:right;color:var(--error)">(${fmt(e.amount_cents)})</td></tr>`).join('');
   }
 
   panel.style.display='block';
@@ -3555,18 +3568,14 @@ async function saveNewUser() {
   if (!name) { showToast('Please enter a name'); return; }
 
   if (email) {
-    // Full account creation with login access
-    const { data, error } = await db.auth.signUp({
-      email, password: 'ChangeMe123!',
-      options: { data: { full_name: name, role } }
+    // Use service role via manage-user function — bypasses email confirmation
+    const result = await callAdminFn({
+      action: 'create_new_user',
+      email, password: 'ChangeMe123!', name,
+      role, phone: phone || null,
+      roles: newRoles
     });
-    if (error) { showToast('Error: ' + error.message); return; }
-    if (data?.user?.id) {
-      await db.from('profiles').upsert({
-        id: data.user.id, email, full_name: name, phone,
-        role, is_active: true, is_owner_operator: false
-      }, { onConflict: 'id' });
-    }
+    if (!result.success) { showToast('Error: ' + (result.error || 'Failed to create user')); return; }
     closeModal('modal-new-user');
     showToast('User created ✓ — temp password: ChangeMe123!');
   } else {
@@ -3634,25 +3643,24 @@ async function saveEditUser() {
   const originalUser = allUsers.find(u => u.id === id);
   const emailChanged = originalUser && originalUser.email !== newEmail;
 
-  // If email changed, call Netlify function to update auth.users
+  // If email changed, try to update auth.users via manage-user function
+  // If user has no auth account (tracking-only), skip auth update gracefully
   if (emailChanged) {
     try {
-      const res = await fetch('/.netlify/functions/update-user-email', {
+      const res = await fetch('/.netlify/functions/manage-user', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-secret': 'MaidSync2026!'
-        },
-        body: JSON.stringify({ userId: id, newEmail })
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': 'MaidSync2026!' },
+        body: JSON.stringify({ action: 'update_email', userId: id, email: newEmail })
       });
       const data = await res.json();
-      if (!res.ok || data.error) {
-        showToast('Email update failed: ' + (data.error || 'unknown error'));
+      // 'user_not_found' is expected for tracking-only profiles — not an error
+      if (!res.ok && data.error && !data.error.includes('not found')) {
+        showToast('Email update failed: ' + data.error);
         return;
       }
     } catch (e) {
-      showToast('Email update failed: ' + e.message);
-      return;
+      // Network error — still save profile email below
+      console.warn('Auth email update failed (may be tracking-only user):', e.message);
     }
   }
 
