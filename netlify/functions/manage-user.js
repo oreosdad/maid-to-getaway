@@ -123,5 +123,64 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   }
 
+  // ── CREATE NEW USER (with profile) ──
+  if (action === 'create_new_user') {
+    if (!email || !password || !name) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'email, password, and name required' }) };
+    }
+
+    // Create auth user — email_confirm:true skips confirmation email
+    const { data: created, error: createErr } = await db.auth.admin.createUser({
+      email, password,
+      email_confirm: true,
+      user_metadata: { full_name: name }
+    });
+    if (createErr) {
+      return { statusCode: 400, body: JSON.stringify({ error: createErr.message }) };
+    }
+
+    const authId = created.user.id;
+    const userRole = role || 'cleaner';
+    const userRoles = roles || [userRole];
+
+    // Delete any auto-created blank profile
+    await db.from('profiles').delete().eq('id', authId);
+
+    // Create profile linked to auth UUID
+    const { error: profErr } = await db.from('profiles').insert({
+      id: authId,
+      email,
+      full_name: name,
+      phone: phone || null,
+      role: userRole,
+      is_active: true,
+      is_owner_operator: false,
+      notification_prefs: userRoles.length > 1 ? { roles: userRoles } : {}
+    });
+
+    if (profErr) {
+      await db.auth.admin.deleteUser(authId);
+      return { statusCode: 500, body: JSON.stringify({ error: 'Profile creation failed: ' + profErr.message }) };
+    }
+
+    return { statusCode: 200, body: JSON.stringify({ success: true, userId: authId }) };
+  }
+
+  // ── UPDATE EMAIL ──
+  if (action === 'update_email') {
+    if (!userId || !email) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'userId and email required' }) };
+    }
+    const { error } = await db.auth.admin.updateUserById(userId, { email });
+    if (error) {
+      // User not in auth (tracking-only profile) — not a fatal error
+      if (error.message.includes('not found') || error.message.includes('User not found')) {
+        return { statusCode: 200, body: JSON.stringify({ success: true, user_not_found: true }) };
+      }
+      return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
+    }
+    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+  }
+
   return { statusCode: 400, body: JSON.stringify({ error: 'Unknown action: ' + action }) };
 };
