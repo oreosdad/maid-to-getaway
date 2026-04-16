@@ -494,44 +494,40 @@
       </div>
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('this-month')" title="Click to filter">
-          <div class="stat-label">Total jobs this month</div>
+          <div class="stat-label">Total jobs this month <span title="All non-deleted jobs scheduled this calendar month" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-total">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('unassigned-2wk')" title="Click to filter">
-          <div class="stat-label">Unassigned (next 2 weeks)</div>
+          <div class="stat-label">Unassigned (next 2 weeks) <span title="Jobs with no cleaner assigned in the next 14 days — needs attention" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-unassigned">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd')" title="Click to filter">
-          <div class="stat-label">Revenue MTD</div>
+          <div class="stat-label">Revenue MTD <span title="Charge to owner on completed jobs this month. Extra clean fees only counted when marked Collected." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
-          <div class="stat-label">Contractor pay MTD</div>
+          <div class="stat-label">Contractor pay MTD <span title="Cash paid to non-owner/op cleaners (Ali, Audrey, BryAnna, Taylor) on completed jobs this month" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-payout">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
-          <div class="stat-label">Owner/op labor MTD</div>
-          <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
-        </div>
         <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
-          <div class="stat-label">Profit MTD</div>
+          <div class="stat-label">Profit MTD <span title="Revenue minus ALL payouts (including owner/op) minus expenses. True net profit after everyone is paid." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-profit-mtd" style="color:#A07D1C">—</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('takehome-mtd')" title="Click to filter">
-          <div class="stat-label">Owner/op labor MTD <span title="What owner/op cleaners were paid — informational only, already included in expenses" style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-takehome-mtd" style="color:var(--gold-dark)">—</div>
-        </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--navy)" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected revenue this month</div>
+          <div class="stat-label">Projected revenue this month <span title="All jobs this month at their set charge amounts — completed and upcoming. Assumes all booked jobs complete." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected profit this month</div>
+          <div class="stat-label">Projected profit this month <span title="Projected revenue minus all projected payouts. Forward-looking estimate." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:#C49A2A" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected contractor pay</div>
+          <div class="stat-label">Projected contractor pay <span title="What you'll pay non-owner/op cleaners this month based on all booked jobs" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-flagged" style="color:#A07D1C">—</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
+          <div class="stat-label">Owner/op labor MTD <span title="What John and Melissa were paid for cleaning this month. Already included in expenses and profit calculation — shown here for context only." style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
         </div>
       </div>
       <div class="card">
@@ -1319,6 +1315,79 @@
   </div>
 </div>
 
+
+<!-- GRANT LOGIN MODAL -->
+<div class="modal-overlay" id="modal-grant-login">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <span class="modal-title">Grant Login Access</span>
+      <button class="modal-close" onclick="closeModal('modal-grant-login')">✕</button>
+    </div>
+    <input type="hidden" id="grant-login-user-id"/>
+    <input type="hidden" id="grant-login-user-role"/>
+    <div id="grant-login-name-display" style="font-size:15px;font-weight:500;color:var(--navy);margin-bottom:4px"></div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Creates a login account linked to their existing profile and job history.</p>
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="grant-login-email" placeholder="cleaner@example.com" autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label>Temporary password</label>
+      <div style="display:flex;gap:8px">
+        <div style="position:relative;flex:1">
+          <input type="text" id="grant-login-password" value="ChangeMe123!" style="width:100%;padding-right:36px;font-family:monospace"/>
+          <button type="button" onclick="copyGrantPassword()" title="Copy password"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">📋</button>
+        </div>
+        <button type="button" onclick="generateGrantPassword()"
+          style="padding:8px 12px;background:var(--cream);border:1.5px solid var(--cream-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--text)">
+          Generate
+        </button>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:6px">Copy this before saving — you'll need to send it to them manually.</p>
+    </div>
+    <div id="grant-login-error" style="display:none;font-size:13px;color:var(--error);padding:10px 14px;background:#FDEEEE;border-radius:8px;margin-bottom:16px"></div>
+    <div id="grant-login-success" style="display:none;font-size:13px;color:var(--success);padding:10px 14px;background:var(--success-bg);border-radius:8px;margin-bottom:16px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-grant-login')">Cancel</button>
+      <button class="btn" id="grant-login-btn" onclick="submitGrantLogin()">Grant access</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="modal-reset-password">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">Reset Password</span>
+      <button class="modal-close" onclick="closeModal('modal-reset-password')">✕</button>
+    </div>
+    <p id="reset-pw-email-display" style="font-size:14px;color:var(--text-muted);margin-bottom:20px"></p>
+    <input type="hidden" id="reset-pw-user-id"/>
+    <div class="form-group">
+      <label>New password</label>
+      <div style="position:relative">
+        <input type="password" id="reset-pw-new" placeholder="Min. 6 characters" style="width:100%;padding-right:44px"/>
+        <button type="button" onclick="togglePwVis('reset-pw-new')"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Confirm password</label>
+      <div style="position:relative">
+        <input type="password" id="reset-pw-confirm" placeholder="Re-enter password" style="width:100%;padding-right:44px"/>
+        <button type="button" onclick="togglePwVis('reset-pw-confirm')"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted)">👁</button>
+      </div>
+    </div>
+    <div id="reset-pw-error" style="display:none;font-size:13px;color:var(--error);margin-top:4px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-reset-password')">Cancel</button>
+      <button class="btn" onclick="submitResetPassword()">Set password</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1479,9 +1548,9 @@ async function renderPL() {
 
   panel.innerHTML = `
     <div class="stats-row" style="margin-bottom:28px">
-      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
-      <div class="stat-card flagged"><div class="stat-label">Total Expenses</div><div class="stat-value">${fmt(totalExp)}</div></div>
-      <div class="stat-card" style="border-color:#C49A2A"><div class="stat-label">Net Profit</div><div class="stat-value" style="color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</div></div>
+      <div class="stat-card" style="cursor:pointer" onclick="showPLDrilldown('cleaning-revenue')" title="Click to see jobs"><div class="stat-label">Revenue <span title="Click to see all jobs" style="font-size:11px">↗</span></div><div class="stat-value" style="color:var(--navy)">${fmt(revenue)}</div></div>
+      <div class="stat-card flagged" style="cursor:pointer" onclick="showPLDrilldown('contractors')" title="Click to see payouts"><div class="stat-label">Total Expenses <span title="Click to see contractor payouts" style="font-size:11px">↗</span></div><div class="stat-value">${fmt(totalExp)}</div></div>
+      <div class="stat-card" style="border-color:#C49A2A;cursor:pointer" onclick="showPLDrilldown('cleaning-revenue')" title="Click to see jobs"><div class="stat-label">Net Profit <span title="Click to see completed jobs" style="font-size:11px">↗</span></div><div class="stat-value" style="color:${netProfit>=0?'var(--success)':'var(--error)'}">${fmt(netProfit)}</div></div>
 
       <div class="stat-card gold"><div class="stat-label">Margin</div><div class="stat-value" style="color:#A07D1C">${margin}%</div></div>
     </div>
@@ -1666,6 +1735,144 @@ function exportFinancials(format='csv') {
   }
 }
 
+
+
+// ── GRANT LOGIN ──
+async function callAdminFn(payload) {
+  const res = await fetch('/.netlify/functions/manage-user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': 'MaidSync2026!'
+    },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+function openGrantLoginModal(userId, userName, userRole) {
+  document.getElementById('grant-login-user-id').value   = userId;
+  document.getElementById('grant-login-user-role').value = userRole;
+  document.getElementById('grant-login-name-display').textContent = userName;
+  document.getElementById('grant-login-email').value    = '';
+  document.getElementById('grant-login-password').value = 'ChangeMe123!';
+  document.getElementById('grant-login-error').style.display   = 'none';
+  document.getElementById('grant-login-success').style.display = 'none';
+  document.getElementById('grant-login-btn').disabled = false;
+  document.getElementById('grant-login-btn').textContent = 'Grant access';
+  document.getElementById('modal-grant-login').classList.add('open');
+  setTimeout(() => document.getElementById('grant-login-email').focus(), 100);
+}
+
+function generateGrantPassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let pw = '';
+  for (let i = 0; i < 10; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('grant-login-password').value = pw;
+}
+
+function copyGrantPassword() {
+  const pw = document.getElementById('grant-login-password').value;
+  navigator.clipboard.writeText(pw).then(() => showToast('Password copied ✓'));
+}
+
+async function submitGrantLogin() {
+  const userId   = document.getElementById('grant-login-user-id').value;
+  const email    = document.getElementById('grant-login-email').value.trim();
+  const password = document.getElementById('grant-login-password').value;
+  const name     = document.getElementById('grant-login-name-display').textContent;
+  const errEl    = document.getElementById('grant-login-error');
+  const sucEl    = document.getElementById('grant-login-success');
+  const btn      = document.getElementById('grant-login-btn');
+
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid email address';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+
+  try {
+    const result = await callAdminFn({ action: 'create_auth', userId, email, password, name });
+
+    if (result.alreadyExists) {
+      sucEl.textContent = `✓ ${name} already has a login account with this email.`;
+      sucEl.style.display = 'block';
+      btn.textContent = 'Done';
+      await loadUsers();
+      return;
+    }
+
+    if (!result.success) {
+      errEl.textContent = result.error || 'Failed to create account';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Grant access';
+      return;
+    }
+
+    // Success
+    sucEl.innerHTML = `✓ Login created for <strong>${name}</strong><br>
+      Email: <strong>${email}</strong><br>
+      Temp password: <strong style="font-family:monospace">${password}</strong><br>
+      <span style="font-size:12px;color:var(--text-muted)">Send these credentials to them directly.</span>`;
+    sucEl.style.display = 'block';
+    btn.textContent = 'Done — close when ready';
+    btn.onclick = () => closeModal('modal-grant-login');
+    await loadUsers();
+  } catch (e) {
+    errEl.textContent = 'Network error: ' + e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Grant access';
+  }
+}
+
+// ── RESET PASSWORD ──
+function resetUserPassword(userId, userEmail) {
+  document.getElementById('reset-pw-user-id').value = userId;
+  document.getElementById('reset-pw-email-display').textContent = 'Setting new password for ' + userEmail;
+  document.getElementById('reset-pw-new').value     = '';
+  document.getElementById('reset-pw-confirm').value = '';
+  document.getElementById('reset-pw-error').style.display = 'none';
+  document.getElementById('modal-reset-password').classList.add('open');
+  setTimeout(() => document.getElementById('reset-pw-new').focus(), 100);
+}
+
+async function submitResetPassword() {
+  const userId = document.getElementById('reset-pw-user-id').value;
+  const pw     = document.getElementById('reset-pw-new').value;
+  const pw2    = document.getElementById('reset-pw-confirm').value;
+  const errEl  = document.getElementById('reset-pw-error');
+  errEl.style.display = 'none';
+
+  if (pw.length < 6)  { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+  if (pw !== pw2)     { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+
+  const result = await callAdminFn({ action: 'reset_pw', userId, password: pw });
+  if (!result.success) {
+    errEl.textContent = result.error || 'Failed to reset password';
+    errEl.style.display = 'block';
+    return;
+  }
+  closeModal('modal-reset-password');
+  showToast('Password updated ✓');
+}
+
+function togglePwVis(inputId) {
+  const input = document.getElementById(inputId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
 
 async function init() {
   let session = null;
@@ -1898,7 +2105,7 @@ function renderJobStats() {
   document.getElementById('stat-payout').textContent        = '$' + Math.round(mtdContractorPay / 100);
   document.getElementById('stat-owner-op-mtd').textContent  = mtdOwnerOpLabor > 0 ? '$' + Math.round(mtdOwnerOpLabor / 100) : '—';
   document.getElementById('stat-profit-mtd').textContent    = mtdCharge > 0 ? '$' + Math.round(mtdProfit / 100) : '—';
-  document.getElementById('stat-takehome-mtd').textContent  = mtdOwnerOpLabor > 0 ? '$' + Math.round(mtdOwnerOpLabor / 100) : '—';
+  document.getElementById('stat-owner-op-mtd').textContent  = mtdOwnerOpLabor > 0 ? '$' + Math.round(mtdOwnerOpLabor / 100) : '—';
 }
 
 function filterJobsFromStat(type) {
