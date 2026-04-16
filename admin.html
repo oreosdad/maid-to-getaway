@@ -3544,9 +3544,16 @@ async function restoreUser(userId, userName) {
 
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
+  // Delete from auth first (service role required)
+  try {
+    await callAdminFn({ action: 'delete_user', userId });
+  } catch(e) {
+    console.warn('Auth delete failed (may be tracking-only):', e.message);
+  }
+  // Delete profile
   const { error } = await db.from('profiles').delete().eq('id', userId);
   if (error) { showToast('Error: ' + error.message); return; }
-  showToast(`${userName} permanently deleted`);
+  showToast(`${userName} permanently deleted ✓`);
   loadUsers();
 }
 
@@ -3569,13 +3576,22 @@ async function saveNewUser() {
 
   if (email) {
     // Use service role via manage-user function — bypasses email confirmation
-    const result = await callAdminFn({
-      action: 'create_new_user',
-      email, password: 'ChangeMe123!', name,
-      role, phone: phone || null,
-      roles: newRoles
-    });
-    if (!result.success) { showToast('Error: ' + (result.error || 'Failed to create user')); return; }
+    let result;
+    try {
+      result = await callAdminFn({
+        action: 'create_new_user',
+        email, password: 'ChangeMe123!', name,
+        role, phone: phone || null,
+        roles: newRoles
+      });
+    } catch(e) {
+      showToast('Network error: ' + e.message);
+      return;
+    }
+    if (result && !result.success) {
+      showToast('Error: ' + (result.error || 'Failed to create user'));
+      return;
+    }
     closeModal('modal-new-user');
     showToast('User created ✓ — temp password: ChangeMe123!');
   } else {
@@ -3696,18 +3712,25 @@ async function deleteUserFromModal() {
   const id   = document.getElementById('edit-user-id').value;
   const name = document.getElementById('edit-user-name').value;
   if (!confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
+  try {
+    await callAdminFn({ action: 'delete_user', userId: id });
+  } catch(e) {
+    console.warn('Auth delete failed (may be tracking-only):', e.message);
+  }
   await db.from('profiles').delete().eq('id', id);
   closeModal('modal-edit-user');
-  showToast('User deleted');
+  showToast(`${name} permanently deleted ✓`);
   loadUsers();
 }
 
-async function resetUserPassword(userId, userEmail) {
-  if (!confirm(`Send password reset email to ${userEmail}?`)) return;
-  const { error } = await db.auth.resetPasswordForEmail(userEmail, {
-    redirectTo: window.location.origin + '/login.html'
-  });
-  showToast(error ? 'Could not send — reset manually in Supabase' : `Reset email sent to ${userEmail} ✓`);
+function resetUserPassword(userId, userEmail) {
+  document.getElementById('reset-pw-user-id').value = userId;
+  document.getElementById('reset-pw-email-display').textContent = 'Setting new password for ' + userEmail;
+  document.getElementById('reset-pw-new').value     = '';
+  document.getElementById('reset-pw-confirm').value = '';
+  document.getElementById('reset-pw-error').style.display = 'none';
+  document.getElementById('modal-reset-password').classList.add('open');
+  setTimeout(() => document.getElementById('reset-pw-new').focus(), 100);
 }
 
 // ── ADMIN REPORT COMMENTS (with owner comment visibility) ──
