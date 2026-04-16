@@ -210,6 +210,12 @@
   </p>
 </div>
 
+<div id="role-picker" style="display:none;max-width:380px;margin:0 auto;padding:32px;background:white;border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,0.10)">
+  <p style="font-size:15px;font-weight:500;color:#0F4A45;margin-bottom:6px;text-align:center">Welcome back!</p>
+  <p style="font-size:13px;color:#7A7060;text-align:center;margin-bottom:24px">Which portal would you like to open?</p>
+  <div id="role-buttons"></div>
+</div>
+
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
@@ -261,12 +267,11 @@
         .eq('id', userId)
         .single();
 
-      console.log('profile:', JSON.stringify(profile), 'error:', error?.message);
       if (error || !profile) { window.location.href = 'admin.html'; return; }
 
-      const allRoles = profile.notification_prefs?.roles;
-      const roles = (Array.isArray(allRoles) && allRoles.length > 0)
-        ? allRoles
+      const storedRoles = profile.notification_prefs?.roles;
+      const roles = (Array.isArray(storedRoles) && storedRoles.length > 0)
+        ? storedRoles
         : [profile.role];
       const validRoles = roles.filter(r => ['admin','cleaner','owner'].includes(r));
 
@@ -281,17 +286,25 @@
         return;
       }
 
-      // Multi-role — show picker
-      const portalNames = { admin: '⚙️ Admin', cleaner: '🧹 Cleaner', owner: '🏠 Owner' };
+      // Multi-role: show picker
+      const portalNames = { admin: '⚙️ Admin Portal', cleaner: '🧹 Cleaner Portal', owner: '🏠 Owner Portal' };
       const portalUrls  = { admin: 'admin.html', cleaner: 'cleaner.html', owner: 'owner.html' };
-      const btn = document.querySelector('.btn[disabled]');
-      if (btn) { btn.disabled = false; btn.innerHTML = 'Sign in'; }
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('role-picker').style.display = 'block';
+
+      // Hide login form, re-enable button
+      const loginDiv = document.querySelector('.card') || document.querySelector('div');
+      document.getElementById('login-btn').disabled = false;
+      document.getElementById('login-btn').textContent = 'Sign in';
+
+      // Hide all top-level divs except role-picker
+      document.querySelectorAll('body > div').forEach(d => d.style.display = 'none');
+      const picker = document.getElementById('role-picker');
+      picker.style.display = 'block';
+
       document.getElementById('role-buttons').innerHTML = validRoles.map(r => `
-        <a href="${portalUrls[r]}" class="btn" style="display:block;text-align:center;margin-bottom:12px;padding:16px;font-size:15px">
-          ${portalNames[r]} Portal
+        <a href="${portalUrls[r]}" style="display:block;text-align:center;padding:16px;margin-bottom:12px;background:#0F4A45;color:white;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;text-decoration:none">
+          ${portalNames[r]}
         </a>`).join('');
+
     } catch(e) {
       console.error('redirectByRole error:', e);
       window.location.href = 'admin.html';
