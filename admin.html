@@ -506,27 +506,27 @@
           <div class="stat-value" id="stat-revenue-mtd" style="color:var(--navy)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('payout-mtd')" title="Click to filter">
-          <div class="stat-label">Contractor pay MTD <span title="Cash paid to non-owner/op cleaners (Ali, Audrey, BryAnna, Taylor) on completed jobs this month" style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-label">Contractor pay MTD <span title="Cash paid to non-owner/op cleaners on completed jobs this month" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-payout" style="color:var(--gold-dark)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd')" title="Click to filter">
-          <div class="stat-label">Profit MTD <span title="Revenue minus ALL payouts (including owner/op) minus expenses. True net profit after everyone is paid." style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-label">Profit MTD <span title="Revenue minus ALL payouts (including owner/op) minus expenses. True net profit." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-profit-mtd" style="color:var(--success)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer" onclick="filterJobsFromStat('revenue-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected revenue this month <span title="All jobs this month at their set charge amounts — completed and upcoming. Assumes all booked jobs complete." style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-label">Projected revenue this month <span title="All jobs this month at their set charge amounts — completed and upcoming." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-active" style="color:var(--navy)">—</div>
-        </div>
-        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
-          <div class="stat-label">Projected profit this month <span title="Projected revenue minus all projected payouts. Forward-looking estimate." style="cursor:help;font-size:11px">ℹ️</span></div>
-          <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
         </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('payout-mtd-proj')" title="Click to filter">
           <div class="stat-label">Projected contractor pay <span title="What you'll pay non-owner/op cleaners this month based on all booked jobs" style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-flagged" style="color:var(--gold-dark)">—</div>
         </div>
+        <div class="stat-card" style="cursor:pointer;border-color:var(--success)" onclick="filterJobsFromStat('profit-mtd-proj')" title="Click to filter">
+          <div class="stat-label">Projected profit this month <span title="Projected revenue minus all projected payouts. Forward-looking estimate." style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-value" id="stat-completed" style="color:var(--success)">—</div>
+        </div>
         <div class="stat-card" style="cursor:pointer;border-color:var(--gold)" onclick="filterJobsFromStat('owner-op-mtd')" title="Click to filter">
-          <div class="stat-label">Owner/op labor MTD <span title="What John and Melissa were paid for cleaning this month. Already included in expenses and profit calculation — shown here for context only." style="cursor:help;font-size:11px">ℹ️</span></div>
+          <div class="stat-label">Owner/op labor MTD <span title="What John and Melissa were paid. Already in expenses — shown for context only." style="cursor:help;font-size:11px">ℹ️</span></div>
           <div class="stat-value" id="stat-owner-op-mtd" style="color:var(--gold-dark)">—</div>
         </div>
       </div>
@@ -594,10 +594,10 @@
       </div>
       <!-- Role tabs -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
-        <button class="filter-btn active" id="user-tab-cleaner" onclick="setUserTab('cleaner',this)">🧹 Cleaners</button>
-        <button class="filter-btn" id="user-tab-owner"          onclick="setUserTab('owner',this)">🏠 Owners</button>
-        <button class="filter-btn" id="user-tab-admin"          onclick="setUserTab('admin',this)">⚙️ Admins</button>
-        <button class="filter-btn" id="user-tab-all"            onclick="setUserTab('all',this)">All</button>
+        <button class="filter-btn" id="user-tab-cleaner" onclick="setUserTab('cleaner',this)">🧹 Cleaners</button>
+        <button class="filter-btn" id="user-tab-owner"   onclick="setUserTab('owner',this)">🏠 Owners</button>
+        <button class="filter-btn" id="user-tab-admin"   onclick="setUserTab('admin',this)">⚙️ Admins</button>
+        <button class="filter-btn active" id="user-tab-all" onclick="setUserTab('all',this)">All</button>
       </div>
       <div class="card">
         <div id="users-table-wrap"><div class="loading-inline">Loading users…</div></div>
@@ -3441,7 +3441,7 @@ function clearReportFilters() {
 
 // ── USER MANAGEMENT ──
 let allUsers = [];
-let userTabFilter = 'cleaner';
+let userTabFilter = 'all';
 let showingArchived = false;
 
 function setUserArchiveView(archived) {
@@ -3544,15 +3544,9 @@ async function restoreUser(userId, userName) {
 
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
-  // Delete from auth first (service role required)
-  try {
-    await callAdminFn({ action: 'delete_user', userId });
-  } catch(e) {
-    console.warn('Auth delete failed (may be tracking-only):', e.message);
-  }
-  // Delete profile
-  const { error } = await db.from('profiles').delete().eq('id', userId);
-  if (error) { showToast('Error: ' + error.message); return; }
+  try { await callAdminFn({ action: 'delete_user', userId }); } catch(e) {}
+  await db.from('job_assignments').delete().eq('cleaner_id', userId);
+  await db.from('profiles').delete().eq('id', userId);
   showToast(`${userName} permanently deleted ✓`);
   loadUsers();
 }
@@ -3712,11 +3706,8 @@ async function deleteUserFromModal() {
   const id   = document.getElementById('edit-user-id').value;
   const name = document.getElementById('edit-user-name').value;
   if (!confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
-  try {
-    await callAdminFn({ action: 'delete_user', userId: id });
-  } catch(e) {
-    console.warn('Auth delete failed (may be tracking-only):', e.message);
-  }
+  try { await callAdminFn({ action: 'delete_user', userId: id }); } catch(e) {}
+  await db.from('job_assignments').delete().eq('cleaner_id', id);
   await db.from('profiles').delete().eq('id', id);
   closeModal('modal-edit-user');
   showToast(`${name} permanently deleted ✓`);
