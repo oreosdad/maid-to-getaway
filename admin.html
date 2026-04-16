@@ -3544,9 +3544,20 @@ async function restoreUser(userId, userName) {
 
 async function permanentDeleteUser(userId, userName) {
   if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
-  try { await callAdminFn({ action: 'delete_user', userId }); } catch(e) {}
-  await db.from('job_assignments').delete().eq('cleaner_id', userId);
-  await db.from('profiles').delete().eq('id', userId);
+  // Step 1: Delete from auth
+  let authResult;
+  try {
+    authResult = await callAdminFn({ action: 'delete_user', userId });
+    if (authResult.error && !authResult.error.includes('not found')) {
+      showToast('Auth delete error: ' + authResult.error); return;
+    }
+  } catch(e) { console.warn('Auth delete failed:', e.message); }
+  // Step 2: Delete job assignments
+  const { error: jaErr } = await db.from('job_assignments').delete().eq('cleaner_id', userId);
+  if (jaErr) console.warn('job_assignments delete:', jaErr.message);
+  // Step 3: Delete profile
+  const { error: profErr } = await db.from('profiles').delete().eq('id', userId);
+  if (profErr) { showToast('Profile delete failed: ' + profErr.message); return; }
   showToast(`${userName} permanently deleted ✓`);
   loadUsers();
 }
@@ -3706,9 +3717,17 @@ async function deleteUserFromModal() {
   const id   = document.getElementById('edit-user-id').value;
   const name = document.getElementById('edit-user-name').value;
   if (!confirm(`Permanently delete ${name}? This cannot be undone.`)) return;
-  try { await callAdminFn({ action: 'delete_user', userId: id }); } catch(e) {}
-  await db.from('job_assignments').delete().eq('cleaner_id', id);
-  await db.from('profiles').delete().eq('id', id);
+  let authResult;
+  try {
+    authResult = await callAdminFn({ action: 'delete_user', userId: id });
+    if (authResult.error && !authResult.error.includes('not found')) {
+      showToast('Auth delete error: ' + authResult.error); return;
+    }
+  } catch(e) { console.warn('Auth delete failed:', e.message); }
+  const { error: jaErr } = await db.from('job_assignments').delete().eq('cleaner_id', id);
+  if (jaErr) console.warn('job_assignments delete:', jaErr.message);
+  const { error: profErr } = await db.from('profiles').delete().eq('id', id);
+  if (profErr) { showToast('Profile delete failed: ' + profErr.message); return; }
   closeModal('modal-edit-user');
   showToast(`${name} permanently deleted ✓`);
   loadUsers();
