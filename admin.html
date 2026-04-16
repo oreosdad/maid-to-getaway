@@ -1722,7 +1722,7 @@ function showPage(name, el) {
 async function loadJobs() {
   const { data, error } = await db
     .from('jobs')
-    .select('*, properties(name), job_assignments(cleaner_id, profiles(full_name, id)), pet_fee_collected')
+    .select('*, properties(name), job_assignments(cleaner_id, payout_cents, base_payout_cents, profiles(full_name, id, is_owner_operator)), pet_fee_collected')
     .order('scheduled_date', { ascending: true })
     .limit(500);
   if (error) { showToast('Error loading jobs'); return; }
