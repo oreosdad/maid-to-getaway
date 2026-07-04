@@ -60,10 +60,6 @@
       color: var(--red);
       font-weight: bold;
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
     .label-star { color: var(--gold); font-size: 18px; }
     .big-counter {
@@ -123,10 +119,6 @@
       background: linear-gradient(90deg, var(--gold) 0%, var(--red) 100%);
       width: 0%;
       transition: width 0.4s ease;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 16px;
     }
     .progress-text {
       font-size: 16px;
@@ -229,19 +221,17 @@
       cursor: pointer;
       letter-spacing: 1px;
       text-transform: uppercase;
-      transition: all 0.2s;
     }
-    .btn-submit:hover:not(:disabled) {
+    .btn-submit:hover {
       background: var(--gold);
       border-color: var(--gold);
       color: var(--navy);
-      transform: translate(-2px, -2px);
     }
     .btn-submit:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
-    .status-message {
+    .status {
       font-size: 12px;
       padding: 8px;
       margin-top: 8px;
@@ -249,14 +239,9 @@
       font-weight: bold;
       display: none;
     }
-    .status-success {
-      background: #2ecc71;
-      color: white;
-    }
-    .status-error {
-      background: var(--red);
-      color: white;
-    }
+    .status.show { display: block; }
+    .status.success { background: #2ecc71; color: white; }
+    .status.error { background: var(--red); color: white; }
     .hero-right {
       display: flex;
       flex-direction: column;
@@ -314,13 +299,8 @@
       border-bottom: 2px solid var(--cream);
       font-size: 13px;
     }
-    .lb-item:last-child {
-      border-bottom: none;
-    }
-    .lb-name {
-      font-weight: bold;
-      color: var(--navy);
-    }
+    .lb-item:last-child { border-bottom: none; }
+    .lb-name { font-weight: bold; color: var(--navy); }
     .lb-name.rank-1 { color: var(--gold); font-size: 14px; }
     .lb-name.rank-2 { color: #C0C0C0; }
     .lb-name.rank-3 { color: #CD7F32; }
@@ -329,7 +309,6 @@
       color: var(--white);
       padding: 4px 12px;
       font-weight: bold;
-      min-width: 50px;
       text-align: center;
       border: 2px solid var(--navy);
     }
@@ -338,7 +317,6 @@
       color: var(--navy);
       padding: 4px 12px;
       font-weight: bold;
-      min-width: 50px;
       text-align: center;
       border: 2px solid var(--navy);
     }
@@ -377,9 +355,7 @@
       font-size: 12px;
       animation: slideIn 0.4s ease;
     }
-    .feed-item:last-child {
-      border-bottom: none;
-    }
+    .feed-item:last-child { border-bottom: none; }
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-10px); }
       to { opacity: 1; transform: translateX(0); }
@@ -415,18 +391,11 @@
       color: #999;
     }
     @media (max-width: 1024px) {
-      .hero-container { grid-template-columns: 1fr; min-height: auto; }
-      .hero-left { border-right: none; border-bottom: 8px solid var(--navy); padding: 40px 20px; }
-      .hero-right { max-height: none; padding: 30px 20px; }
+      .hero-container { grid-template-columns: 1fr; }
+      .hero-left { border-right: none; border-bottom: 8px solid var(--navy); }
+      .hero-right { max-height: none; }
       .big-counter { font-size: 80px; }
       .button-section { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .hero-left { padding: 30px 16px; }
-      .big-counter { font-size: 60px; letter-spacing: 4px; }
-      .counter-digit { min-width: 60px; padding: 6px 12px; }
-      .hero-right { padding: 20px 16px; }
-      .lb-item { grid-template-columns: 1fr; gap: 6px; }
     }
   </style>
 </head>
@@ -470,12 +439,12 @@
     </div>
 
     <div class="button-section">
-      <button class="btn-add" id="btnAdd1">+1 DOG</button>
-      <button class="btn-add" id="btnAdd3">+3 DOGS</button>
+      <button class="btn-add" onclick="window.addOne()">+1 DOG</button>
+      <button class="btn-add" onclick="window.addThree()">+3 DOGS</button>
     </div>
     <div class="dog-selected" id="dogSelected">0 dogs selected</div>
 
-    <form class="form-section" id="dogForm">
+    <form class="form-section" id="dogForm" onsubmit="window.submitLog(event)">
       <div class="form-group">
         <label class="form-label">Your Name</label>
         <input type="text" id="playerName" placeholder="Your name here" required>
@@ -487,7 +456,7 @@
       </div>
 
       <button type="submit" class="btn-submit">LOG & SUBMIT</button>
-      <div id="statusMessage"></div>
+      <div id="statusMessage" class="status"></div>
     </form>
   </div>
 
@@ -515,70 +484,35 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // CONFIG
+  // GLOBALS
+  window.currentDogCount = 0;
+  window.allLogs = [];
+
   const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA5NTAxMjAsImV4cCI6MjAyNjU3MzMyMH0.TvUIh-HpfhKqYyK4kWqfWaWb8pLMG6dNQ3qCjWmkc';
   const TABLE_NAME = 'hotdog_challenge_2026';
 
-  let supabase;
-  let currentDogCount = 0;
-  let allLogs = [];
+  // BUTTON HANDLERS
+  window.addOne = function() {
+    window.currentDogCount += 1;
+    document.getElementById('dogSelected').textContent = `${window.currentDogCount} dog${window.currentDogCount !== 1 ? 's' : ''} selected`;
+  };
 
-  // INIT
-  async function init() {
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log('✓ Supabase ready');
-      
-      setupCountdown();
-      setupButtonListeners();
-      setupFormListener();
-      await loadLogs();
-      setupRealtimeListener();
-    } catch (err) {
-      console.error('✗ Init error:', err);
+  window.addThree = function() {
+    window.currentDogCount += 3;
+    document.getElementById('dogSelected').textContent = `${window.currentDogCount} dog${window.currentDogCount !== 1 ? 's' : ''} selected`;
+  };
+
+  window.showStatus = function(msg, type) {
+    const el = document.getElementById('statusMessage');
+    el.textContent = msg;
+    el.className = `status show ${type}`;
+    if (type === 'success') {
+      setTimeout(() => { el.classList.remove('show'); }, 3000);
     }
-  }
+  };
 
-  function setupCountdown() {
-    setInterval(() => {
-      const endTime = new Date('2026-07-04T23:59:59').getTime();
-      const now = new Date().getTime();
-      const diff = endTime - now;
-
-      if (diff <= 0) {
-        document.getElementById('countdown').textContent = '00:00:00';
-        document.body.innerHTML = '<div style="min-height:100vh;background:var(--navy);display:flex;align-items:center;justify-content:center;"><div style="text-align:center;color:var(--red);"><div style="font-size:72px;letter-spacing:4px;font-weight:bold;margin-bottom:20px;">🌭 CHALLENGE COMPLETE 🌭</div><div style="font-size:28px;letter-spacing:2px;">THIS TAB HAS SELF-DESTRUCTED</div></div></div>';
-        return;
-      }
-
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      document.getElementById('countdown').textContent = 
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }, 1000);
-  }
-
-  function setupButtonListeners() {
-    document.getElementById('btnAdd1').addEventListener('click', () => {
-      currentDogCount += 1;
-      updateDogDisplay();
-    });
-    
-    document.getElementById('btnAdd3').addEventListener('click', () => {
-      currentDogCount += 3;
-      updateDogDisplay();
-    });
-  }
-
-  function updateDogDisplay() {
-    document.getElementById('dogSelected').textContent = 
-      `${currentDogCount} dog${currentDogCount !== 1 ? 's' : ''} selected`;
-  }
-
-  function rateComedy(comment) {
+  window.rateComedy = function(comment) {
     if (!comment || comment.trim().length === 0) return null;
     let score = 25;
     const text = comment.toLowerCase();
@@ -609,20 +543,10 @@
     score += emojiCount * 4;
 
     return Math.min(100, Math.max(1, Math.round(score)));
-  }
+  };
 
-  function showStatus(message, type = 'success') {
-    const el = document.getElementById('statusMessage');
-    el.textContent = message;
-    el.className = `status-message status-${type}`;
-    el.style.display = 'block';
-    if (type === 'success') {
-      setTimeout(() => { el.style.display = 'none'; }, 3000);
-    }
-  }
-
-  function updateDisplay() {
-    const total = allLogs.reduce((sum, log) => sum + (log.dogs_logged || 0), 0);
+  window.updateDisplay = function() {
+    const total = window.allLogs.reduce((sum, log) => sum + (log.dogs_logged || 0), 0);
     
     const str = String(total).padStart(3, '0');
     document.getElementById('digit1').textContent = str[0];
@@ -638,7 +562,7 @@
     document.getElementById('progressCount').textContent = total;
 
     // LEADERBOARD
-    const leaderboard = allLogs
+    const leaderboard = window.allLogs
       .reduce((acc, log) => {
         const existing = acc.find(item => item.name === log.player_name);
         if (existing) {
@@ -680,7 +604,7 @@
 
     // FEED
     const feed = document.getElementById('feedList');
-    const recentLogs = allLogs.slice(0, 20);
+    const recentLogs = window.allLogs.slice(0, 20);
     if (recentLogs.length === 0) {
       feed.innerHTML = '<li class="empty-state">Waiting for the first log...</li>';
     } else {
@@ -695,98 +619,119 @@
         </li>
       `).join('');
     }
-  }
+  };
 
-  async function loadLogs() {
+  window.loadLogs = async function() {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await window.supabase
         .from(TABLE_NAME)
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('✗ Load error:', error);
+        console.error('Load error:', error);
         return;
       }
 
-      allLogs = data || [];
-      console.log(`✓ Loaded ${allLogs.length} logs`);
-      updateDisplay();
+      window.allLogs = data || [];
+      window.updateDisplay();
     } catch (err) {
-      console.error('✗ Fetch error:', err);
+      console.error('Fetch error:', err);
     }
-  }
+  };
 
-  function setupRealtimeListener() {
+  window.setupRealtimeListener = function() {
     try {
-      supabase
+      window.supabase
         .channel(`public:${TABLE_NAME}`)
         .on('postgres_changes', 
           { event: 'INSERT', schema: 'public', table: TABLE_NAME }, 
           (payload) => {
-            console.log('✓ New log received:', payload.new);
-            allLogs.unshift(payload.new);
-            updateDisplay();
+            window.allLogs.unshift(payload.new);
+            window.updateDisplay();
           }
         )
         .subscribe();
     } catch (err) {
-      console.error('✗ Realtime error:', err);
+      console.error('Realtime error:', err);
     }
-  }
+  };
 
-  function setupFormListener() {
-    document.getElementById('dogForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+  window.submitLog = async function(e) {
+    e.preventDefault();
 
-      const name = document.getElementById('playerName').value.trim();
-      const comment = document.getElementById('comment').value.trim() || null;
-      const rating = comment ? rateComedy(comment) : null;
+    const name = document.getElementById('playerName').value.trim();
+    const comment = document.getElementById('comment').value.trim() || null;
+    const rating = comment ? window.rateComedy(comment) : null;
 
-      if (!name || currentDogCount <= 0) {
-        showStatus('Enter name & select at least 1 dog', 'error');
-        return;
+    if (!name || window.currentDogCount <= 0) {
+      window.showStatus('Enter name & select at least 1 dog', 'error');
+      return;
+    }
+
+    const btn = document.querySelector('.btn-submit');
+    btn.disabled = true;
+
+    try {
+      const payload = {
+        player_name: name,
+        dogs_logged: window.currentDogCount,
+        comment: comment,
+        comedy_rating: rating,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await window.supabase.from(TABLE_NAME).insert([payload]).select();
+
+      if (error) {
+        console.error('Insert error:', error);
+        window.showStatus(`Error: ${error.message}`, 'error');
+      } else {
+        console.log('Success:', data);
+        document.getElementById('playerName').value = '';
+        document.getElementById('comment').value = '';
+        window.currentDogCount = 0;
+        document.getElementById('dogSelected').textContent = '0 dogs selected';
+        window.showStatus('Dogs logged! 🌭', 'success');
+        await window.loadLogs();
       }
+    } catch (err) {
+      console.error('Submit error:', err);
+      window.showStatus(`Error: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  };
 
-      const btn = document.querySelector('.btn-submit');
-      btn.disabled = true;
+  window.updateCountdown = function() {
+    const endTime = new Date('2026-07-04T23:59:59').getTime();
+    const now = new Date().getTime();
+    const diff = endTime - now;
 
-      try {
-        const payload = {
-          player_name: name,
-          dogs_logged: currentDogCount,
-          comment: comment,
-          comedy_rating: rating,
-          created_at: new Date().toISOString()
-        };
+    if (diff <= 0) {
+      document.getElementById('countdown').textContent = '00:00:00';
+      document.body.innerHTML = '<div style="min-height:100vh;background:var(--navy);display:flex;align-items:center;justify-content:center;"><div style="text-align:center;color:var(--red);"><div style="font-size:72px;letter-spacing:4px;font-weight:bold;margin-bottom:20px;">🌭 CHALLENGE COMPLETE 🌭</div><div style="font-size:28px;letter-spacing:2px;">THIS TAB HAS SELF-DESTRUCTED</div></div></div>';
+      return;
+    }
 
-        console.log('Submitting:', payload);
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        const { data, error } = await supabase.from(TABLE_NAME).insert([payload]).select();
-
-        if (error) {
-          console.error('✗ Insert error:', error);
-          showStatus(`Error: ${error.message}`, 'error');
-        } else {
-          console.log('✓ Success! Inserted:', data);
-          document.getElementById('playerName').value = '';
-          document.getElementById('comment').value = '';
-          currentDogCount = 0;
-          updateDogDisplay();
-          showStatus('Dogs logged! 🌭', 'success');
-          await loadLogs();
-        }
-      } catch (err) {
-        console.error('✗ Submit error:', err);
-        showStatus(`Error: ${err.message}`, 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  }
+    document.getElementById('countdown').textContent = 
+      `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
 
   // START
-  init();
+  (async function() {
+    const supabaseModule = window.supabase;
+    window.supabase = supabaseModule.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    setInterval(window.updateCountdown, 1000);
+    window.updateCountdown();
+    await window.loadLogs();
+    window.setupRealtimeListener();
+  })();
 </script>
 
 </body>
