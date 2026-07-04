@@ -3,735 +3,84 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🌭 HOT DOG CHALLENGE 250</title>
+  <title>🌭 HOT DOG COUNTER</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --navy: #001F3F;
-      --red: #E63946;
-      --gold: #F4A261;
-      --cream: #F5F0E8;
-      --white: #FFFFFF;
-      --text-dark: #1A2B28;
-    }
-    html { scroll-behavior: smooth; }
-    body { 
-      font-family: 'Arial', sans-serif; 
-      background: var(--navy);
-      color: var(--text-dark); 
+    body {
       margin: 0;
       padding: 0;
-    }
-    .header {
-      background: var(--red);
-      color: var(--white);
-      padding: 12px 20px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 16px;
-      letter-spacing: 2px;
-      border-bottom: 6px solid var(--gold);
-    }
-    .header-star { color: var(--gold); margin: 0 12px; }
-    .hero-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      min-height: 100vh;
-      background-color: var(--cream);
-    }
-    .hero-left {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 60px 40px;
-      background: var(--cream);
-      border-right: 8px solid var(--navy);
-    }
-    .counter-box {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    .counter-label {
-      font-size: 14px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--red);
-      font-weight: bold;
-      margin-bottom: 16px;
-    }
-    .label-star { color: var(--gold); font-size: 18px; }
-    .big-counter {
-      font-family: 'Courier New', monospace;
-      font-size: 140px;
-      font-weight: bold;
-      color: var(--navy);
-      line-height: 0.9;
-      letter-spacing: 8px;
-      text-shadow: 3px 3px 0px var(--gold);
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-    }
-    .counter-digit {
-      display: inline-block;
-      background: var(--white);
-      border: 4px solid var(--navy);
-      padding: 10px 20px;
-      min-width: 100px;
-    }
-    .goal-text {
-      font-size: 18px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--red);
-      font-weight: bold;
-      margin-top: 12px;
-    }
-    .progress-section {
-      width: 100%;
-      margin: 40px 0;
-      padding: 20px 0;
-      border-top: 4px solid var(--red);
-      border-bottom: 4px solid var(--red);
-    }
-    .progress-label {
-      font-size: 12px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--red);
-      font-weight: bold;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-    .progress-bar {
-      height: 50px;
-      background: var(--white);
-      border: 4px solid var(--navy);
-      overflow: hidden;
-      position: relative;
-      margin-bottom: 8px;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--gold) 0%, var(--red) 100%);
-      width: 0%;
-      transition: width 0.4s ease;
-    }
-    .progress-text {
-      font-size: 16px;
-      font-weight: bold;
-      color: var(--navy);
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-    }
-    .progress-count {
-      font-size: 12px;
-      color: var(--text-dark);
-      text-align: center;
-      font-weight: bold;
-    }
-    .button-section {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 30px;
-    }
-    .btn-add {
-      padding: 18px 20px;
-      border: 4px solid var(--navy);
-      background: var(--navy);
-      color: var(--white);
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      transition: all 0.2s;
-    }
-    .btn-add:hover {
-      background: var(--red);
-      border-color: var(--red);
-      transform: translate(-3px, -3px);
-      box-shadow: 3px 3px 0px var(--gold);
-    }
-    .btn-add:active {
-      transform: translate(0, 0);
-    }
-    .dog-selected {
-      font-size: 14px;
-      color: var(--red);
-      font-weight: bold;
-      background: var(--gold);
-      padding: 8px 16px;
-      text-align: center;
-      border: 3px solid var(--navy);
-      margin-bottom: 20px;
-    }
-    .form-section {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .form-label {
-      font-size: 11px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--navy);
-      font-weight: bold;
-    }
-    input[type="text"],
-    textarea {
-      padding: 10px;
-      border: 2px solid var(--navy);
+      background: #001F3F;
       font-family: Arial, sans-serif;
-      font-size: 13px;
-      background: var(--white);
-    }
-    textarea {
-      resize: none;
-      min-height: 60px;
-    }
-    input[type="text"]:focus,
-    textarea:focus {
-      outline: none;
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(244, 162, 97, 0.3);
-    }
-    .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: var(--red);
-      color: var(--white);
-      border: 3px solid var(--red);
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .btn-submit:hover {
-      background: var(--gold);
-      border-color: var(--gold);
-      color: var(--navy);
-    }
-    .btn-submit:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .status {
-      font-size: 12px;
-      padding: 8px;
-      margin-top: 8px;
-      text-align: center;
-      font-weight: bold;
-      display: none;
-    }
-    .status.show { display: block; }
-    .status.success { background: #2ecc71; color: white; }
-    .status.error { background: var(--red); color: white; }
-    .hero-right {
       display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      padding: 40px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(245,240,232,0.95) 100%);
-      overflow-y: auto;
-      max-height: 100vh;
-    }
-    .countdown-box {
-      background: var(--red);
-      border: 4px solid var(--navy);
-      color: var(--white);
-      padding: 16px;
-      text-align: center;
-      margin-bottom: 20px;
-      font-weight: bold;
-    }
-    .countdown-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .countdown-timer {
-      font-family: 'Courier New', monospace;
-      font-size: 32px;
-      letter-spacing: 2px;
-    }
-    .leaderboard-section {
-      background: var(--white);
-      border: 6px solid var(--navy);
-      margin-bottom: 20px;
-    }
-    .lb-header {
-      background: var(--red);
-      color: var(--white);
-      padding: 12px;
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-weight: bold;
-      text-align: center;
-    }
-    .leaderboard-list {
-      list-style: none;
-      padding: 0;
-    }
-    .lb-item {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 12px;
       align-items: center;
-      padding: 12px;
-      border-bottom: 2px solid var(--cream);
-      font-size: 13px;
+      justify-content: center;
+      min-height: 100vh;
     }
-    .lb-item:last-child { border-bottom: none; }
-    .lb-name { font-weight: bold; color: var(--navy); }
-    .lb-name.rank-1 { color: var(--gold); font-size: 14px; }
-    .lb-name.rank-2 { color: #C0C0C0; }
-    .lb-name.rank-3 { color: #CD7F32; }
-    .lb-count {
-      background: var(--red);
-      color: var(--white);
-      padding: 4px 12px;
-      font-weight: bold;
+    
+    .container {
       text-align: center;
-      border: 2px solid var(--navy);
+      background: #F5F0E8;
+      padding: 60px 40px;
+      border: 8px solid #001F3F;
     }
-    .lb-rating {
-      background: var(--gold);
-      color: var(--navy);
-      padding: 4px 12px;
+    
+    .label {
+      font-size: 24px;
       font-weight: bold;
-      text-align: center;
-      border: 2px solid var(--navy);
-    }
-    .lb-comment {
-      grid-column: 1 / -1;
-      font-size: 12px;
-      color: var(--text-dark);
-      font-style: italic;
-      margin-top: -8px;
-      padding: 0 12px;
-    }
-    .feed-section {
-      background: var(--white);
-      border: 6px solid var(--navy);
-    }
-    .feed-header {
-      background: var(--navy);
-      color: var(--white);
-      padding: 12px;
-      font-size: 14px;
+      color: #E63946;
+      margin-bottom: 30px;
       letter-spacing: 2px;
-      text-transform: uppercase;
+    }
+    
+    .counter {
+      font-size: 200px;
       font-weight: bold;
-      text-align: center;
+      color: #001F3F;
+      font-family: 'Courier New', monospace;
+      margin: 20px 0;
+      line-height: 1;
+      text-shadow: 4px 4px 0px #F4A261;
     }
-    .feed-list {
-      list-style: none;
-      padding: 0;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .feed-item {
-      padding: 12px;
-      border-bottom: 2px solid var(--cream);
-      border-left: 4px solid var(--gold);
-      font-size: 12px;
-      animation: slideIn 0.4s ease;
-    }
-    .feed-item:last-child { border-bottom: none; }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-10px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    .feed-name {
+    
+    .button {
+      font-size: 32px;
+      padding: 30px 60px;
+      background: #E63946;
+      color: white;
+      border: 4px solid #001F3F;
       font-weight: bold;
-      color: var(--navy);
-      margin-bottom: 4px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      margin-top: 40px;
+      transition: all 0.1s;
     }
-    .feed-dogs {
-      display: inline-block;
-      background: var(--red);
-      color: var(--white);
-      padding: 2px 6px;
-      margin-right: 8px;
-      font-weight: bold;
+    
+    .button:hover {
+      background: #F4A261;
+      color: #001F3F;
+      transform: translate(-3px, -3px);
+      box-shadow: 3px 3px 0px #001F3F;
     }
-    .feed-rating {
-      display: inline-block;
-      background: var(--gold);
-      color: var(--navy);
-      padding: 2px 6px;
-      font-weight: bold;
-    }
-    .feed-comment {
-      color: var(--text-dark);
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-    .empty-state {
-      padding: 30px;
-      text-align: center;
-      color: #999;
-    }
-    @media (max-width: 1024px) {
-      .hero-container { grid-template-columns: 1fr; }
-      .hero-left { border-right: none; border-bottom: 8px solid var(--navy); }
-      .hero-right { max-height: none; }
-      .big-counter { font-size: 80px; }
-      .button-section { grid-template-columns: 1fr; }
+    
+    .button:active {
+      transform: translate(0, 0);
     }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <span class="header-star">★</span>
-  HOT DOG CHALLENGE 2026
-  <span class="header-star">★</span>
+<div class="container">
+  <div class="label">🌭 HOT DOGS 🌭</div>
+  <div class="counter" id="count">0</div>
+  <button class="button" onclick="addDog()">+1 DOG</button>
 </div>
 
-<div class="hero-container">
-  <div class="hero-left">
-    <div class="counter-box">
-      <div class="counter-label">
-        <span class="label-star">★</span>
-        TOTAL DOGS CONSUMED
-        <span class="label-star">★</span>
-      </div>
-      <div class="big-counter" id="counterDisplay">
-        <span class="counter-digit" id="digit1">0</span>
-        <span class="counter-digit" id="digit2">0</span>
-        <span class="counter-digit" id="digit3">0</span>
-      </div>
-      <div class="goal-text">
-        <span id="remaining">250</span> / 250 TO GO
-      </div>
-    </div>
-
-    <div class="progress-section">
-      <div class="progress-label">
-        <span class="label-star">★</span>
-        PROGRESS TO 250
-        <span class="label-star">★</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
-        <div class="progress-text" id="progressText">0%</div>
-      </div>
-      <div class="progress-count"><span id="progressCount">0</span> / 250</div>
-    </div>
-
-    <div class="button-section">
-      <button class="btn-add" onclick="window.addOne()">+1 DOG</button>
-      <button class="btn-add" onclick="window.addThree()">+3 DOGS</button>
-    </div>
-    <div class="dog-selected" id="dogSelected">0 dogs selected</div>
-
-    <form class="form-section" id="dogForm" onsubmit="window.submitLog(event)">
-      <div class="form-group">
-        <label class="form-label">Your Name</label>
-        <input type="text" id="playerName" placeholder="Your name here" required>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Comments (Optional)</label>
-        <textarea id="comment" placeholder="How's your stomach?"></textarea>
-      </div>
-
-      <button type="submit" class="btn-submit">LOG & SUBMIT</button>
-      <div id="statusMessage" class="status"></div>
-    </form>
-  </div>
-
-  <div class="hero-right">
-    <div class="countdown-box">
-      <div class="countdown-label">SELF-DESTRUCTS IN</div>
-      <div class="countdown-timer" id="countdown">00:00:00</div>
-    </div>
-
-    <div class="leaderboard-section">
-      <div class="lb-header">★ TOP GLIZZY GLUTTONS ★</div>
-      <ul class="leaderboard-list" id="leaderboard">
-        <li style="padding:20px;text-align:center;color:#999;">No logs yet...</li>
-      </ul>
-    </div>
-
-    <div class="feed-section">
-      <div class="feed-header">★ LIVE FEED ★</div>
-      <ul class="feed-list" id="feedList">
-        <li class="empty-state">Waiting for the first log...</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // GLOBALS
-  window.currentDogCount = 0;
-  window.allLogs = [];
-
-  const SUPABASE_URL = 'https://rpqdxjrdpyjppttodbao.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwcWR4anJkcHlqcHB0dG9kYmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA5NTAxMjAsImV4cCI6MjAyNjU3MzMyMH0.TvUIh-HpfhKqYyK4kWqfWaWb8pLMG6dNQ3qCjWmkc';
-  const TABLE_NAME = 'hotdog_challenge_2026';
-
-  // BUTTON HANDLERS
-  window.addOne = function() {
-    window.currentDogCount += 1;
-    document.getElementById('dogSelected').textContent = `${window.currentDogCount} dog${window.currentDogCount !== 1 ? 's' : ''} selected`;
-  };
-
-  window.addThree = function() {
-    window.currentDogCount += 3;
-    document.getElementById('dogSelected').textContent = `${window.currentDogCount} dog${window.currentDogCount !== 1 ? 's' : ''} selected`;
-  };
-
-  window.showStatus = function(msg, type) {
-    const el = document.getElementById('statusMessage');
-    el.textContent = msg;
-    el.className = `status show ${type}`;
-    if (type === 'success') {
-      setTimeout(() => { el.classList.remove('show'); }, 3000);
-    }
-  };
-
-  window.rateComedy = function(comment) {
-    if (!comment || comment.trim().length === 0) return null;
-    let score = 25;
-    const text = comment.toLowerCase();
-
-    const painWords = ['die', 'dying', 'regret', 'hate', 'hell', 'worst', 'kill', 'sick', 'full', 'cry', 'suffer', 'destroy', 'mad', 'lose'];
-    const funnyWords = ['glizzy', 'wiener', 'hotdog', 'dog', 'lol', 'haha', 'literally', 'absolutely', 'completely'];
-    const selfDeprecating = ['i\'m', 'im ', 'stupid', 'dumb', 'idiot', 'why did', 'what was i', 'never again'];
-
-    painWords.forEach(word => { if (text.includes(word)) score += 8; });
-    funnyWords.forEach(word => { if (text.includes(word)) score += 6; });
-    selfDeprecating.forEach(word => { if (text.includes(word)) score += 10; });
-
-    const exclamationCount = (comment.match(/!/g) || []).length;
-    score += exclamationCount * 3;
-
-    const questionMarks = (comment.match(/\?/g) || []).length;
-    score += questionMarks * 2;
-
-    const capsWords = (comment.match(/\b[A-Z]{2,}\b/g) || []).length;
-    score += capsWords * 5;
-
-    if (comment.length > 50) score += 10;
-    if (comment.length > 100) score += 15;
-    if (comment.includes('...')) score += 8;
-
-    const emojiRegex = /(\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-    const emojiCount = (comment.match(emojiRegex) || []).length;
-    score += emojiCount * 4;
-
-    return Math.min(100, Math.max(1, Math.round(score)));
-  };
-
-  window.updateDisplay = function() {
-    const total = window.allLogs.reduce((sum, log) => sum + (log.dogs_logged || 0), 0);
-    
-    const str = String(total).padStart(3, '0');
-    document.getElementById('digit1').textContent = str[0];
-    document.getElementById('digit2').textContent = str[1];
-    document.getElementById('digit3').textContent = str[2];
-
-    const remaining = Math.max(0, 250 - total);
-    document.getElementById('remaining').textContent = remaining;
-
-    const percent = Math.min(100, Math.round((total / 250) * 100));
-    document.getElementById('progressFill').style.width = percent + '%';
-    document.getElementById('progressText').textContent = percent + '%';
-    document.getElementById('progressCount').textContent = total;
-
-    // LEADERBOARD
-    const leaderboard = window.allLogs
-      .reduce((acc, log) => {
-        const existing = acc.find(item => item.name === log.player_name);
-        if (existing) {
-          existing.total += log.dogs_logged || 0;
-          if (log.comment && log.comedy_rating && (!existing.rating || log.comedy_rating > existing.rating)) {
-            existing.bestComment = log.comment;
-            existing.rating = log.comedy_rating;
-          }
-        } else {
-          acc.push({
-            name: log.player_name,
-            total: log.dogs_logged || 0,
-            bestComment: log.comment || null,
-            rating: log.comedy_rating || null
-          });
-        }
-        return acc;
-      }, [])
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
-
-    const lb = document.getElementById('leaderboard');
-    if (leaderboard.length === 0) {
-      lb.innerHTML = '<li style="padding:20px;text-align:center;color:#999;">No logs yet...</li>';
-    } else {
-      lb.innerHTML = leaderboard.map((item, idx) => {
-        const rank = idx + 1;
-        const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-        return `
-          <li class="lb-item">
-            <div class="lb-name ${rankClass}">${rank}. ${item.name}</div>
-            <div class="lb-count">${item.total}</div>
-            <div class="lb-rating">${item.rating ? item.rating + '★' : '—'}</div>
-            ${item.bestComment ? `<div class="lb-comment">"${item.bestComment}"</div>` : ''}
-          </li>
-        `;
-      }).join('');
-    }
-
-    // FEED
-    const feed = document.getElementById('feedList');
-    const recentLogs = window.allLogs.slice(0, 20);
-    if (recentLogs.length === 0) {
-      feed.innerHTML = '<li class="empty-state">Waiting for the first log...</li>';
-    } else {
-      feed.innerHTML = recentLogs.map(log => `
-        <li class="feed-item">
-          <div class="feed-name">${log.player_name}</div>
-          <div>
-            <span class="feed-dogs">+${log.dogs_logged}</span>
-            ${log.comedy_rating ? `<span class="feed-rating">${log.comedy_rating}★</span>` : ''}
-          </div>
-          ${log.comment ? `<div class="feed-comment">"${log.comment}"</div>` : ''}
-        </li>
-      `).join('');
-    }
-  };
-
-  window.loadLogs = async function() {
-    try {
-      const { data, error } = await window.supabase
-        .from(TABLE_NAME)
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Load error:', error);
-        return;
-      }
-
-      window.allLogs = data || [];
-      window.updateDisplay();
-    } catch (err) {
-      console.error('Fetch error:', err);
-    }
-  };
-
-  window.setupRealtimeListener = function() {
-    try {
-      window.supabase
-        .channel(`public:${TABLE_NAME}`)
-        .on('postgres_changes', 
-          { event: 'INSERT', schema: 'public', table: TABLE_NAME }, 
-          (payload) => {
-            window.allLogs.unshift(payload.new);
-            window.updateDisplay();
-          }
-        )
-        .subscribe();
-    } catch (err) {
-      console.error('Realtime error:', err);
-    }
-  };
-
-  window.submitLog = async function(e) {
-    e.preventDefault();
-
-    const name = document.getElementById('playerName').value.trim();
-    const comment = document.getElementById('comment').value.trim() || null;
-    const rating = comment ? window.rateComedy(comment) : null;
-
-    if (!name || window.currentDogCount <= 0) {
-      window.showStatus('Enter name & select at least 1 dog', 'error');
-      return;
-    }
-
-    const btn = document.querySelector('.btn-submit');
-    btn.disabled = true;
-
-    try {
-      const payload = {
-        player_name: name,
-        dogs_logged: window.currentDogCount,
-        comment: comment,
-        comedy_rating: rating,
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error } = await window.supabase.from(TABLE_NAME).insert([payload]).select();
-
-      if (error) {
-        console.error('Insert error:', error);
-        window.showStatus(`Error: ${error.message}`, 'error');
-      } else {
-        console.log('Success:', data);
-        document.getElementById('playerName').value = '';
-        document.getElementById('comment').value = '';
-        window.currentDogCount = 0;
-        document.getElementById('dogSelected').textContent = '0 dogs selected';
-        window.showStatus('Dogs logged! 🌭', 'success');
-        await window.loadLogs();
-      }
-    } catch (err) {
-      console.error('Submit error:', err);
-      window.showStatus(`Error: ${err.message}`, 'error');
-    } finally {
-      btn.disabled = false;
-    }
-  };
-
-  window.updateCountdown = function() {
-    const endTime = new Date('2026-07-04T23:59:59').getTime();
-    const now = new Date().getTime();
-    const diff = endTime - now;
-
-    if (diff <= 0) {
-      document.getElementById('countdown').textContent = '00:00:00';
-      document.body.innerHTML = '<div style="min-height:100vh;background:var(--navy);display:flex;align-items:center;justify-content:center;"><div style="text-align:center;color:var(--red);"><div style="font-size:72px;letter-spacing:4px;font-weight:bold;margin-bottom:20px;">🌭 CHALLENGE COMPLETE 🌭</div><div style="font-size:28px;letter-spacing:2px;">THIS TAB HAS SELF-DESTRUCTED</div></div></div>';
-      return;
-    }
-
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    document.getElementById('countdown').textContent = 
-      `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  };
-
-  // START
-  (async function() {
-    const supabaseModule = window.supabase;
-    window.supabase = supabaseModule.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    setInterval(window.updateCountdown, 1000);
-    window.updateCountdown();
-    await window.loadLogs();
-    window.setupRealtimeListener();
-  })();
+  let count = 0;
+  
+  function addDog() {
+    count = count + 1;
+    document.getElementById('count').textContent = count;
+  }
 </script>
 
 </body>
